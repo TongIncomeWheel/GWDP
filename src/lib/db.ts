@@ -3,7 +3,11 @@ import path from "path";
 import type { OralExercise, PracticeHistory, AppSettings } from "./types";
 import { getSeedExercises } from "./seed-data";
 
-const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), "oral_practice.db");
+const DB_PATH = process.env.DB_PATH || (
+  process.env.NODE_ENV === "production"
+    ? "/tmp/oral_practice.db"
+    : path.join(process.cwd(), "oral_practice.db")
+);
 
 let _db: Database.Database | null = null;
 
