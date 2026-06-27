@@ -24,12 +24,12 @@ export async function POST(request: NextRequest) {
 
   const errors: string[] = [];
 
-  // Try Imagen 4 (fast) → Imagen 4 (standard) → Imagen 3 → Gemini
-  const imagenUrl = await tryImagenGeneration(apiKey, prompt, errors);
-  if (imagenUrl) return NextResponse.json({ imageUrl: imagenUrl, description });
-
+  // Try Gemini first (free-tier compatible), then Imagen (paid tier)
   const geminiUrl = await tryGeminiGeneration(apiKey, prompt, errors);
   if (geminiUrl) return NextResponse.json({ imageUrl: geminiUrl, description });
+
+  const imagenUrl = await tryImagenGeneration(apiKey, prompt, errors);
+  if (imagenUrl) return NextResponse.json({ imageUrl: imagenUrl, description });
 
   return NextResponse.json({
     imageUrl: null,
