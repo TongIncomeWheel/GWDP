@@ -4,15 +4,20 @@ import { updateExerciseImage } from "@/lib/db";
 export async function POST(request: NextRequest) {
   const { exerciseId, description } = await request.json();
   if (!exerciseId || !description) {
-    return NextResponse.json({ error: "exerciseId and description required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "exerciseId and description required" },
+      { status: 400 }
+    );
   }
 
   const apiKey = process.env.GEMINI_API_KEY || "";
 
   if (!apiKey) {
-    const placeholderUrl = `https://placehold.co/400x300/E8DEF8/4A148C?text=${encodeURIComponent(description.slice(0, 30))}`;
-    updateExerciseImage(Number(exerciseId), placeholderUrl);
-    return NextResponse.json({ imageUrl: placeholderUrl, mock: true });
+    // No API key: return a placeholder description instead of generating
+    return NextResponse.json({
+      imageUrl: null,
+      description: description,
+    });
   }
 
   try {
@@ -42,23 +47,32 @@ export async function POST(request: NextRequest) {
     const parts = data.candidates?.[0]?.content?.parts;
     if (!parts) throw new Error("No content in response");
 
-    const imagePart = parts.find((p: Record<string, unknown>) => p.inlineData);
+    const imagePart = parts.find(
+      (p: Record<string, unknown>) => p.inlineData
+    );
     if (imagePart?.inlineData) {
-      const { mimeType, data: b64 } = imagePart.inlineData as { mimeType: string; data: string };
+      const { mimeType, data: b64 } = imagePart.inlineData as {
+        mimeType: string;
+        data: string;
+      };
       const dataUrl = `data:${mimeType};base64,${b64}`;
       updateExerciseImage(Number(exerciseId), dataUrl);
-      return NextResponse.json({ imageUrl: dataUrl });
+      return NextResponse.json({
+        imageUrl: dataUrl,
+        description: description,
+      });
     }
 
-    const placeholderUrl = `https://placehold.co/400x300/E8DEF8/4A148C?text=${encodeURIComponent(description.slice(0, 30))}`;
-    updateExerciseImage(Number(exerciseId), placeholderUrl);
-    return NextResponse.json({ imageUrl: placeholderUrl, mock: true });
-  } catch (e) {
-    const placeholderUrl = `https://placehold.co/400x300/E8DEF8/4A148C?text=${encodeURIComponent(description.slice(0, 30))}`;
-    updateExerciseImage(Number(exerciseId), placeholderUrl);
+    // Image generation did not return inline data
     return NextResponse.json({
-      imageUrl: placeholderUrl,
-      mock: true,
+      imageUrl: null,
+      description: description,
+    });
+  } catch (e) {
+    // On error, return null imageUrl with description as fallback
+    return NextResponse.json({
+      imageUrl: null,
+      description: description,
       error: (e as Error).message,
     });
   }

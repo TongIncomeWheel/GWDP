@@ -63,8 +63,67 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const body: PracticeHistory = await request.json();
-  updatePracticeHistory(body);
+  const body = await request.json();
+
+  // If an id is provided, fetch the existing record and merge
+  if (body.id) {
+    const existing = getPracticeHistoryById(Number(body.id));
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const updated: PracticeHistory = {
+      ...existing,
+      // Allow updating all standard fields
+      exerciseId: body.exerciseId ?? existing.exerciseId,
+      exerciseTitle: body.exerciseTitle ?? existing.exerciseTitle,
+      exerciseType: body.exerciseType ?? existing.exerciseType,
+      exerciseTopic: body.exerciseTopic ?? existing.exerciseTopic,
+      dateMillis: body.dateMillis ?? existing.dateMillis,
+      audioPath1: body.audioPath1 !== undefined ? body.audioPath1 : existing.audioPath1,
+      audioPath2: body.audioPath2 !== undefined ? body.audioPath2 : existing.audioPath2,
+      audioPath3: body.audioPath3 !== undefined ? body.audioPath3 : existing.audioPath3,
+      transcript1: body.transcript1 !== undefined ? body.transcript1 : existing.transcript1,
+      transcript2: body.transcript2 !== undefined ? body.transcript2 : existing.transcript2,
+      transcript3: body.transcript3 !== undefined ? body.transcript3 : existing.transcript3,
+      score1: body.score1 ?? existing.score1,
+      score2: body.score2 ?? existing.score2,
+      score3: body.score3 ?? existing.score3,
+      totalScore: body.totalScore ?? existing.totalScore,
+      maxScore: body.maxScore ?? existing.maxScore,
+      generalFeedback: body.generalFeedback !== undefined ? body.generalFeedback : existing.generalFeedback,
+      strengths: body.strengths !== undefined ? body.strengths : existing.strengths,
+      areasOfImprovement: body.areasOfImprovement !== undefined ? body.areasOfImprovement : existing.areasOfImprovement,
+      modelAnswer1: body.modelAnswer1 !== undefined ? body.modelAnswer1 : existing.modelAnswer1,
+      modelAnswer2: body.modelAnswer2 !== undefined ? body.modelAnswer2 : existing.modelAnswer2,
+      modelAnswer3: body.modelAnswer3 !== undefined ? body.modelAnswer3 : existing.modelAnswer3,
+      isEvaluated: body.isEvaluated !== undefined ? body.isEvaluated : existing.isEvaluated,
+      isEvaluating: body.isEvaluating !== undefined ? body.isEvaluating : existing.isEvaluating,
+      errorMessage: body.errorMessage !== undefined ? body.errorMessage : existing.errorMessage,
+      // Parent grading fields
+      parentScore1: body.parentScore1 !== undefined ? body.parentScore1 : existing.parentScore1,
+      parentScore2: body.parentScore2 !== undefined ? body.parentScore2 : existing.parentScore2,
+      parentScore3: body.parentScore3 !== undefined ? body.parentScore3 : existing.parentScore3,
+      parentFeedback: body.parentFeedback !== undefined ? body.parentFeedback : existing.parentFeedback,
+      parentTotalScore: body.parentTotalScore !== undefined ? body.parentTotalScore : existing.parentTotalScore,
+      // Audio blob fields
+      audioBlob1: body.audioBlob1 !== undefined ? body.audioBlob1 : existing.audioBlob1,
+      audioBlob2: body.audioBlob2 !== undefined ? body.audioBlob2 : existing.audioBlob2,
+      audioBlob3: body.audioBlob3 !== undefined ? body.audioBlob3 : existing.audioBlob3,
+      // Structured transcript fields
+      structuredTranscript1: body.structuredTranscript1 !== undefined ? body.structuredTranscript1 : existing.structuredTranscript1,
+      structuredTranscript2: body.structuredTranscript2 !== undefined ? body.structuredTranscript2 : existing.structuredTranscript2,
+      structuredTranscript3: body.structuredTranscript3 !== undefined ? body.structuredTranscript3 : existing.structuredTranscript3,
+      isClosed: body.isClosed !== undefined ? body.isClosed : existing.isClosed,
+    };
+
+    updatePracticeHistory(updated);
+    return NextResponse.json({ ok: true });
+  }
+
+  // Fallback: treat body as full PracticeHistory object
+  const fullBody: PracticeHistory = body;
+  updatePracticeHistory(fullBody);
   return NextResponse.json({ ok: true });
 }
 
