@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import path from "path";
-import type { OralExercise, PracticeHistory } from "./types";
+import type { OralExercise, PracticeHistory, AppSettings } from "./types";
 import { getSeedExercises } from "./seed-data";
 
 const DB_PATH = path.join(process.cwd(), "oral_practice.db");
@@ -76,6 +76,11 @@ function getDb(): Database.Database {
         structuredTranscript3 TEXT,
         isClosed INTEGER DEFAULT 0,
         FOREIGN KEY (exerciseId) REFERENCES exercises(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL DEFAULT ''
       );
     `);
 
@@ -372,4 +377,64 @@ function mapHistoryRow(row: Record<string, unknown>): PracticeHistory {
 
 function getDefaultExercises(): Omit<OralExercise, "id">[] {
   return getSeedExercises();
+}
+
+// --- Settings CRUD ---
+
+const SETTINGS_KEYS = [
+  "geminiApiKey",
+  "notificationEmail",
+  "emailOnCompletion",
+  "emailOnMissed",
+  "childName",
+  "dailyPracticeGoal",
+] as const;
+
+export function getSetting(key: string): string {
+  const db = getDb();
+  const row = db.prepare("SELECT value FROM app_settings WHERE key = ?").get(key) as { value: string } | undefined;
+  return row?.value ?? "";
+}
+
+export function setSetting(key: string, value: string): void {
+  const db = getDb();
+  db.prepare(
+    "INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  ).run(key, value);
+}
+
+export function getAllSettings(): AppSettings {
+  const db = getDb();
+  const rows = db.prepare("SELECT key, value FROM app_settings").all() as Array<{ key: string; value: string }>;
+  const map: Record<string, string> = {};
+  for (const r of rows) map[r.key] = r.value;
+  return {
+    geminiApiKey: map.geminiApiKey ?? "",
+    notificationEmail: map.notificationEmail ?? "",
+    emailOnCompletion: map.emailOnCompletion === "true",
+    emailOnMissed: map.emailOnMissed === "true",
+    childName: map.childName ?? "",
+    dailyPracticeGoal: parseInt(map.dailyPracticeGoal || "1", 10),
+  };
+}
+
+export function saveAllSettings(settings: AppSettings): void {
+  const db = getDb();
+  const stmt = db.prepare(
+    "INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  );
+  const tx = db.transaction(() => {
+    stmt.run("geminiApiKey", settings.geminiApiKey);
+    stmt.run("notificationEmail", settings.notificationEmail);
+    stmt.run("emailOnCompletion", settings.emailOnCompletion ? "true" : "false");
+    stmt.run("emailOnMissed", settings.emailOnMissed ? "true" : "false");
+    stmt.run("childName", settings.childName);
+    stmt.run("dailyPracticeGoal", String(settings.dailyPracticeGoal));
+  });
+  tx();
+}
+
+export function getEffectiveApiKey(): string {
+  const dbKey = getSetting("geminiApiKey");
+  return dbKey || process.env.GEMINI_API_KEY || "";
 }

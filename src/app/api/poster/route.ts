@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateExerciseImage } from "@/lib/db";
+import { updateExerciseImage, getEffectiveApiKey } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   const { exerciseId, description } = await request.json();
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || "";
+  const apiKey = getEffectiveApiKey();
 
   if (!apiKey) {
     // No API key: return a placeholder description instead of generating

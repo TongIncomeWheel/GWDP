@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPracticeHistoryById, getExerciseById, updatePracticeHistory } from "@/lib/db";
+import { getPracticeHistoryById, getExerciseById, updatePracticeHistory, getEffectiveApiKey, getAllSettings } from "@/lib/db";
 import { evaluateWithGemini, generateMockEvaluation } from "@/lib/gemini";
+
+function triggerCompletionNotification(historyId: number) {
+  const settings = getAllSettings();
+  if (settings.notificationEmail && settings.emailOnCompletion) {
+    console.log(`[NOTIFY] Triggering completion notification for session ${historyId}`);
+    const { notificationEmail, childName } = settings;
+    const history = getPracticeHistoryById(historyId);
+    const exercise = history?.exerciseTitle || "an exercise";
+    const score = history ? `${history.totalScore}/${history.maxScore}` : "N/A";
+    console.log(`[NOTIFY] To: ${notificationEmail}`);
+    console.log(`[NOTIFY] ${childName || "Your child"} completed "${exercise}" - Score: ${score}`);
+  }
+}
 
 export async function POST(request: NextRequest) {
   const { historyId } = await request.json();
@@ -19,7 +32,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(errorState);
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || "";
+  const apiKey = getEffectiveApiKey();
 
   if (!apiKey) {
     const result = generateMockEvaluation(history, exercise);
@@ -73,6 +86,7 @@ export async function POST(request: NextRequest) {
       errorMessage: null,
     };
     updatePracticeHistory(evaluated);
+    triggerCompletionNotification(historyId);
     return NextResponse.json(evaluated);
   } catch (e) {
     const result = generateMockEvaluation(history, exercise);

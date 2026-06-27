@@ -94,3 +94,12 @@ export interface ParentGrading {
   totalScore: number;
   feedback: string;
 }
+
+export interface AppSettings {
+  geminiApiKey: string;
+  notificationEmail: string;
+  emailOnCompletion: boolean;
+  emailOnMissed: boolean;
+  childName: string;
+  dailyPracticeGoal: number;
+}

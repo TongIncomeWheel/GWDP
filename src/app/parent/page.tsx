@@ -304,21 +304,38 @@ export default function ParentDashboard() {
       <header className="page-header">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h1>Parent Dashboard</h1>
-          <button
-            onClick={() => router.push("/")}
-            style={{
-              background: "rgba(255,255,255,0.2)",
-              border: "none",
-              color: "white",
-              padding: "6px 14px",
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Back to Student
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => router.push("/parent/settings")}
+              style={{
+                background: "rgba(255,255,255,0.2)",
+                border: "none",
+                color: "white",
+                padding: "6px 14px",
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              &#9881; Settings
+            </button>
+            <button
+              onClick={() => router.push("/")}
+              style={{
+                background: "rgba(255,255,255,0.2)",
+                border: "none",
+                color: "white",
+                padding: "6px 14px",
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Back to Student
+            </button>
+          </div>
         </div>
       </header>
 

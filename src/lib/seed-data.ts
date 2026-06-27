@@ -2,27 +2,27 @@ import type { OralExercise } from "./types";
 
 export function getSeedExercises(): Omit<OralExercise, "id">[] {
   return [
+    // ============================================================
+    // Theme 1: Community and Kindness (Foundation, isDaily: true)
+    // ============================================================
     {
       type: "READING",
-      title: `Community and Kindness — Reading Aloud`,
-      topic: `Community and Kindness`,
-      difficulty: "P6",
-      preambleText: `You are a Primary Six student who has been chosen to give a speech at your school assembly. You want to encourage your schoolmates to join the school's 'Buddy Up' programme, where older students help younger ones settle into school life.`,
-      passageText: `Good morning, everyone! Have you ever felt nervous on your first day of school — not knowing where to go, who to sit with, or whether you would fit in? I certainly did. That is why I am so glad the Buddy Up programme exists, and I am here today to invite all of you to be a part of it.
-
-As a buddy, you will be paired with a Primary One student who is just starting out. Your job is simple — walk them to class, share lunch with them, and show them that school can be a place where they truly belong. You do not need to be perfect. You just need to care.
-
-Last year, our school had over fifty buddy pairs, and the results were remarkable. Teachers noticed that younger students settled in faster, cried less, and made friends more easily. And the buddies? They told us they grew in confidence and felt proud of the difference they made.
-
-So I ask you — will you be the kind face that a frightened seven-year-old remembers for the rest of their life? Sign up at the General Office by this Friday. Together, let us make Greenfield Primary a place where no one feels alone.`,
+      title: "A Helping Hand in the Neighbourhood",
+      topic: "Community and Kindness",
+      difficulty: "Foundation",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "Last Saturday, something wonderful happened in my neighbourhood that reminded me of the power of kindness. Our elderly neighbour, Mdm Ong, had been struggling to carry her heavy grocery bags up the stairs because the lift in our block was under repair. Without hesitation, my mother nudged me forward and said, \"Go and help her, Wei Ming.\"\n\nI rushed over and took the bags from Mdm Ong's trembling hands. Her face lit up with gratitude. \"Thank you, child,\" she whispered, her eyes glistening with tears. Together, we climbed the five flights of stairs slowly, one step at a time.\n\nWhen we reached her door, she invited me in for a glass of chrysanthemum tea and told me stories about the kampung days, when neighbours looked out for one another like family. That afternoon, I learnt that kindness does not require grand gestures. Sometimes, the simplest act of helping someone carry their groceries can make a world of difference. It strengthened the bond between our families and reminded me that a caring community begins with each one of us.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
-      isDaily: false,
-      preamblePact: `Purpose: To persuade schoolmates to join the Buddy Up programme\\nAudience: Fellow students at school assembly\\nContext: School assembly hall, formal but warm setting\\nTone: Enthusiastic, warm and persuasive`,
-      readingTips: `Stress 'truly belong', 'just need to care', 'no one feels alone'. Slow down on the rhetorical question. Smile audibly on the final call to action. Pause after each paragraph.`,
+      isDaily: true,
+      preamblePact:
+        '{"purpose":"To recount a personal experience about kindness","audience":"Classmates and teacher","context":"A neighbourhood setting in Singapore","tone":"Warm, reflective, and sincere"}',
+      readingTips:
+        "Speak warmly when quoting Mdm Ong. Slow down at emotional moments. Emphasise words like 'gratitude', 'trembling', and 'glistening'. Use a reflective tone in the final paragraph.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -32,49 +32,55 @@ So I ask you — will you be the kind face that a frightened seven-year-old reme
     },
     {
       type: "STIMULUS",
-      title: `Community and Kindness — Stimulus-Based Conversation`,
-      topic: `Community and Kindness`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "A Helping Hand in the Neighbourhood (SBC)",
+      topic: "Community and Kindness",
+      difficulty: "Foundation",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of two children — an older student (around 11-12 years old) and a much younger child (around 6-7 years old) — sitting together on a bench in a school corridor. The older child is pointing at something in a storybook open on the younger child's lap. Both are smiling. School bags are on the floor beside them. Warm natural light. Casual, candid feel.`,
-      question1: `What do you think is happening in this photograph, and how do you think the younger child is feeling?`,
-      question2: `Tell me about a time when you helped someone who was struggling — at school, at home, or elsewhere. How did it make you feel?`,
-      question3: `Do you think schools should make it compulsory for older students to help younger ones? Why or why not?`,
-      isDaily: false,
+      posterDescription:
+        "A heartwarming photograph taken in a Singapore HDB void deck. Several young students wearing school uniforms are helping elderly residents carry bags of groceries from a nearby market. One boy is holding an umbrella over an elderly woman using a walking stick while another girl carefully places fruit into a reusable bag. In the background, a community notice board displays a poster reading 'Kindness Week' with colourful drawings. The atmosphere is cheerful, with residents smiling and chatting. Potted plants line the edges of the void deck, adding a touch of greenery to the scene.",
+      question1:
+        "What do you think is happening in this photograph? Why do you think the students are helping the elderly residents?",
+      question2:
+        "Tell me about a time when you helped someone in your community. How did it make you feel?",
+      question3:
+        "Do you think young people today do enough to help the elderly in their neighbourhood? Why or why not?",
+      isDaily: true,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of two children — an older student (around 11-12 years old) and a much younger child (around 6-7 years old) — sitting together on a bench in a school corridor. The older child is pointing at something in a storybook open on the younger child's lap. Both are smiling. School bags are on the floor beside them. Warm natural light. Casual, candid feel.`,
-      imageSearchSuggestion: `older primary school student helping younger student reading book corridor Singapore`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A heartwarming photograph taken in a Singapore HDB void deck. Several young students wearing school uniforms are helping elderly residents carry bags of groceries from a nearby market. One boy is holding an umbrella over an elderly woman using a walking stick while another girl carefully places fruit into a reusable bag. In the background, a community notice board displays a poster reading 'Kindness Week' with colourful drawings. The atmosphere is cheerful, with residents smiling and chatting. Potted plants line the edges of the void deck, adding a touch of greenery to the scene.",
+      imageSearchSuggestion:
+        "Singapore students helping elderly HDB community volunteer",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 2: Environment and Sustainability (Foundation, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Environment and Sustainability — Reading Aloud`,
-      topic: `Environment and Sustainability`,
-      difficulty: "P6",
-      preambleText: `You are a student councillor at Riverview Primary School. You are making an announcement over the school's public address system to inform students about the new 'Zero Waste Week' challenge starting on Monday.`,
-      passageText: `Good morning, Riverview Primary! This is your Student Council speaking, and we have an exciting announcement to make.
-
-Starting this coming Monday, our school will be taking part in Zero Waste Week — a five-day challenge where every one of us tries to produce as little rubbish as possible. Here is how you can take part. First, bring your food in reusable containers instead of disposable packaging. Second, carry a water bottle so you do not need to buy bottled drinks. Third, think before you print — save paper by sharing notes digitally whenever you can.
-
-You might be wondering — does any of this actually make a difference? The answer is a resounding yes. Last year, a school in Tampines cut their weekly waste by forty percent just by switching to reusable lunchboxes. Imagine what we could do together.
-
-At the end of the week, the class with the least waste collected will win an eco-friendly prize hamper donated by our Parent Support Group. So speak to your form teacher, bring your containers, and let us show Singapore that Riverview Primary cares about our planet.
-
-Thank you, and have a great day ahead!`,
+      title: "Our Green School Initiative",
+      topic: "Environment and Sustainability",
+      difficulty: "Foundation",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "Dear fellow students, I am writing to share an exciting project that our school has embarked on this term. As part of the Green School Initiative, every class has been given a small garden plot to grow vegetables and herbs. Our class chose to plant kangkong and basil, and I must say, the results have been truly rewarding.\n\nEvery morning before assembly, a group of us would water the plants and pull out weeds. At first, I found it tedious and wondered why we could not simply buy vegetables from the supermarket. However, as the weeks passed and tiny green shoots began to appear, I felt a growing sense of pride and accomplishment.\n\nOur teacher, Mr. Rajagopal, explained that growing our own food reduces the carbon footprint caused by transporting produce from overseas. He also taught us about composting food waste to create natural fertiliser. Through this project, I have come to understand that protecting our environment is not just about big changes. It starts with small, everyday actions that each of us can take to make our planet a better place for future generations.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To inform and motivate students to take part in Zero Waste Week\\nAudience: All students in the school listening over the PA system\\nContext: School morning announcement — students in classrooms\\nTone: Clear, informative and energising`,
-      readingTips: `PA announcement tone — clear and crisp. Stress the three action points with a slight pause before each number. Energy lifts on 'resounding yes' and the prize hamper section. End warm and upbeat.`,
+      preamblePact:
+        '{"purpose":"To persuade others to care for the environment","audience":"Fellow students at a school assembly","context":"A school gardening initiative in Singapore","tone":"Enthusiastic, informative, and encouraging"}',
+      readingTips:
+        "Use an enthusiastic tone when describing the project. Pause before the reflection about finding it tedious. Stress the contrast between initial reluctance and later pride. Read the final sentence with conviction.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -84,49 +90,55 @@ Thank you, and have a great day ahead!`,
     },
     {
       type: "STIMULUS",
-      title: `Environment and Sustainability — Stimulus-Based Conversation`,
-      topic: `Environment and Sustainability`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "Our Green School Initiative (SBC)",
+      topic: "Environment and Sustainability",
+      difficulty: "Foundation",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph taken outdoors near a beach or park in Singapore. A group of four to five teenagers in casual clothes and gloves are picking up litter with tongs. They are holding up clear rubbish bags that are partially filled. One teenager is smiling broadly at the camera while another is bent over picking something up. The mood is energetic and purposeful. Bright daylight.`,
-      question1: `What can you tell about these teenagers from looking at this photograph? What does their body language suggest about how they feel?`,
-      question2: `Have you ever participated in a community or environmental activity? Tell me about your experience.`,
-      question3: `Some people think that keeping Singapore clean is the government's job, not the public's. What is your view?`,
+      posterDescription:
+        "A photograph of a school garden in Singapore. Primary school students in PE attire are tending to raised garden beds filled with leafy vegetables like kangkong, lettuce, and chye sim. One student is carefully watering plants with a watering can while another is scooping compost from a bin labelled 'Food Waste Compost'. A teacher stands nearby, pointing at a chart showing the plant growth cycle. Behind them, a banner reads 'Green School Initiative - Every Seed Counts'. The garden is surrounded by the school building, with solar panels visible on the rooftop.",
+      question1:
+        "What are the students doing in this photograph? What do you think they might learn from this activity?",
+      question2:
+        "Does your school have any programmes to help the environment? Tell me about one that you have taken part in.",
+      question3:
+        "Some people say that schools should spend more time on environmental projects even if it means less time for academic subjects. Do you agree?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph taken outdoors near a beach or park in Singapore. A group of four to five teenagers in casual clothes and gloves are picking up litter with tongs. They are holding up clear rubbish bags that are partially filled. One teenager is smiling broadly at the camera while another is bent over picking something up. The mood is energetic and purposeful. Bright daylight.`,
-      imageSearchSuggestion: `teenagers beach cleanup litter picking Singapore outdoor volunteers`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a school garden in Singapore. Primary school students in PE attire are tending to raised garden beds filled with leafy vegetables like kangkong, lettuce, and chye sim. One student is carefully watering plants with a watering can while another is scooping compost from a bin labelled 'Food Waste Compost'. A teacher stands nearby, pointing at a chart showing the plant growth cycle. Behind them, a banner reads 'Green School Initiative - Every Seed Counts'. The garden is surrounded by the school building, with solar panels visible on the rooftop.",
+      imageSearchSuggestion:
+        "Singapore primary school garden students growing vegetables environmental education",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 3: Technology and Screen Time (Foundation, isDaily: true)
+    // ============================================================
     {
       type: "READING",
-      title: `Technology and Screen Time — Reading Aloud`,
-      topic: `Technology and Screen Time`,
-      difficulty: "P6",
-      preambleText: `You are presenting a speech at your school's Parents' Night. You want to share with parents some findings from a school survey about students and screen time, and to encourage parents and children to work together on managing device use.`,
-      passageText: `Good evening, parents. Thank you for joining us tonight. I am here to share something that I believe matters deeply — not just to us as students, but to every family in this room.
-
-Earlier this term, our school conducted a survey on screen time habits among Primary Five and Six students. The results may surprise you. More than sixty percent of respondents said they spend over four hours a day on their devices outside of school — and nearly a third admitted that screen use was affecting their sleep.
-
-Now, I want to be clear — technology is not the enemy. Many of us use our devices to learn, to create, and to stay connected with people we love. The issue is not the screen itself, but the boundaries — or the lack of them.
-
-What the survey also revealed was this: students whose families set clear, agreed-upon screen time rules reported feeling more focused, sleeping better, and even enjoying device time more because it felt earned rather than endless.
-
-So tonight, I would like to invite each family here to have one honest conversation at home about screen time. Not a lecture from parent to child, but a genuine two-way discussion. Because when we work together, we can all thrive — both online and off.`,
+      title: "The Digital Detox Challenge",
+      topic: "Technology and Screen Time",
+      difficulty: "Foundation",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "I have a confession to make. Until last month, I spent nearly five hours every day glued to my tablet, watching videos and playing games. My parents were worried. My grades had slipped, and I had stopped playing badminton with my friends at the court downstairs. \"You are missing out on life,\" my father told me one evening, his voice tinged with concern.\n\nThat was when my family decided to take on the Digital Detox Challenge. For one whole week, we would limit our screen time to just one hour a day. The first two days were agonising. I felt restless and did not know what to do with my time. But by the third day, something shifted. I picked up a book I had abandoned months ago. I helped my mother bake pineapple tarts. I even went cycling with my younger brother along the park connector.\n\nBy the end of the week, I realised that the world beyond my screen was far more interesting than I had imagined. Technology is a wonderful tool, but it should never replace the joy of real experiences and genuine human connections.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
-      isDaily: false,
-      preamblePact: `Purpose: To inform parents about screen time findings and encourage collaborative family action\\nAudience: Parents gathered at school for Parents' Night\\nContext: School hall, evening event, respectful formal tone expected\\nTone: Thoughtful, respectful and persuasive`,
-      readingTips: `Slow and clear for the statistics — let the numbers land. The phrase 'Technology is not the enemy' deserves a slight dramatic pause before it. Warm and collegial tone — you are speaking as a student to parents, so respectful but confident.`,
+      isDaily: true,
+      preamblePact:
+        '{"purpose":"To share a personal experience about reducing screen time","audience":"Classmates during a class sharing session","context":"A family challenge to reduce device usage","tone":"Honest, reflective, and persuasive"}',
+      readingTips:
+        "Sound confessional at the opening. Use a concerned tone when quoting the father. Build energy as you describe the positive activities discovered. End with a firm, persuasive delivery.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -136,49 +148,55 @@ So tonight, I would like to invite each family here to have one honest conversat
     },
     {
       type: "STIMULUS",
-      title: `Technology and Screen Time — Stimulus-Based Conversation`,
-      topic: `Technology and Screen Time`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "The Digital Detox Challenge (SBC)",
+      topic: "Technology and Screen Time",
+      difficulty: "Foundation",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a teenage boy — around 12 to 13 years old — lying on a bed in a dark room, face lit by the glow of a smartphone screen. His posture is slouched. An alarm clock on the bedside table shows 11:45 PM. School textbooks are stacked closed on a desk in the background. The mood is quiet and slightly melancholic.`,
-      question1: `What does this photograph tell you about this teenager's habits? What concerns, if any, do you have looking at this image?`,
-      question2: `Have you ever felt that you were spending too much time on a device? What happened and what did you do about it?`,
-      question3: `Should schools ban students from bringing smartphones to school? What is your opinion?`,
-      isDaily: false,
+      posterDescription:
+        "A photograph showing a family of four sitting together in a bright, modern living room in Singapore. The father and mother are playing a board game with their two children, a boy and a girl aged around eleven. Smartphones and a tablet are placed inside a basket on a shelf in the background, with a handwritten sign reading 'Device-Free Zone'. The family is laughing and engaged in the game. On the coffee table, there are snacks and drinks. Through the window, an HDB estate and playground are visible in the warm evening light.",
+      question1:
+        "What do you notice about the devices in the background of this photograph? Why do you think the family has done this?",
+      question2:
+        "How much time do you spend on electronic devices each day? Do you think it is too much, too little, or just right?",
+      question3:
+        "Some people believe that children under twelve should not be allowed to own a smartphone. What is your opinion?",
+      isDaily: true,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a teenage boy — around 12 to 13 years old — lying on a bed in a dark room, face lit by the glow of a smartphone screen. His posture is slouched. An alarm clock on the bedside table shows 11:45 PM. School textbooks are stacked closed on a desk in the background. The mood is quiet and slightly melancholic.`,
-      imageSearchSuggestion: `teenager phone bed late night screen glow dark room`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph showing a family of four sitting together in a bright, modern living room in Singapore. The father and mother are playing a board game with their two children, a boy and a girl aged around eleven. Smartphones and a tablet are placed inside a basket on a shelf in the background, with a handwritten sign reading 'Device-Free Zone'. The family is laughing and engaged in the game. On the coffee table, there are snacks and drinks. Through the window, an HDB estate and playground are visible in the warm evening light.",
+      imageSearchSuggestion:
+        "family board game no phones digital detox living room Singapore",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 4: Sports and Resilience (Foundation, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Sports and Resilience — Reading Aloud`,
-      topic: `Sports and Resilience`,
-      difficulty: "P6",
-      preambleText: `You are the captain of your school's track and field team. At the start of the new training season, you are giving a pep talk to your team in the school hall after a difficult year where your team narrowly missed qualifying for the National Schools championships.`,
-      passageText: `Hey, team. I am not going to pretend last season did not hurt — because it did. We trained hard. We gave everything. And we fell short by the narrowest of margins. That kind of disappointment does not go away overnight, and I am not asking you to forget it.
-
-But here is what I have been thinking about over the holidays. That painful finish was not the end of our story. It was the beginning of a new chapter — one where we train smarter, support each other better, and show up with the kind of hunger that comes from knowing exactly how it feels to fall just short of your dream.
-
-I have seen what this team is made of. I have seen you push through cramps, through rain, through days when you did not feel like getting out of bed. And I know that same strength is still there — maybe even sharper now because of what we went through.
-
-This season, we are not just training for medals. We are training to become the best versions of ourselves — athletes who know that every step, every second, and every sacrifice matters.
-
-So — are you ready? Because I believe in this team with everything I have got. Let us go get what we came for.`,
+      title: "The Race That Taught Me Never to Give Up",
+      topic: "Sports and Resilience",
+      difficulty: "Foundation",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "The starting whistle pierced the morning air, and my legs surged forward with the crowd of runners. It was the annual cross-country race, and I had been training for weeks. My target was simple: to finish in the top twenty. By the second kilometre, I was keeping a steady pace, my breathing controlled and rhythmic.\n\nThen disaster struck. My foot caught on a tree root, and I tumbled forward, skidding across the gravel path. Pain shot through my right knee, which was now bleeding. For a moment, I wanted to give up. Tears stung my eyes as other runners overtook me.\n\nBut then I heard my coach's voice from the sideline. \"Get up, Priya! You did not train so hard just to sit on the ground!\" Her words ignited something inside me. Gritting my teeth, I stood up and began running again, slower this time but with fierce determination. I did not finish in the top twenty. I came in thirty-second. Yet when I crossed the finish line, the cheers from my teammates felt like the greatest victory I had ever earned. That day, I learnt that resilience is not about winning. It is about refusing to quit.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To motivate and unite the team after a disappointing previous season\\nAudience: Your school's track and field team members\\nContext: School hall, pre-training season pep talk\\nTone: Passionate, sincere, motivating and resilient`,
-      readingTips: `This is a pep talk — energy should build progressively. Begin steady and sincere; lift the emotion on 'beginning of a new chapter'. The final question 'Are you ready?' should be punchy with a rising inflection. Do not rush — let pauses do the work.`,
+      preamblePact:
+        '{"purpose":"To recount a challenging sporting experience and its lesson","audience":"School assembly","context":"An annual school cross-country race","tone":"Dramatic, determined, and inspiring"}',
+      readingTips:
+        "Start with energy to convey the excitement of the race. Slow down dramatically when describing the fall. Use an urgent, motivating voice for the coach's quote. Build to a triumphant finish.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -188,47 +206,55 @@ So — are you ready? Because I believe in this team with everything I have got.
     },
     {
       type: "STIMULUS",
-      title: `Sports and Resilience — Stimulus-Based Conversation`,
-      topic: `Sports and Resilience`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "The Race That Taught Me Never to Give Up (SBC)",
+      topic: "Sports and Resilience",
+      difficulty: "Foundation",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a young boy — around 11 to 12 years old — sitting on the edge of a running track. He is wearing athletics gear and has just finished a race. His hands are on his knees, and he is looking down at the ground with an expression that could be read as tired, disappointed, or contemplative. Other runners are visible in the soft background, some being congratulated. The atmosphere is post-race.`,
-      question1: `How do you think the boy in this photograph is feeling? What might have happened just before this moment?`,
-      question2: `Tell me about a time you faced a setback or failure. How did you handle it?`,
-      question3: `Some people believe that children today give up too easily when they face difficulties. Do you agree?`,
+      posterDescription:
+        "A photograph from a primary school sports day in Singapore. A young girl in a red sports jersey is crossing the finish line of a running race on a school field, her face showing both exhaustion and triumph. Her right knee has a visible bandage. Behind her, several other students are still running. On the sidelines, classmates and teachers are cheering enthusiastically, waving small flags. A large banner strung across the field reads 'Annual Sports Day - Perseverance Wins'. The school building and a bright blue sky form the backdrop.",
+      question1:
+        "Look at the girl crossing the finish line. What do you think might have happened to her during the race? What makes you think so?",
+      question2:
+        "Tell me about a time when you faced a difficulty during a sports event or physical activity. How did you overcome it?",
+      question3:
+        "Do you think it is more important to win a competition or to try your best even if you do not win? Explain your view.",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a young boy — around 11 to 12 years old — sitting on the edge of a running track. He is wearing athletics gear and has just finished a race. His hands are on his knees, and he is looking down at the ground with an expression that could be read as tired, disappointed, or contemplative. Other runners are visible in the soft background, some being congratulated. The atmosphere is post-race.`,
-      imageSearchSuggestion: `young boy athlete sitting track after race disappointed tired`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph from a primary school sports day in Singapore. A young girl in a red sports jersey is crossing the finish line of a running race on a school field, her face showing both exhaustion and triumph. Her right knee has a visible bandage. Behind her, several other students are still running. On the sidelines, classmates and teachers are cheering enthusiastically, waving small flags. A large banner strung across the field reads 'Annual Sports Day - Perseverance Wins'. The school building and a bright blue sky form the backdrop.",
+      imageSearchSuggestion:
+        "primary school sports day girl finish line running perseverance Singapore",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 5: Food and Hawker Culture (Foundation, isDaily: true)
+    // ============================================================
     {
       type: "READING",
-      title: `Food and Hawker Culture — Reading Aloud`,
-      topic: `Food and Hawker Culture`,
-      difficulty: "P6",
-      preambleText: `You are a student guide leading a group of foreign exchange students on a tour of a Singapore hawker centre. You are sharing with them what makes hawker culture special and why it was inscribed on UNESCO's Representative List of Intangible Cultural Heritage in 2020.`,
-      passageText: `Welcome to one of Singapore's most beloved institutions — the hawker centre! I know some of you may be used to food courts or restaurants, but what you are about to experience is something entirely different — and I promise, it is unforgettable.
-
-A hawker centre is an open-air dining space where dozens of individual stallholders each specialise in one dish. Over there, you will see Uncle Tan — he has been serving his famous chicken rice for over thirty years. Next to him is a family-run stall selling roti prata, a flaky Indian flatbread. And just around the corner, you will find a stall offering wonton noodles that my grandmother swears is the best she has ever tasted.
-
-But hawker culture is about more than just food. It is where Singaporeans of all races and backgrounds sit together at the same tables, share the same space, and find common ground through a shared love of good, affordable food. That is why in 2020, UNESCO recognised Singapore's hawker culture as part of our world's intangible cultural heritage — because it is living history that we share and create together every single day.
-
-So pull up a plastic chair, help yourself to some kaya toast, and let me show you what makes this place the heart of Singapore.`,
+      title: "Saving Our Hawker Heritage",
+      topic: "Food and Hawker Culture",
+      difficulty: "Foundation",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "Every Sunday morning, my grandfather and I have a special tradition. We walk to the hawker centre near our home, where he orders his favourite bowl of fish ball noodles from Uncle Tan's stall. Uncle Tan has been running his stall for over forty years, waking up at four in the morning to prepare his handmade fish balls from scratch.\n\n\"These are not like the factory ones,\" my grandfather always says proudly, slurping his noodles with delight. \"Uncle Tan puts his heart into every single ball.\" Sadly, Uncle Tan told us recently that he might have to close his stall soon. His children do not wish to take over the business, and the long hours are taking a toll on his aging body.\n\nThis news troubled me deeply. Singapore's hawker culture was recognised by UNESCO as an Intangible Cultural Heritage in 2020. Yet if the next generation does not step forward, we risk losing these treasured recipes and the warm community spirit that hawker centres represent. I believe we must find ways to support our hawker heroes before their legacy disappears forever.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
-      isDaily: false,
-      preamblePact: `Purpose: To inform and excite foreign students about Singapore hawker culture\\nAudience: Foreign exchange students on a school tour\\nContext: Standing at a busy hawker centre, surrounded by sights and smells\\nTone: Enthusiastic, proud and welcoming`,
-      readingTips: `Tour guide energy — warm, proud and performative in a good way. Slight elevation in pace when listing dishes. Slow down on the UNESCO sentence — it carries weight. End with genuine warmth and an inviting gesture in your voice.`,
+      isDaily: true,
+      preamblePact:
+        '{"purpose":"To highlight the importance of preserving hawker culture","audience":"Classmates and teachers","context":"A personal connection to a local hawker centre","tone":"Nostalgic, concerned, and persuasive"}',
+      readingTips:
+        "Use a warm, fond tone when describing the Sunday tradition. Voice the grandfather's quote with pride and affection. Shift to a more serious, concerned tone when discussing the potential closure. End with urgency and conviction.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -238,47 +264,55 @@ So pull up a plastic chair, help yourself to some kaya toast, and let me show yo
     },
     {
       type: "STIMULUS",
-      title: `Food and Hawker Culture — Stimulus-Based Conversation`,
-      topic: `Food and Hawker Culture`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "Saving Our Hawker Heritage (SBC)",
+      topic: "Food and Hawker Culture",
+      difficulty: "Foundation",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph taken inside a busy Singapore hawker centre. In the foreground, an elderly Chinese man — likely in his 70s — stands at his stall behind a steaming wok, concentrating on cooking. He is wearing a white singlet and an apron. His expression is focused and proud. The stall has various condiments and a handwritten menu in the background. A queue of customers of mixed ethnicities is visible, some chatting, some holding trays.`,
-      question1: `What can you tell about this hawker uncle from this photograph? What do his expression and surroundings tell you?`,
-      question2: `Tell me about your favourite hawker dish and what makes it special to you.`,
-      question3: `Do you think Singapore's hawker culture is at risk of disappearing? What can be done to preserve it?`,
-      isDaily: false,
+      posterDescription:
+        "A lively photograph of a busy Singapore hawker centre during lunchtime. An elderly hawker wearing a white apron and cap is serving a steaming plate of chicken rice to a smiling customer across the counter. The stall's signboard shows prices and a long menu written in English and Chinese. Behind the hawker, large pots of broth simmer on gas stoves. In the foreground, families and office workers are seated at round tables, enjoying a variety of dishes. Ceiling fans spin overhead. A small sign on the stall reads 'Since 1978', highlighting the stall's long history.",
+      question1:
+        "What can you tell about the hawker and his stall from this photograph? What clues suggest he has been doing this for a long time?",
+      question2:
+        "What is your favourite hawker food? Describe a memorable experience you have had at a hawker centre.",
+      question3:
+        "Some people think that hawker food should be replaced by modern food courts with air conditioning. Do you agree? Why or why not?",
+      isDaily: true,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph taken inside a busy Singapore hawker centre. In the foreground, an elderly Chinese man — likely in his 70s — stands at his stall behind a steaming wok, concentrating on cooking. He is wearing a white singlet and an apron. His expression is focused and proud. The stall has various condiments and a handwritten menu in the background. A queue of customers of mixed ethnicities is visible, some chatting, some holding trays.`,
-      imageSearchSuggestion: `elderly hawker stall uncle cooking wok Singapore busy`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A lively photograph of a busy Singapore hawker centre during lunchtime. An elderly hawker wearing a white apron and cap is serving a steaming plate of chicken rice to a smiling customer across the counter. The stall's signboard shows prices and a long menu written in English and Chinese. Behind the hawker, large pots of broth simmer on gas stoves. In the foreground, families and office workers are seated at round tables, enjoying a variety of dishes. Ceiling fans spin overhead. A small sign on the stall reads 'Since 1978', highlighting the stall's long history.",
+      imageSearchSuggestion:
+        "Singapore hawker centre elderly hawker cooking chicken rice stall heritage",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 6: Mental Health and Stress (Foundation, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Mental Health and Stress — Reading Aloud`,
-      topic: `Mental Health and Stress`,
-      difficulty: "P6",
-      preambleText: `You are a Primary Six student who has been asked to share a personal recount during your school's Wellness Week assembly. You want to talk honestly about the stress you felt during PSLE preparation and the things that helped you manage it.`,
-      passageText: `Hi, everyone. I want to start by asking you something — how many of you have felt overwhelmed this year? Maybe by the amount of revision you have to do, or the pressure to do well, or just the feeling that everyone around you seems to be coping better than you are.
-
-I felt all of those things. There was one period in April when I was studying until midnight every day, eating at my desk, and barely talking to my family. I told myself it was necessary — that this was what it meant to work hard. But the truth is, I was exhausted, anxious, and not performing any better for it. In fact, I was making more careless mistakes than usual.
-
-What changed things for me was surprisingly simple. My mother noticed I was not sleeping well and suggested I go for a short evening walk with her. No phones, no studying — just thirty minutes outside. I resisted at first. But something about that walk — the fresh air, the simple conversation, the break from the desk — reset my brain in a way that no extra hour of revision ever could.
-
-So today, I want to say this: taking care of yourself is not a distraction from doing well. It is part of doing well. Please — talk to someone, take your breaks, and be kind to yourself. You are doing better than you think.`,
+      title: "It Is Okay Not to Be Okay",
+      topic: "Mental Health and Stress",
+      difficulty: "Foundation",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "For weeks, I had been feeling a heavy weight on my shoulders that I could not explain. My PSLE examinations were approaching, and everywhere I turned, someone was reminding me how important they were. \"Study harder,\" my tuition teacher urged. \"Do not disappoint us,\" a relative said during a family gathering. The pressure was suffocating.\n\nOne evening, I broke down in tears at my desk. My mother found me with my head buried in my arms, my revision papers scattered on the floor. Instead of scolding me, she sat beside me quietly and held my hand. \"It is okay not to be okay,\" she said gently. \"Your health and happiness matter more than any grade.\"\n\nThose words were like a cool breeze on a scorching day. We talked for over an hour about my fears and worries. She helped me create a realistic study schedule and promised that we would take short breaks together. That night, for the first time in weeks, I slept peacefully. I learnt that asking for help is not a sign of weakness. It is one of the bravest things a person can do.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To share a personal experience about managing stress and encourage peers to seek support\\nAudience: Primary Five and Six students at a school wellness assembly\\nContext: School hall, Wellness Week — a safe, supportive atmosphere\\nTone: Honest, warm, relatable and reassuring`,
-      readingTips: `This is a heartfelt personal recount — not a performance. Speak slowly and sincerely. The opening question should feel genuine, not rhetorical. Pause after 'I felt all of those things.' The final sentence should be warm and direct, like speaking to a friend.`,
+      preamblePact:
+        '{"purpose":"To share a personal story about managing stress","audience":"Classmates during a wellness assembly","context":"Examination pressure faced by primary school students","tone":"Vulnerable, honest, and hopeful"}',
+      readingTips:
+        "Convey the heaviness and pressure in the opening lines. Read the adults' quotes with firm, expectant tones. Soften your voice significantly for the mother's comforting words. End with quiet strength and hope.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -288,51 +322,55 @@ So today, I want to say this: taking care of yourself is not a distraction from 
     },
     {
       type: "STIMULUS",
-      title: `Mental Health and Stress — Stimulus-Based Conversation`,
-      topic: `Mental Health and Stress`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "It Is Okay Not to Be Okay (SBC)",
+      topic: "Mental Health and Stress",
+      difficulty: "Foundation",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a girl — around 11 to 12 years old — sitting at a desk covered in textbooks, worksheets and stationery. She is rubbing her temples with both hands, eyes closed. A half-eaten snack sits beside her. A wall clock in the background shows 10:30 PM. The lamp on the desk is the only light on in the room.`,
-      question1: `What is this girl going through? What details in the photograph help you understand her situation?`,
-      question2: `Have you ever felt very stressed about school? What did you do to manage it?`,
-      question3: `Some parents believe that academic pressure in Singapore is necessary to prepare children for the real world. Do you agree?`,
+      posterDescription:
+        "A photograph of a quiet corner in a school counselling room. A young student is sitting on a comfortable beanbag chair, talking to a school counsellor who is listening attentively and taking notes on a clipboard. The room is decorated with calming pastel colours and motivational posters that read 'It is okay to ask for help' and 'You are not alone'. A small shelf holds fidget toys and stress balls. On the wall, there is a feelings chart with different emoji faces labelled with emotions like 'happy', 'worried', 'sad', and 'confused'. Soft natural light enters through a window with curtains partially drawn.",
+      question1:
+        "What do you think the student and the counsellor are talking about? What details in the photograph give you clues?",
+      question2:
+        "Have you ever felt stressed about school or exams? What did you do to feel better?",
+      question3:
+        "Do you think every school should have a counsellor whom students can talk to freely? Why or why not?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a girl — around 11 to 12 years old — sitting at a desk covered in textbooks, worksheets and stationery. She is rubbing her temples with both hands, eyes closed. A half-eaten snack sits beside her. A wall clock in the background shows 10:30 PM. The lamp on the desk is the only light on in the room.`,
-      imageSearchSuggestion: `primary school girl stressed studying late night textbooks desk`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a quiet corner in a school counselling room. A young student is sitting on a comfortable beanbag chair, talking to a school counsellor who is listening attentively and taking notes on a clipboard. The room is decorated with calming pastel colours and motivational posters that read 'It is okay to ask for help' and 'You are not alone'. A small shelf holds fidget toys and stress balls. On the wall, there is a feelings chart with different emoji faces labelled with emotions like 'happy', 'worried', 'sad', and 'confused'. Soft natural light enters through a window with curtains partially drawn.",
+      imageSearchSuggestion:
+        "school counselling room student talking counsellor mental health support",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 7: Elderly and Intergenerational Bonds (Foundation, isDaily: true)
+    // ============================================================
     {
       type: "READING",
-      title: `Elderly and Intergenerational Bonds — Reading Aloud`,
-      topic: `Elderly and Intergenerational Bonds`,
-      difficulty: "P6",
-      preambleText: `You are a member of your school's Values in Action (VIA) club. At a community event held at a senior activity centre, you are introducing a new programme your school is launching called 'Pen Pals Across Generations', where students write regular letters to elderly residents.`,
-      passageText: `Good afternoon, everyone! It is such a pleasure to be here at the Sunshine Senior Activity Centre today. My name is Reagan, and I am a Primary Six student from Greenfield Primary School.
-
-I want to begin by asking — how many of you have received a handwritten letter recently? Not a WhatsApp message, not an email — but an actual letter, on paper, written by someone who sat down and thought carefully about what they wanted to say to you?
-
-I suspect not many. And I think that is a shame. Because there is something about a handwritten letter — the imperfect handwriting, the time it took to write — that tells the person receiving it: you matter enough for me to slow down.
-
-Starting next month, students from Greenfield Primary will be writing to residents here once every two weeks. We want to hear about your lives, your memories, your favourite foods, your biggest adventures. In return, we will share what life is like for a twelve-year-old in Singapore today.
-
-We believe that when young and old share their stories, everyone grows richer for it. We hope this programme will remind you — and us — that no matter our age, we all have something meaningful to say, and someone out there who is genuinely glad to hear it.
-
-Thank you.`,
+      title: "Lessons from My Grandmother",
+      topic: "Elderly and Intergenerational Bonds",
+      difficulty: "Foundation",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "My grandmother is eighty-three years old, and she is the wisest person I know. Every weekend, I visit her at her flat in Toa Payoh, where the aroma of her home-cooked curry fills the entire corridor. While she stirs the pot, she tells me stories about growing up in a kampung where everyone shared what little they had.\n\n\"We did not have much, but we had each other,\" she often says, her wrinkled hands moving gracefully as she slices onions. She taught me how to fold dumplings, how to sew a button, and most importantly, how to be patient. \"Good things take time, Hui Ling,\" she reminds me whenever I rush through my work.\n\nLast month, I taught her how to make a video call on her tablet so she could see her sister in Penang. Her laughter when her sister's face appeared on the screen was the most beautiful sound I had ever heard. In that moment, I understood that the bond between young and old is a precious bridge. We learn from each other, and together, we keep our family stories alive for generations to come.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
-      isDaily: false,
-      preamblePact: `Purpose: To introduce and promote the intergenerational pen pal programme to seniors and their families\\nAudience: Elderly residents and their family members at a senior activity centre\\nContext: Community event in a senior activity centre — bright, cheerful space\\nTone: Respectful, warm and sincere`,
-      readingTips: `Address the seniors directly — make eye contact with your imaginary audience. The question about handwritten letters should feel genuine and thoughtful. Slow down on 'you matter enough for me to slow down.' The closing should be heartfelt and unhurried.`,
+      isDaily: true,
+      preamblePact:
+        '{"purpose":"To celebrate the relationship between grandchild and grandmother","audience":"Classmates and family members","context":"Regular visits to grandmother in Singapore","tone":"Loving, nostalgic, and appreciative"}',
+      readingTips:
+        "Use a warm, loving tone throughout. Speak the grandmother's dialogue slowly and gently, mimicking an elderly voice. Pause after emotional moments. Read the final lines about the bond with genuine feeling and sincerity.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -342,49 +380,55 @@ Thank you.`,
     },
     {
       type: "STIMULUS",
-      title: `Elderly and Intergenerational Bonds — Stimulus-Based Conversation`,
-      topic: `Elderly and Intergenerational Bonds`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "Lessons from My Grandmother (SBC)",
+      topic: "Elderly and Intergenerational Bonds",
+      difficulty: "Foundation",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of an elderly woman — perhaps 75 years old — sitting at a table with a young girl of about 10 to 11. The elderly woman is showing the girl something in a small, old photo album. Both are leaning in together over the album. The elderly woman's expression is animated, as if recounting a story. The girl is looking at the photos with obvious fascination. The setting appears to be a simple living room or community space.`,
-      question1: `What do you think is happening in this photograph, and what does it tell you about the relationship between these two people?`,
-      question2: `Tell me about a meaningful experience you have had with an elderly person — a grandparent, a neighbour, or anyone older.`,
-      question3: `In Singapore, more elderly people are living alone. What do you think society should do to ensure they are not lonely?`,
-      isDaily: false,
+      posterDescription:
+        "A touching photograph in the kitchen of an HDB flat. An elderly grandmother wearing a floral blouse is teaching her young granddaughter, around eleven years old, how to wrap traditional rice dumplings at a wooden table covered with bamboo leaves, rice, and fillings. The grandmother's hands are guiding the girl's hands to fold the leaf correctly. Both are smiling. On the kitchen counter behind them, there are jars of spices, a rice cooker, and framed family photos. A calendar on the wall shows the month of June, suggesting it is near the Dragon Boat Festival. The kitchen has a warm, homely atmosphere.",
+      question1:
+        "What activity are the grandmother and granddaughter doing together? Why do you think this kind of activity is meaningful?",
+      question2:
+        "Tell me about something special that an elderly family member has taught you. Why is it important to you?",
+      question3:
+        "In Singapore, some elderly people live alone and feel lonely. What can young people do to help them feel less isolated?",
+      isDaily: true,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of an elderly woman — perhaps 75 years old — sitting at a table with a young girl of about 10 to 11. The elderly woman is showing the girl something in a small, old photo album. Both are leaning in together over the album. The elderly woman's expression is animated, as if recounting a story. The girl is looking at the photos with obvious fascination. The setting appears to be a simple living room or community space.`,
-      imageSearchSuggestion: `grandmother granddaughter looking photo album together reminiscing`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A touching photograph in the kitchen of an HDB flat. An elderly grandmother wearing a floral blouse is teaching her young granddaughter, around eleven years old, how to wrap traditional rice dumplings at a wooden table covered with bamboo leaves, rice, and fillings. The grandmother's hands are guiding the girl's hands to fold the leaf correctly. Both are smiling. On the kitchen counter behind them, there are jars of spices, a rice cooker, and framed family photos. A calendar on the wall shows the month of June, suggesting it is near the Dragon Boat Festival. The kitchen has a warm, homely atmosphere.",
+      imageSearchSuggestion:
+        "grandmother granddaughter making dumplings together HDB kitchen intergenerational",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 8: Reading and Books (Intermediate, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Reading and Books — Reading Aloud`,
-      topic: `Reading and Books`,
-      difficulty: "P6",
-      preambleText: `You are a student volunteer at your school library. During the school's annual Book Week, you are giving a short presentation to a class of Primary Three students to convince them that reading is one of the best habits they can build.`,
-      passageText: `Hey, Primary Three! How many of you have read a book for fun recently — not for homework, not because a teacher told you to, but because you genuinely wanted to?
-
-Well, if you haven't — or if you're not sure where to start — that is exactly why I am here today. Because I want to tell you something: reading might just be the single most powerful skill you will ever develop.
-
-I know what some of you might be thinking. 'Books are boring!' Or: 'I'd rather play games.' And honestly? I used to think the same thing. In Primary Two, I refused to read anything that wasn't a comic book. But then my teacher recommended a book called 'The Wild Robot' to me — and I read it in two days flat. I cried twice. I laughed once. I learned something about survival, friendship, and what it means to belong — and I never looked at books the same way again.
-
-Here is what books can do for you. They take you to places you have never been. They introduce you to people who feel more real than some people you know. They make you smarter without making you feel like you are studying.
-
-So this Book Week, I challenge you — pick one book that looks even a little bit interesting, and give it ten pages. Just ten. I promise you — you might be surprised.`,
+      title: "The Magic of Reading",
+      topic: "Reading and Books",
+      difficulty: "Intermediate",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "If you asked me to name the greatest adventure I have ever been on, I would not tell you about a trip to a theme park or a holiday overseas. I would tell you about the adventures I have found between the pages of a book. Reading has taken me to places no aeroplane could reach. I have sailed with pirates across stormy seas, solved mysteries in foggy London streets, and walked alongside dinosaurs in prehistoric jungles.\n\nMy love for reading began when my father read \"Charlie and the Chocolate Factory\" to me at bedtime. I was only six, but I remember the way his voice changed for each character, how Willy Wonka sounded mischievous and Grandpa Joe sounded full of wonder. From that night on, I was hooked.\n\nToday, I carry a book with me wherever I go. On the MRT, during recess, even while waiting at the dentist. Some of my classmates tease me, calling me a bookworm. But I wear that title with pride. A book is a passport to a thousand worlds, and the best part is that every reader gets to choose their own destination. I urge each of you to pick up a book today and discover the magic for yourselves.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To persuade younger students to develop a reading habit\\nAudience: Primary Three students in a classroom or library setting\\nContext: School Book Week — festive and exciting atmosphere around reading\\nTone: Energetic, fun and encouraging`,
-      readingTips: `Address the Primary Threes directly — high energy, almost playful. The opening question should be delivered with a genuine look around as if waiting for hands. Use slightly exaggerated expression on 'I cried twice. I laughed once.' Pace should be brisk and fun, slowing only on the final challenge.`,
+      preamblePact:
+        '{"purpose":"To inspire others to develop a love for reading","audience":"School assembly","context":"A personal speech about the joy of books","tone":"Passionate, imaginative, and persuasive"}',
+      readingTips:
+        "Use vivid, enthusiastic delivery when describing imaginary adventures. Shift to a fond, nostalgic tone for the father's bedtime reading memory. Speak confidently about being a bookworm. End with an inspiring call to action.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -394,49 +438,55 @@ So this Book Week, I challenge you — pick one book that looks even a little bi
     },
     {
       type: "STIMULUS",
-      title: `Reading and Books — Stimulus-Based Conversation`,
-      topic: `Reading and Books`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "The Magic of Reading (SBC)",
+      topic: "Reading and Books",
+      difficulty: "Intermediate",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a boy — around 11 to 12 years old — lying on the floor on his stomach in what appears to be a library, completely absorbed in a thick book. His legs are kicked up behind him. Around him are a few other children, but he appears entirely lost in his own world. A soft smile is just visible on his face. Bookshelves fill the background.`,
-      question1: `What do you notice about this boy in the photograph? What does his posture and expression tell you?`,
-      question2: `Tell me about a book that made a strong impression on you. Why did it stand out?`,
-      question3: `Some people say that watching a film based on a book is just as good as reading it. What do you think?`,
+      posterDescription:
+        "A photograph of a public library reading corner in Singapore. Several children are sitting on colourful cushions and low stools, absorbed in different books. One boy is reading a graphic novel with wide eyes, while a girl next to him has a thick chapter book open on her lap. Behind them, shelves are packed with books arranged by genre, with labels like 'Adventure', 'Science', and 'Folklore'. A librarian is setting up a display table with a sign reading 'Book Swap - Bring One, Take One'. Bright overhead lights and cheerful wall murals of storybook characters create an inviting atmosphere. A small sign reminds visitors: 'A reader today, a leader tomorrow.'",
+      question1:
+        "Describe what you see in this photograph. Why do you think the library has arranged the space this way?",
+      question2:
+        "What is a book that you have enjoyed reading recently? What made it special to you?",
+      question3:
+        "With so many videos and apps available today, do you think reading physical books is still important? Why or why not?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a boy — around 11 to 12 years old — lying on the floor on his stomach in what appears to be a library, completely absorbed in a thick book. His legs are kicked up behind him. Around him are a few other children, but he appears entirely lost in his own world. A soft smile is just visible on his face. Bookshelves fill the background.`,
-      imageSearchSuggestion: `boy reading book library floor absorbed happy`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a public library reading corner in Singapore. Several children are sitting on colourful cushions and low stools, absorbed in different books. One boy is reading a graphic novel with wide eyes, while a girl next to him has a thick chapter book open on her lap. Behind them, shelves are packed with books arranged by genre, with labels like 'Adventure', 'Science', and 'Folklore'. A librarian is setting up a display table with a sign reading 'Book Swap - Bring One, Take One'. Bright overhead lights and cheerful wall murals of storybook characters create an inviting atmosphere. A small sign reminds visitors: 'A reader today, a leader tomorrow.'",
+      imageSearchSuggestion:
+        "children reading library cushions books Singapore public library kids corner",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 9: Animals and Responsibility (Intermediate, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Animals and Responsibility — Reading Aloud`,
-      topic: `Animals and Responsibility`,
-      difficulty: "P6",
-      preambleText: `You are a member of your school's Animal Welfare Club. You are giving a short speech at a school carnival to raise awareness about responsible pet ownership and to promote the upcoming pet adoption drive at a local animal shelter.`,
-      passageText: `Good afternoon, everyone! Before you head off to enjoy the carnival, I would like to take just two minutes of your time — because what I am about to share could change a life. Possibly a few of them.
-
-Did you know that each year, thousands of dogs and cats in Singapore are surrendered to shelters — not because they are dangerous, but simply because their owners were unprepared for the responsibility of caring for them? These animals are then left waiting — sometimes for months — for someone to give them a second chance.
-
-Next Saturday, the SPCA is holding an adoption drive at our school. We are not asking you to make an impulse decision. Adopting a pet is a ten to fifteen year commitment, and it should be made thoughtfully, as a family. But if you have been thinking about bringing a pet into your home, I would like to encourage you to meet some of these animals first — before buying from a pet shop.
-
-Because here is the thing: a pet from a shelter is not a lesser choice. They are just an animal that has not yet been given a fair one.
-
-Come down next Saturday, meet the animals, speak to the shelter staff, and see if one of them might just be the perfect fit for your family. They are waiting. And they are worth it.`,
+      title: "A Friend for Life",
+      topic: "Animals and Responsibility",
+      difficulty: "Intermediate",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "When my family adopted Biscuit from the SPCA two years ago, I had no idea how much a small, scruffy dog could change our lives. Biscuit had been abandoned by his previous owner and was found wandering the streets, hungry and afraid. His fur was matted, and he flinched whenever someone raised a hand, even if it was just to pat him.\n\nThe first few weeks were challenging. Biscuit hid under the sofa and refused to eat. My mother suggested we give him time and space. So every evening, I sat on the floor near him, reading my book quietly, letting him get used to my presence. Slowly, day by day, he inched closer. The first time he rested his head on my lap, I felt my heart swell with joy.\n\nToday, Biscuit greets me at the door every day after school, his tail wagging furiously. He has taught me that caring for an animal is a serious responsibility. It requires patience, commitment, and unconditional love. But the reward is a loyal companion who loves you with every fibre of his being. Adopting Biscuit was the best decision our family ever made.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To educate and persuade students and parents to consider adopting rather than buying pets\\nAudience: Students and parents attending a school carnival\\nContext: Outdoor school carnival — noisy, lively environment\\nTone: Passionate, informative and urgent`,
-      readingTips: `Raise your energy for 'two minutes of your time' to cut through the carnival noise. The statistics should be delivered clearly and with weight. Slow down and soften on 'waiting — sometimes for months.' The closing should feel like a genuine invitation, not a sales pitch.`,
+      preamblePact:
+        '{"purpose":"To share a personal story about pet adoption and responsibility","audience":"Classmates during show-and-tell","context":"Adopting a rescue dog from the SPCA","tone":"Tender, honest, and heartfelt"}',
+      readingTips:
+        "Use a sad, sympathetic tone when describing Biscuit's past. Speak softly about the early days of building trust. Let your voice brighten as you describe the breakthrough moment. End warmly with conviction about responsibility.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -446,49 +496,55 @@ Come down next Saturday, meet the animals, speak to the shelter staff, and see i
     },
     {
       type: "STIMULUS",
-      title: `Animals and Responsibility — Stimulus-Based Conversation`,
-      topic: `Animals and Responsibility`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "A Friend for Life (SBC)",
+      topic: "Animals and Responsibility",
+      difficulty: "Intermediate",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a mixed-breed dog sitting inside a kennel at what appears to be an animal shelter. The dog is looking directly at the camera with alert, soulful eyes. Its paws are resting on the kennel door. In the background, a handwritten name tag reads 'Biscuit'. The shelter looks clean but sparse. Natural light comes from a window out of frame.`,
-      question1: `What do you think this dog might be feeling in this photograph? What makes you say that?`,
-      question2: `Do you or does someone you know have a pet? What have you learnt from that experience?`,
-      question3: `Do you think people in Singapore are responsible enough to own pets? Why or why not?`,
+      posterDescription:
+        "A photograph taken at an animal shelter adoption drive in Singapore. A young boy is kneeling on the grass, gently stroking a small brown dog that is licking his face. Behind them, a row of temporary enclosures houses cats and dogs available for adoption, each with a name card and description attached. Volunteers wearing matching green T-shirts with the words 'Adopt, Don't Shop' are speaking to families who are visiting. A table displays pamphlets about responsible pet ownership. In the background, a banner reads 'Give Them a Second Chance - Adoption Day' with paw print decorations.",
+      question1:
+        "What event is taking place in this photograph? How can you tell that the boy has formed a connection with the dog?",
+      question2:
+        "Do you have a pet, or have you ever wanted one? What responsibilities come with caring for an animal?",
+      question3:
+        "Some people say that keeping animals as pets is selfish because animals should live freely in nature. Do you agree or disagree?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a mixed-breed dog sitting inside a kennel at what appears to be an animal shelter. The dog is looking directly at the camera with alert, soulful eyes. Its paws are resting on the kennel door. In the background, a handwritten name tag reads 'Biscuit'. The shelter looks clean but sparse. Natural light comes from a window out of frame.`,
-      imageSearchSuggestion: `shelter dog kennel looking camera hopeful soulful eyes`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph taken at an animal shelter adoption drive in Singapore. A young boy is kneeling on the grass, gently stroking a small brown dog that is licking his face. Behind them, a row of temporary enclosures houses cats and dogs available for adoption, each with a name card and description attached. Volunteers wearing matching green T-shirts with the words 'Adopt, Don't Shop' are speaking to families who are visiting. A table displays pamphlets about responsible pet ownership. In the background, a banner reads 'Give Them a Second Chance - Adoption Day' with paw print decorations.",
+      imageSearchSuggestion:
+        "animal adoption drive boy dog SPCA Singapore pet shelter volunteer",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 10: Volunteering and Service (Intermediate, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Volunteering and Service — Reading Aloud`,
-      topic: `Volunteering and Service`,
-      difficulty: "P6",
-      preambleText: `You are a student who has just returned from a week-long community service trip to a rural school in a neighbouring country. At your school's VIA sharing session, you are presenting what you experienced and why it changed your perspective on your own life.`,
-      passageText: `When I packed my bags for the trip last month, I honestly did not know what to expect. I had read about the village school we were visiting — no aircon, limited textbooks, classes of forty in a room meant for twenty. But reading about it and seeing it in person are very different things.
-
-The first thing that struck me was not the lack of resources. It was the energy. Children rushing to school before seven in the morning. Teachers preparing lessons without a whiteboard, let alone a projector. Students sharing one textbook between four classmates — and not a single one of them complained.
-
-On the second day, I helped a boy named Amir with his English worksheet. He struggled with nearly every sentence, but he never gave up. He erased and tried again, erased and tried again. And when he finally got a question right, the look on his face — pure, unselfconscious joy — is something I will not forget for a long time.
-
-I came home to my air-conditioned bedroom, my own shelf of books, and my tablet, and I felt something shift in me. Not guilt — but gratitude. Real gratitude. The kind that makes you want to do more, give more, and complain a little less.
-
-I hope that one day, some of you will have an experience like this too. Because I believe it changes you — in the best possible way.`,
+      title: "The Joy of Giving Back",
+      topic: "Volunteering and Service",
+      difficulty: "Intermediate",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "Last December, my class volunteered at a community food distribution centre in Geylang. Our task was to pack and distribute food hampers to families in need. I arrived expecting a simple packing exercise, but what I experienced that day left a lasting impression on my heart.\n\nAs I handed a bag of rice and canned goods to an elderly man, he clasped my hands tightly and said, \"Thank you, child. You do not know how much this means to me.\" His gratitude was so sincere that I had to blink back tears. Behind him, a young mother carrying a toddler smiled quietly as she received her hamper. I noticed her shoes were worn and her bag was patched with tape.\n\nThat day, I realised how fortunate I was to have three meals a day without worrying about where they came from. I also understood that volunteering is not about feeling sorry for others. It is about recognising our shared humanity and doing our part to build a more compassionate society. Since then, I have signed up to volunteer every school holiday, because giving back gives me far more than I could ever give.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To share personal reflections from a service trip and inspire peers to value what they have\\nAudience: Schoolmates and teachers at a VIA sharing session\\nContext: School hall, warm and reflective atmosphere\\nTone: Reflective, sincere and gently inspiring`,
-      readingTips: `This is a personal recount delivered in a sharing session — warm and measured, not performative. Slow down on 'erased and tried again, erased and tried again' for effect. The gratitude section should feel genuine and quiet, not like a speech climax. End humbly.`,
+      preamblePact:
+        '{"purpose":"To reflect on a volunteering experience and inspire others to serve","audience":"School community during Values in Action presentation","context":"A food distribution volunteer event in Singapore","tone":"Humble, reflective, and inspiring"}',
+      readingTips:
+        "Begin calmly, setting the scene. Use a deeply grateful tone when voicing the elderly man. Pause for effect after emotional lines. Shift to a thoughtful, mature tone for the reflections. End with sincere conviction.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -498,54 +554,55 @@ I hope that one day, some of you will have an experience like this too. Because 
     },
     {
       type: "STIMULUS",
-      title: `Volunteering and Service — Stimulus-Based Conversation`,
-      topic: `Volunteering and Service`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "The Joy of Giving Back (SBC)",
+      topic: "Volunteering and Service",
+      difficulty: "Intermediate",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a teenage girl in a volunteer T-shirt sitting on the floor with three young children of around 5 to 7 years old in what appears to be a modest community centre or kindergarten. The children are gathered around her listening intently as she reads from a picture book. The girl's expression is engaged and warm. Simple, brightly coloured drawings on the wall in the background. Daylight from a window.`,
-      question1: `What can you tell about this volunteer from the way she is interacting with the children? What does this photograph suggest about her character?`,
-      question2: `Have you ever done any volunteer work or helped someone in need? How did the experience affect you?`,
-      question3: `Some schools make community service compulsory. Do you think volunteering should be mandatory for students?`,
+      posterDescription:
+        "A photograph of a community food packing event at a void deck in Singapore. A group of primary school students in their school PE attire are working together to pack items into large bags. On the long table in front of them are stacks of rice, instant noodles, canned food, biscuits, and cooking oil. An adult volunteer with a clipboard is supervising the students. Some finished hampers are neatly stacked at the end of the table, each tied with a ribbon and a small card that reads 'With Love, From Your Neighbours'. A banner above reads 'Share-A-Meal Project'. In the background, a few elderly residents are seated on benches, waiting to receive their hampers.",
+      question1:
+        "What is happening in this photograph? Why do you think the organisers included a handwritten card with each hamper?",
+      question2:
+        "Have you ever taken part in a volunteering activity? Describe what you did and what you learnt from the experience.",
+      question3:
+        "Some people say that volunteering should be made compulsory for all students. Do you think this is a good idea? Why or why not?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a teenage girl in a volunteer T-shirt sitting on the floor with three young children of around 5 to 7 years old in what appears to be a modest community centre or kindergarten. The children are gathered around her listening intently as she reads from a picture book. The girl's expression is engaged and warm. Simple, brightly coloured drawings on the wall in the background. Daylight from a window.`,
-      imageSearchSuggestion: `teenage volunteer reading storybook children community centre`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a community food packing event at a void deck in Singapore. A group of primary school students in their school PE attire are working together to pack items into large bags. On the long table in front of them are stacks of rice, instant noodles, canned food, biscuits, and cooking oil. An adult volunteer with a clipboard is supervising the students. Some finished hampers are neatly stacked at the end of the table, each tied with a ribbon and a small card that reads 'With Love, From Your Neighbours'. A banner above reads 'Share-A-Meal Project'. In the background, a few elderly residents are seated on benches, waiting to receive their hampers.",
+      imageSearchSuggestion:
+        "students volunteering food packing community centre Singapore hampers elderly",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 11: Public Transport and Civic Behaviour (Intermediate, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Public Transport and Civic Behaviour — Reading Aloud`,
-      topic: `Public Transport and Civic Behaviour`,
-      difficulty: "P6",
-      preambleText: `You are writing a letter on behalf of your school's Student Leadership Board to the Land Transport Authority (LTA), suggesting ways to make Singapore's public transport more comfortable for all commuters. Your letter is being read aloud at a school ceremony where the winning entry is announced.`,
-      passageText: `Dear Sir or Madam,
-
-We are writing on behalf of the Student Leadership Board of Greenfield Primary School to share some observations and suggestions regarding public transport in Singapore.
-
-As regular MRT and bus commuters, we have noticed that while Singapore's public transport system is among the most efficient in the world, certain commuter behaviours continue to detract from the experience for many passengers. These include speaking loudly on mobile phones, rushing onto trains before passengers have alighted, and leaving litter behind on seats.
-
-We believe that most of these behaviours stem not from inconsiderateness but from habit — and habits can be changed with the right nudges.
-
-We would like to suggest three initiatives. First, short animated videos on the screens in MRT stations modelling considerate commuter behaviour, particularly aimed at younger viewers. Second, a recognition programme where commuters who help fellow passengers — such as offering seats to the elderly or assisting someone with a heavy pram — can be nominated and featured on LTA's social media pages. Third, a school outreach programme where LTA representatives visit primary schools annually to engage students in conversations about commuter responsibility.
-
-We are proud of Singapore's reputation as a gracious society, and we believe these steps can help us live up to that reputation every day — on every train and bus.
-
-Yours sincerely,
-The Student Leadership Board`,
+      title: "Graciousness on the Go",
+      topic: "Public Transport and Civic Behaviour",
+      difficulty: "Intermediate",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "The MRT was packed that morning, as it usually is during the rush hour. I squeezed through the crowd, clutching my school bag tightly to my chest, and managed to find a seat near the door. Just as I sat down, I noticed an elderly woman with a walking frame struggling to board the train. The doors were about to close.\n\nWithout thinking, I jumped up, pressed the door-open button, and helped her step safely inside. She thanked me breathlessly, and I offered her my seat. To my surprise, a man in a business suit who had been seated nearby stood up and offered his seat to a pregnant woman standing further along. It was as if one small act of kindness had sparked a chain reaction.\n\nWhen I arrived at school and told my form teacher, Mrs. Goh, about it, she smiled and said, \"Graciousness is contagious, Zhi Wei. One person can set the tone for an entire train carriage.\" That morning taught me that public transport is more than just a way to get from one place to another. It is a shared space where we practise patience, consideration, and the simple art of looking out for one another.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To formally put forward student suggestions to improve public transport civility\\nAudience: LTA representatives, school staff and students at a ceremony\\nContext: A formal awards ceremony for a letter-writing competition\\nTone: Formal, respectful and constructively persuasive`,
-      readingTips: `This is a formal letter being read aloud at a ceremony — measured, clear and dignified. Do not rush the three suggestions — each one deserves a clear pause before the next. The closing sentiment should be delivered with quiet pride, not performance. Formal but not stiff.`,
+      preamblePact:
+        '{"purpose":"To recount an experience about graciousness on public transport","audience":"School newsletter readers","context":"A typical MRT ride during rush hour in Singapore","tone":"Lively, thoughtful, and uplifting"}',
+      readingTips:
+        "Set a bustling pace for the rush hour scene. Use urgency when describing the elderly woman boarding. Show warmth and surprise at the chain reaction. Deliver Mrs. Goh's quote with gentle wisdom. End reflectively.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -555,51 +612,55 @@ The Student Leadership Board`,
     },
     {
       type: "STIMULUS",
-      title: `Public Transport and Civic Behaviour — Stimulus-Based Conversation`,
-      topic: `Public Transport and Civic Behaviour`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "Graciousness on the Go (SBC)",
+      topic: "Public Transport and Civic Behaviour",
+      difficulty: "Intermediate",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph taken inside a Singapore MRT train. A teenage boy is seated and looking at his phone while an elderly woman, who appears tired and is holding shopping bags, stands nearby gripping the overhead rail. Several other seated passengers are also visible, all looking at their phones. Nobody has offered the elderly woman a seat. The scene is neutral in tone but the contrast is noticeable.`,
-      question1: `What is happening in this photograph, and what does it tell you about human behaviour in public spaces?`,
-      question2: `Have you ever witnessed or been in a situation on public transport that made you feel uncomfortable or proud? Tell me about it.`,
-      question3: `Should graciousness in public be enforced through rules and fines, or should it be left to individuals to choose? What is your view?`,
+      posterDescription:
+        "A photograph taken inside a Singapore MRT train during a moderately crowded ride. A young student in school uniform is standing up and gesturing politely towards his seat, offering it to an elderly man carrying a bag of groceries. The elderly man is smiling gratefully and reaching for the handrail. Nearby, other passengers are looking on with approving expressions. Above the reserved seat, a sticker reads 'Priority Seat - Please offer to those who need it more'. Through the train window, the cityscape of HDB blocks and green trees is visible. The train interior is clean and well-lit.",
+      question1:
+        "What is the student doing in this photograph? Why do you think the other passengers are looking on with approval?",
+      question2:
+        "Tell me about a time when someone showed you kindness on public transport, or when you showed kindness to someone else.",
+      question3:
+        "Do you think people in Singapore are generally gracious on public transport? What more could be done to encourage better behaviour?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph taken inside a Singapore MRT train. A teenage boy is seated and looking at his phone while an elderly woman, who appears tired and is holding shopping bags, stands nearby gripping the overhead rail. Several other seated passengers are also visible, all looking at their phones. Nobody has offered the elderly woman a seat. The scene is neutral in tone but the contrast is noticeable.`,
-      imageSearchSuggestion: `MRT train elderly woman standing teenager seat phone Singapore`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph taken inside a Singapore MRT train during a moderately crowded ride. A young student in school uniform is standing up and gesturing politely towards his seat, offering it to an elderly man carrying a bag of groceries. The elderly man is smiling gratefully and reaching for the handrail. Nearby, other passengers are looking on with approving expressions. Above the reserved seat, a sticker reads 'Priority Seat - Please offer to those who need it more'. Through the train window, the cityscape of HDB blocks and green trees is visible. The train interior is clean and well-lit.",
+      imageSearchSuggestion:
+        "Singapore MRT student offering seat elderly gracious priority seat public transport",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 12: Creativity and the Arts (Intermediate, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Creativity and the Arts — Reading Aloud`,
-      topic: `Creativity and the Arts`,
-      difficulty: "P6",
-      preambleText: `You are a student who participated in your school's Arts Festival. At the final showcase, you have been asked to give a short opening address to parents, teachers and school leaders to explain why the arts matter in education.`,
-      passageText: `Good evening, everyone! Welcome to Greenfield Primary's Annual Arts Festival. Tonight, you are going to see dances, hear music, and witness performances that have taken weeks of rehearsal, courage, and heart.
-
-But before we begin, I would like to say something that I feel strongly about: the arts are not a break from learning. They are learning — just in a different language.
-
-When a student learns to play a piece of music, they are learning patience, precision, and how to handle the frustration of getting something wrong and trying again. When a student rehearses for a drama production, they are learning empathy — how to step inside another person's shoes and make their story feel real. When a student paints, they are learning to see the world with more attention and more wonder than most people remember to.
-
-These are not soft skills. They are the skills that employers, universities, and the world are increasingly asking for — creativity, collaboration, resilience, and the ability to communicate ideas in compelling ways.
-
-So tonight, as you watch our students perform, I hope you see not just a school show, but a glimpse of the kinds of people they are becoming. People who feel deeply, think originally, and are not afraid to put something of themselves on a stage.
-
-Thank you — and enjoy the show!`,
+      title: "The Power of Art",
+      topic: "Creativity and the Arts",
+      difficulty: "Intermediate",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "I used to think that art was just about drawing pretty pictures. That changed the day Ms. Ng, our art teacher, took our class to visit the National Gallery Singapore. As we wandered through the galleries, she stopped us in front of a painting by Georgette Chen showing a bustling market scene.\n\n\"What do you see?\" she asked. At first, we described the obvious: fruit, vegetables, people. But Ms. Ng pushed us deeper. \"Look at the colours. Look at the expressions. What story is the artist trying to tell?\" Gradually, the painting came alive. I saw the weariness on the vendor's face, the vibrant energy of the crowd, and the warmth of a community gathering.\n\nThat visit opened my eyes to the power of art. It is not merely decoration. Art tells stories, preserves history, and expresses emotions that words sometimes cannot capture. Since that trip, I have started sketching in a journal, capturing moments from my daily life. Whether it is a sunset over the HDB blocks or my cat napping on the windowsill, each sketch is my way of seeing the world more deeply and sharing that vision with others.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To advocate for the importance of arts education to a school community audience\\nAudience: Parents, teachers and school leaders at an Arts Festival showcase\\nContext: School hall decorated for the Arts Festival — festive and expectant atmosphere\\nTone: Passionate, confident and celebratory`,
-      readingTips: `Opening energy should be warm and celebratory. The pivot on 'the arts are not a break from learning' should be slightly slower and more deliberate. Build energy through the three arts examples. The final paragraph should feel heartfelt and genuine — this is your moment as a student advocate.`,
+      preamblePact:
+        '{"purpose":"To share how a gallery visit changed the speaker\'s view of art","audience":"Classmates during a class presentation","context":"A school excursion to the National Gallery Singapore","tone":"Curious, reflective, and enthusiastic"}',
+      readingTips:
+        "Start with a casual, dismissive tone about art. Build curiosity when describing the gallery visit. Use Ms. Ng's questions with genuine inquiry. Let wonder grow in your voice. End passionately about the power of art.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -609,51 +670,55 @@ Thank you — and enjoy the show!`,
     },
     {
       type: "STIMULUS",
-      title: `Creativity and the Arts — Stimulus-Based Conversation`,
-      topic: `Creativity and the Arts`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "The Power of Art (SBC)",
+      topic: "Creativity and the Arts",
+      difficulty: "Intermediate",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a girl — around 11 to 12 years old — standing on stage in a school auditorium, mid-performance. She is singing with a microphone, eyes closed, expression completely absorbed in the music. Stage lighting illuminates her face. In the background, slightly out of focus, the audience is visible — parents and students watching.`,
-      question1: `What do you think this girl is experiencing at this moment? What does her expression tell you?`,
-      question2: `Tell me about a time when you performed, created something, or expressed yourself through an art form. What did you learn from it?`,
-      question3: `Some people argue that arts subjects should be reduced in schools to make more time for core academic subjects. Do you agree?`,
+      posterDescription:
+        "A photograph of a group of primary school students participating in an outdoor mural painting activity along a corridor of their school. Each student is painting a section of a large, colourful wall mural that depicts scenes of Singapore life: hawker centres, the Merlion, children playing at a playground, and a dragon boat race. Paint cans and brushes are spread on newspaper on the floor. A teacher is pointing at a section and giving guidance. Some students are wearing aprons splattered with paint. The partially completed mural is vibrant with greens, reds, blues, and yellows. A sign nearby reads 'Our Singapore Story - Painted by P6 Students'.",
+      question1:
+        "What are the students creating in this photograph? What scenes of Singapore life can you identify in the mural?",
+      question2:
+        "Do you enjoy any form of art, such as drawing, painting, music, or drama? Tell me about a time when you expressed your creativity.",
+      question3:
+        "Some people think that art and music should be given as much time as Mathematics and English in school. Do you agree? Why or why not?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a girl — around 11 to 12 years old — standing on stage in a school auditorium, mid-performance. She is singing with a microphone, eyes closed, expression completely absorbed in the music. Stage lighting illuminates her face. In the background, slightly out of focus, the audience is visible — parents and students watching.`,
-      imageSearchSuggestion: `primary school girl singing on stage auditorium performance spotlight`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a group of primary school students participating in an outdoor mural painting activity along a corridor of their school. Each student is painting a section of a large, colourful wall mural that depicts scenes of Singapore life: hawker centres, the Merlion, children playing at a playground, and a dragon boat race. Paint cans and brushes are spread on newspaper on the floor. A teacher is pointing at a section and giving guidance. Some students are wearing aprons splattered with paint. The partially completed mural is vibrant with greens, reds, blues, and yellows. A sign nearby reads 'Our Singapore Story - Painted by P6 Students'.",
+      imageSearchSuggestion:
+        "primary school students painting mural Singapore life art creativity school",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 13: Healthy Living and Exercise (Intermediate, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Healthy Living and Exercise — Reading Aloud`,
-      topic: `Healthy Living and Exercise`,
-      difficulty: "P6",
-      preambleText: `You are a Primary Six student who has been selected to host your school's annual Sports Day. You are delivering the opening address to students, parents and school leaders in the field.`,
-      passageText: `Good morning, Greenfield Primary! Welcome to our Annual Sports Day — the one day of the year where the field is ours, the competition is real, and every single one of you has the chance to surprise yourselves!
-
-Whether you are lining up for the hundred-metre dash, throwing your best shot in the shot put, or cheering your classmates from the sidelines — you are all part of today. And I want to say something important: winning a medal is wonderful. But it is not why we are here.
-
-We are here because movement matters. Because the body that carries you through twelve years of education, through work, through life — needs to be cared for and celebrated, not just used. We are here because sport teaches us things that a classroom cannot always capture — how to work with a team, how to lose with grace, how to find something extra in yourself when everything in you wants to stop.
-
-I have seen some of you training quietly for weeks without anyone watching. I have seen students practice relay handoffs until their hands were sore. That discipline, that commitment — that is the real prize today.
-
-So run your hardest. Jump your highest. Cheer the loudest. And whatever happens today — be proud of every step you take on this field.
-
-Let the games begin!`,
+      title: "Moving for a Better Life",
+      topic: "Healthy Living and Exercise",
+      difficulty: "Intermediate",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "Six months ago, I could barely run two rounds around the school field without gasping for breath. I would collapse on the grass, red-faced and panting, while my classmates jogged effortlessly past me. Physical education was my least favourite subject, and I dreaded every single lesson.\n\nThen my father challenged me. \"Let us start jogging together every morning,\" he said. \"Just fifteen minutes. No pressure.\" Reluctantly, I agreed. The first few mornings were torture. My legs ached, my lungs burned, and I wanted to quit after the first lamppost. But my father ran beside me, encouraging me gently. \"One more step,\" he would say. \"Just one more.\"\n\nWeek by week, those fifteen minutes grew to twenty, then thirty. My stamina improved. I slept better at night. I felt more alert during lessons and even my mood lifted. By the third month, I completed the school's two-point-four-kilometre run without stopping for the first time in my life. The look of pride on my father's face was worth every agonising morning. Exercise has taught me that our bodies are capable of far more than our minds believe. All it takes is the courage to start and the discipline to keep going.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To open Sports Day and motivate students to participate fully and in the spirit of the event\\nAudience: Students, parents and teachers gathered at the school field\\nContext: Outdoor school field, bright morning, festive atmosphere\\nTone: Energetic, cheerful and encouraging`,
-      readingTips: `This is an outdoor address — project your voice. High energy throughout, but the pivot on 'but it is not why we are here' should be slightly more reflective and measured. Build back up to a crescendo on 'Let the games begin!' Pause before that final line for effect.`,
+      preamblePact:
+        '{"purpose":"To share a personal fitness journey and encourage exercise","audience":"Classmates during a health and wellness week assembly","context":"A father-child morning jogging routine","tone":"Honest, determined, and motivational"}',
+      readingTips:
+        "Express physical exhaustion at the start. Voice the father's encouragement gently but firmly. Build momentum as the narrator improves. Deliver the final reflection with pride and confidence.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -663,51 +728,55 @@ Let the games begin!`,
     },
     {
       type: "STIMULUS",
-      title: `Healthy Living and Exercise — Stimulus-Based Conversation`,
-      topic: `Healthy Living and Exercise`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "Moving for a Better Life (SBC)",
+      topic: "Healthy Living and Exercise",
+      difficulty: "Intermediate",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a group of mixed-gender primary school students running a relay race on a school track. The runner in the foreground is mid-stride, face strained with effort, hand reaching back to receive the baton from a teammate. Other runners in the background are cheering or already running. The track is sunlit and the mood is intensely competitive but joyful.`,
-      question1: `What can you tell about what the students in this photograph are feeling and experiencing?`,
-      question2: `Tell me about a sport or physical activity that you enjoy and why it is important to you.`,
-      question3: `With Singapore's busy lifestyle, many children are spending more time on devices than on physical activity. Is this something we should be worried about?`,
+      posterDescription:
+        "A photograph of a park connector in Singapore early in the morning. A father and his primary-school-aged son are jogging side by side along a tree-lined path. Both are wearing sports attire and running shoes. The son looks determined, his face slightly flushed with effort, while the father gives him a thumbs-up of encouragement. Behind them, other residents are exercising: an elderly couple is practising tai chi on the grass, and a woman is walking her dog. A distance marker on the path reads '2 km'. The sky is a soft orange-pink of dawn, and the greenery around the path is lush. A water fountain and a park bench are visible nearby.",
+      question1:
+        "Describe what you see in this photograph. What tells you that the father and son make exercise a regular habit?",
+      question2:
+        "What kind of physical activity do you enjoy? How often do you exercise, and how does it make you feel?",
+      question3:
+        "Do you think schools should have physical education lessons every day instead of just twice a week? Give reasons for your view.",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a group of mixed-gender primary school students running a relay race on a school track. The runner in the foreground is mid-stride, face strained with effort, hand reaching back to receive the baton from a teammate. Other runners in the background are cheering or already running. The track is sunlit and the mood is intensely competitive but joyful.`,
-      imageSearchSuggestion: `primary school children relay race track baton sport day Singapore`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a park connector in Singapore early in the morning. A father and his primary-school-aged son are jogging side by side along a tree-lined path. Both are wearing sports attire and running shoes. The son looks determined, his face slightly flushed with effort, while the father gives him a thumbs-up of encouragement. Behind them, other residents are exercising: an elderly couple is practising tai chi on the grass, and a woman is walking her dog. A distance marker on the path reads '2 km'. The sky is a soft orange-pink of dawn, and the greenery around the path is lush. A water fountain and a park bench are visible nearby.",
+      imageSearchSuggestion:
+        "father son jogging park connector morning exercise Singapore healthy living",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 14: Safety and Road Awareness (Intermediate, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Safety and Road Awareness — Reading Aloud`,
-      topic: `Safety and Road Awareness`,
-      difficulty: "P6",
-      preambleText: `You are a Primary Six student who has been appointed as a junior road safety ambassador. You are delivering a short speech at your school assembly after a road accident near the school prompted the school to launch a road safety awareness campaign.`,
-      passageText: `Good morning, everyone. This morning, I want to speak about something that happened last Friday — something that shook many of us, and that I believe we cannot simply move on from without taking action.
-
-As many of you know, a student from our school narrowly avoided being hit by a vehicle at the crossing outside our main gate. Thankfully, she was not seriously hurt. But the moment could have ended very differently.
-
-I have been thinking about why these near-misses happen, and I believe the answer is simple but uncomfortable: we are not as careful as we think we are. We assume the car will stop. We look up from our phones when we are already halfway across the road. We cross before the green man appears because we are in a hurry.
-
-Every single one of those habits is a gamble — and one day, the odds may not be in our favour.
-
-So starting today, I am asking each of you to make a small but serious commitment. Put your phone away before you reach the crossing. Wait for the green man, every single time — even when no cars are coming. And if you see a friend about to take a risk, say something.
-
-We look out for each other inside this school. Let us make sure we do the same on the roads outside it. Thank you.`,
+      title: "A Close Call at the Crossing",
+      topic: "Safety and Road Awareness",
+      difficulty: "Intermediate",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "It happened so fast that I still shudder when I think about it. Last Tuesday, my younger brother Ethan and I were walking home from school. We reached the pedestrian crossing near our estate, and the green man appeared on the signal. Ethan, eager to get home and watch his favourite cartoon, dashed forward without looking.\n\nA delivery motorcycle that had run the red light came hurtling around the corner. Time seemed to freeze. I grabbed Ethan's school bag and yanked him backwards with all my strength. The motorcycle missed him by mere centimetres, its engine roaring as it sped away. Ethan stood on the kerb, trembling, his face white with shock.\n\n\"Always look left, right, and left again,\" I told him firmly, my own voice shaking. \"Even when the light is green. Not every driver follows the rules.\" That evening, our parents sat us both down for a serious talk about road safety. They reminded us to use pedestrian overhead bridges whenever possible and to never assume that vehicles will stop. It was a close call that we were lucky to walk away from, and it is a lesson I will never forget.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To raise awareness and change student behaviour around road safety near school\\nAudience: All students and teachers at a school assembly\\nContext: School assembly, serious topic following a recent near-accident\\nTone: Serious, urgent and persuasive — but not alarmist`,
-      readingTips: `Begin seriously and deliberately — this is a heavy topic. The description of the near-accident should be delivered with care, not drama. 'Every single one of those habits is a gamble' deserves a long pause before and after. The closing call to action should be firm and warm — not preachy.`,
+      preamblePact:
+        '{"purpose":"To recount a road safety incident and warn others","audience":"Classmates during a road safety assembly","context":"A near-accident at a pedestrian crossing in Singapore","tone":"Tense, urgent, and cautionary"}',
+      readingTips:
+        "Create tension and urgency as the scene unfolds. Speed up slightly at the moment of danger. Use a shaky, relieved voice after the near-miss. Deliver the safety reminders firmly and seriously.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -717,51 +786,55 @@ We look out for each other inside this school. Let us make sure we do the same o
     },
     {
       type: "STIMULUS",
-      title: `Safety and Road Awareness — Stimulus-Based Conversation`,
-      topic: `Safety and Road Awareness`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "A Close Call at the Crossing (SBC)",
+      topic: "Safety and Road Awareness",
+      difficulty: "Intermediate",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph taken at a pedestrian crossing near a school in Singapore. A group of primary school-aged children are crossing the road. Two of them are looking at their phones while walking across. One child is looking up attentively. The traffic light shows the green man, but a car is visible at the edge of the frame, slowing down. The scene is safe but the phone use while crossing is a visible detail.`,
-      question1: `What do you notice about the behaviour of the children in this photograph? What concerns, if any, does it raise for you?`,
-      question2: `Has there ever been a moment when you or someone you know had a close call or narrow escape involving safety? What happened?`,
-      question3: `Do you think using phones while walking or crossing roads should be made illegal in Singapore? Why or why not?`,
+      posterDescription:
+        "A photograph of a pedestrian crossing near a primary school in Singapore. A group of young students wearing school uniforms with reflective sashes are crossing the road in an orderly line. A traffic warden in a bright orange vest is holding up a stop sign to halt traffic. Cars and a bus are waiting at the red light. On the pavement, a yellow sign reads 'School Zone - Slow Down'. Road markings are clearly visible, including zebra stripes and a speed bump. In the background, the school gate and a large sign with the school name are visible. Some parents are standing near the gate, watching their children cross safely.",
+      question1:
+        "What safety measures can you see in this photograph that help to protect the students? Why do you think they are important?",
+      question2:
+        "How do you stay safe when crossing roads near your school or home? Describe the steps you take.",
+      question3:
+        "Some people suggest that all roads near schools should be car-free zones during school hours. Do you think this is practical? Why or why not?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph taken at a pedestrian crossing near a school in Singapore. A group of primary school-aged children are crossing the road. Two of them are looking at their phones while walking across. One child is looking up attentively. The traffic light shows the green man, but a car is visible at the edge of the frame, slowing down. The scene is safe but the phone use while crossing is a visible detail.`,
-      imageSearchSuggestion: `children pedestrian crossing school gate phone looking road Singapore`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a pedestrian crossing near a primary school in Singapore. A group of young students wearing school uniforms with reflective sashes are crossing the road in an orderly line. A traffic warden in a bright orange vest is holding up a stop sign to halt traffic. Cars and a bus are waiting at the red light. On the pavement, a yellow sign reads 'School Zone - Slow Down'. Road markings are clearly visible, including zebra stripes and a speed bump. In the background, the school gate and a large sign with the school name are visible. Some parents are standing near the gate, watching their children cross safely.",
+      imageSearchSuggestion:
+        "Singapore school zone pedestrian crossing students traffic warden safety road",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 15: School Life and Friendship (Advanced, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `School Life and Friendship — Reading Aloud`,
-      topic: `School Life and Friendship`,
-      difficulty: "P6",
-      preambleText: `You are a Primary Six student who has been asked to write and read a farewell speech for your class on the last day of primary school, reflecting on six years of friendship, growth and memories.`,
-      passageText: `I never thought this day would come — and now that it is here, I am not quite sure how to feel. Happy? Nervous? A little sad? Honestly — all three at once.
-
-Six years ago, I walked through those gates not knowing anyone. I remember my first day — sitting at a table in Primary One and not being sure where to put my bag. A girl I had never met told me to just leave it under the chair. That was Hannah. We have been friends ever since.
-
-Over these six years, we have done so much together — celebrated National Days and science exhibitions and Racial Harmony Days. We have stayed up before exams sending each other questions over the class group chat. We have laughed until we could not breathe in class, and tried to suppress that laughter before a teacher noticed. We have supported each other through disappointments that felt enormous at twelve years old, even if they might seem small one day.
-
-Something happens to you over six years in the same space, with the same people. You grow — not just academically, but as a human being. And I think the people sitting in this room with me today have been a bigger part of that growth than any examination result.
-
-I do not know what secondary school holds for us. But I do know this — wherever we go, whatever we become — this class, these six years, will always be part of who we are.
-
-Thank you. For everything.`,
+      title: "The Friend Who Changed Everything",
+      topic: "School Life and Friendship",
+      difficulty: "Advanced",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "When Kai Wen transferred to our school at the start of Primary Five, nobody paid him much attention. He was quiet, kept to himself, and always ate alone at the corner table in the canteen. Most of my classmates dismissed him as unfriendly. I might have done the same, if not for what happened during our group project.\n\nWe were assigned to the same team, and I quickly discovered that Kai Wen was anything but unfriendly. He was shy, yes, but also incredibly thoughtful. While the rest of us argued about who would do what, Kai Wen quietly completed the research, designed the slides, and even brought homemade cookies for the group. When I thanked him, he looked surprised, as if he was not used to being appreciated.\n\nOver the next few months, Kai Wen and I became close friends. He taught me origami, introduced me to astronomy, and showed me that the quietest people often have the richest inner worlds. In return, I helped him come out of his shell, introducing him to our wider group of friends. Our friendship taught me a valuable lesson: never judge someone before you truly know them. The best friendships often bloom in the most unexpected places.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To bid farewell to classmates and teachers with warmth and reflection at the end of primary school\\nAudience: Classmates and form teachers at a class farewell session\\nContext: Classroom, last day of primary school — emotional but celebratory\\nTone: Warm, reflective, genuine and slightly bittersweet`,
-      readingTips: `This is deeply personal — slow down and let the emotion breathe. Do not over-perform it. 'A girl I had never met told me to just leave it under the chair. That was Hannah.' — pause before saying Hannah's name. The final paragraph should feel quiet and sincere. Hold the silence after 'Thank you. For everything.'`,
+      preamblePact:
+        '{"purpose":"To share how an unexpected friendship formed and its lessons","audience":"Classmates and teachers at a graduation assembly","context":"A new student joining the class in primary school","tone":"Genuine, warm, and insightful"}',
+      readingTips:
+        "Use a neutral, slightly indifferent tone when describing Kai Wen initially. Show surprise and admiration when revealing his true character. Warm your voice progressively as the friendship develops. Deliver the final lesson with sincerity.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -771,49 +844,55 @@ Thank you. For everything.`,
     },
     {
       type: "STIMULUS",
-      title: `School Life and Friendship — Stimulus-Based Conversation`,
-      topic: `School Life and Friendship`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "The Friend Who Changed Everything (SBC)",
+      topic: "School Life and Friendship",
+      difficulty: "Advanced",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a group of five primary school children — a mix of boys and girls — sitting on the floor in a school corridor laughing together during what appears to be recess. They are in school uniforms. One child has spilled something from a lunchbox and they are all laughing about it. Their expressions are completely unguarded — genuine, unposed joy. School bags and water bottles are scattered around them.`,
-      question1: `What is happening in this photograph and what does it tell you about these children's relationship?`,
-      question2: `Tell me about a friendship that has meant a lot to you. How did it develop, and what have you learned from it?`,
-      question3: `Some students find it difficult to make friends in school. What advice would you give them?`,
+      posterDescription:
+        "A photograph of a school canteen during recess. Two boys are sitting at a table, one showing the other how to fold an origami crane. The table has their lunch trays with half-eaten food and a stack of colourful origami paper. Around them, other students are eating and chatting in groups. One of the boys looks confident and animated while the other appears more reserved but is smiling as he follows the folding instructions. On the wall behind them, a bulletin board displays a poster reading 'Be a Buddy, Not a Bully - Friendship Week'. School bags are hung on hooks beside the table. The canteen is bright and bustling with activity.",
+      question1:
+        "What can you tell about the relationship between the two boys in this photograph? What details support your answer?",
+      question2:
+        "Think about your closest friend at school. How did your friendship begin, and what makes it special?",
+      question3:
+        "Do you think schools do enough to help new students make friends and settle in? What else could be done?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a group of five primary school children — a mix of boys and girls — sitting on the floor in a school corridor laughing together during what appears to be recess. They are in school uniforms. One child has spilled something from a lunchbox and they are all laughing about it. Their expressions are completely unguarded — genuine, unposed joy. School bags and water bottles are scattered around them.`,
-      imageSearchSuggestion: `primary school children friends laughing recess corridor Singapore uniforms`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a school canteen during recess. Two boys are sitting at a table, one showing the other how to fold an origami crane. The table has their lunch trays with half-eaten food and a stack of colourful origami paper. Around them, other students are eating and chatting in groups. One of the boys looks confident and animated while the other appears more reserved but is smiling as he follows the folding instructions. On the wall behind them, a bulletin board displays a poster reading 'Be a Buddy, Not a Bully - Friendship Week'. School bags are hung on hooks beside the table. The canteen is bright and bustling with activity.",
+      imageSearchSuggestion:
+        "school canteen two boys origami friendship recess Singapore primary school",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 16: Money and Financial Literacy (Advanced, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Money and Financial Literacy — Reading Aloud`,
-      topic: `Money and Financial Literacy`,
-      difficulty: "P6",
-      preambleText: `You are presenting a show-and-tell session to your classmates about what you learned from a school holiday project on saving and spending wisely. Your teacher has asked you to share your findings in a clear and engaging way.`,
-      passageText: `Hi everyone! For my holiday project, I explored the topic of money — specifically, how young people like us can be smarter about the money we receive and spend. And I found out some things that honestly surprised me.
-
-First — did you know that if you save just three dollars a week starting at age twelve, and put it in a savings account with a two percent annual interest rate, you would have over eight hundred dollars by the time you finish secondary school? Three dollars. That is less than one bubble tea.
-
-Second, I learned about the difference between needs and wants. A 'need' is something essential — food, school supplies, transportation. A 'want' is something you desire but could live without — an extra pair of shoes, the latest phone accessory. The trick is not to never spend on wants, but to be conscious of which category you are choosing from.
-
-Third — and this one hit me personally — I discovered that the reason many people end up with money problems is not usually that they did not earn enough. It is that they never built the habit of saving regularly, no matter how small the amount.
-
-Money habits are like all habits: the younger you start, the easier they become. And the earlier you understand this, the more options you will have as you grow up. So — does anyone here save regularly? Because if you do not, today might be a good day to start.`,
+      title: "The Piggy Bank Lesson",
+      topic: "Money and Financial Literacy",
+      difficulty: "Advanced",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "I will never forget the day I smashed open my piggy bank and discovered that six months of saving had only amounted to forty-seven dollars and thirty cents. I had set my sights on a remote-controlled drone that cost one hundred and twenty dollars, and the reality of how far away my goal was hit me like a cold splash of water.\n\nMy mother saw the disappointment on my face and sat me down at the kitchen table. \"Let me show you something,\" she said, pulling out a notebook. Together, we tracked my spending for the past month. I was stunned. I had spent over thirty dollars on bubble tea, snacks from the school bookshop, and capsule toy machines without even realising it.\n\n\"Money has a way of disappearing when you are not paying attention,\" my mother explained. She taught me the 50-30-20 rule: fifty per cent of my allowance for needs, thirty per cent for wants, and twenty per cent for savings. It sounded strict at first, but within three months, my savings had tripled. I finally bought that drone, and it felt incredibly rewarding because I had earned it through discipline. That experience taught me that financial literacy is not just for adults. The habits we build now will shape the way we manage money for the rest of our lives.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To share financial literacy findings with classmates in an engaging, accessible way\\nAudience: Classmates in a school classroom setting\\nContext: Show-and-tell session — relaxed but structured\\nTone: Friendly, informative and enthusiastic`,
-      readingTips: `Friendly and conversational — this is a peer-to-peer sharing. Deliver the bubble tea comparison with a light, slightly humorous tone. The statistics should be clear and unhurried. End with the question as a genuine invitation — make eye contact with your imaginary audience.`,
+      preamblePact:
+        '{"purpose":"To share a personal lesson about saving money and budgeting","audience":"Classmates during a financial literacy week talk","context":"A child learning to manage pocket money in Singapore","tone":"Honest, self-aware, and educational"}',
+      readingTips:
+        "Express genuine disappointment when opening the piggy bank. Use a patient, wise tone for the mother's dialogue. Show surprise at the spending revelation. End with pride and a firm, instructive delivery about financial discipline.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -823,51 +902,55 @@ Money habits are like all habits: the younger you start, the easier they become.
     },
     {
       type: "STIMULUS",
-      title: `Money and Financial Literacy — Stimulus-Based Conversation`,
-      topic: `Money and Financial Literacy`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "The Piggy Bank Lesson (SBC)",
+      topic: "Money and Financial Literacy",
+      difficulty: "Advanced",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a teenage boy — around 12 to 13 years old — standing outside a bubble tea shop looking at a menu board with wide eyes. In one hand he is holding a small amount of cash. The shop is colourful and busy. Other customers are visible in the background. His expression is a mix of desire and visible deliberation — he is clearly weighing up a decision.`,
-      question1: `What do you think is going through this boy's mind as he looks at the menu? What does the photograph tell you about decision-making?`,
-      question2: `Tell me about a time when you made a spending decision you later regretted, or a time when you were glad you chose to save.`,
-      question3: `Do you think schools in Singapore should spend more time teaching students about money and financial literacy? Why?`,
+      posterDescription:
+        "A photograph of a classroom activity about financial literacy. A teacher is standing at the front holding a large chart labelled 'My Budget Plan' with columns for 'Needs', 'Wants', and 'Savings'. Students at their desks have play money, calculators, and worksheets. One student in the foreground is carefully sorting colourful play dollar notes into three labelled envelopes. Another student is using a calculator with a concentrated expression. On the whiteboard behind the teacher, there are drawings of a piggy bank, a shopping cart, and a savings jar with coins. A banner above reads 'Financial Literacy Week'. The classroom is tidy and well-organised with students engaged in the activity.",
+      question1:
+        "What lesson do you think the students are learning in this photograph? How can you tell they are engaged in the activity?",
+      question2:
+        "How do you manage your pocket money or allowance? Do you save, spend, or do both?",
+      question3:
+        "Do you think children should be taught about money management in school? Why or why not?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a teenage boy — around 12 to 13 years old — standing outside a bubble tea shop looking at a menu board with wide eyes. In one hand he is holding a small amount of cash. The shop is colourful and busy. Other customers are visible in the background. His expression is a mix of desire and visible deliberation — he is clearly weighing up a decision.`,
-      imageSearchSuggestion: `teenager boy bubble tea shop cash money deliberating Singapore`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a classroom activity about financial literacy. A teacher is standing at the front holding a large chart labelled 'My Budget Plan' with columns for 'Needs', 'Wants', and 'Savings'. Students at their desks have play money, calculators, and worksheets. One student in the foreground is carefully sorting colourful play dollar notes into three labelled envelopes. Another student is using a calculator with a concentrated expression. On the whiteboard behind the teacher, there are drawings of a piggy bank, a shopping cart, and a savings jar with coins. A banner above reads 'Financial Literacy Week'. The classroom is tidy and well-organised with students engaged in the activity.",
+      imageSearchSuggestion:
+        "primary school financial literacy classroom budget money management students Singapore",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 17: Climate Change and Nature (Advanced, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Climate Change and Nature — Reading Aloud`,
-      topic: `Climate Change and Nature`,
-      difficulty: "P6",
-      preambleText: `You are a student who has joined a youth climate awareness group. At a school-wide assembly marking Earth Day, you are reading a speech to your schoolmates and teachers, calling on everyone to take small but meaningful action on climate change.`,
-      passageText: `Good morning, Greenfield Primary. Today is Earth Day — a day when people around the world pause to think about the planet we live on, and what kind of planet we want to leave behind.
-
-I want to start with a fact that might surprise you. Singapore — our small island — generates about 7.2 million tonnes of waste every year. If you stacked all that waste into a single tower, it would be taller than seventy Merlions. And about half of it is recyclable — but is not actually being recycled.
-
-Now, I know what some of you might be thinking. 'I am just one student. What difference can I make?' And I understand that feeling — I have felt it too. But here is what I have come to believe: small actions, multiplied by thousands of people, become something large.
-
-If every student in this hall committed to one thing — just one — like using a reusable water bottle, reducing food waste, or choosing to walk short distances instead of taking a car — the combined impact over a year would be genuinely significant.
-
-We are the generation that will live with the consequences of choices made today. But that also means we are the generation with the most reason to act. The Earth is not ours to destroy. It is ours to protect — for ourselves, for the children after us, and for every living thing that calls it home.
-
-Happy Earth Day. Let us make it count.`,
+      title: "Our Warming World",
+      topic: "Climate Change and Nature",
+      difficulty: "Advanced",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "Dear Editor, I am writing to express my growing concern about the effects of climate change on our small island nation. Last year, Singapore experienced its warmest recorded year, with temperatures soaring to nearly thirty-seven degrees Celsius. Flash floods disrupted roads in Bukit Timah and Orchard Road, and the haze from regional forest fires left many of us struggling to breathe.\n\nAs a Primary Six student, I may be young, but I understand that the choices we make today will determine the kind of world my generation inherits. Scientists warn that rising sea levels could threaten low-lying countries like ours within the next few decades. The coral reefs around our southern islands are bleaching at an alarming rate, and wildlife habitats are shrinking.\n\nHowever, I refuse to feel hopeless. I believe that every person, no matter how young, can contribute to the solution. We can reduce our use of single-use plastics, conserve electricity by switching off appliances when not in use, and support local farms to reduce food miles. Climate change is not a distant problem for future generations to solve. It is happening right now, and it demands action from every single one of us.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To raise awareness about climate change and inspire action at the individual level\\nAudience: Students and teachers at an Earth Day school assembly\\nContext: School hall, Earth Day — posters, greenery and decorations around the hall\\nTone: Serious but hopeful, urgent but not despairing`,
-      readingTips: `Begin earnestly and measured. The Merlion statistic should land clearly — do not rush it. The response to 'just one student' should feel personal, as if you are acknowledging your own doubts. The final paragraph should build gradually to a quiet but powerful close — not shouted, but felt.`,
+      preamblePact:
+        '{"purpose":"To persuade readers to take climate change seriously","audience":"Newspaper readers via a letter to the editor","context":"Climate change impacts on Singapore","tone":"Concerned, informed, and urgent"}',
+      readingTips:
+        "Open with formal gravity appropriate for a letter to the editor. Use alarming emphasis on the temperature and flood statistics. Shift from concern to determination when refusing to feel hopeless. End with a rallying, urgent call to action.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -877,51 +960,55 @@ Happy Earth Day. Let us make it count.`,
     },
     {
       type: "STIMULUS",
-      title: `Climate Change and Nature — Stimulus-Based Conversation`,
-      topic: `Climate Change and Nature`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "Our Warming World (SBC)",
+      topic: "Climate Change and Nature",
+      difficulty: "Advanced",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph taken at the coast — possibly Sentosa or East Coast — showing a beach with patches of litter visible among the sand. In the foreground, a plastic bottle is half-buried in the sand. The sea is visible in the background, blue and calm. The contrast between the natural beauty of the beach and the litter is striking. No people are in the frame.`,
-      question1: `What does this photograph make you feel, and what does it tell you about how we treat our natural environment?`,
-      question2: `Tell me about something you or your family does to be more environmentally responsible. Why is this important to you?`,
-      question3: `Some people argue that Singapore is too small to make a meaningful difference to global climate change. Do you agree with this view?`,
+      posterDescription:
+        "A striking photograph showing the contrast between nature and urbanisation in Singapore. In the foreground, a lush mangrove area at Sungei Buloh Wetland Reserve is teeming with life: birds perch on branches, mudskippers hop along the mudflats, and green mangrove roots reach into the water. In the background, the skyline of industrial buildings and construction cranes is visible across the strait. A wooden boardwalk runs through the mangrove, and a group of students with clipboards are taking notes as part of a nature study. An information board near the boardwalk shows facts about rising sea levels and their impact on coastal ecosystems. The sky is overcast with heavy grey clouds.",
+      question1:
+        "What contrast do you notice between the foreground and background of this photograph? What message do you think this contrast sends?",
+      question2:
+        "What is one thing you or your family do at home to help the environment? How effective do you think it is?",
+      question3:
+        "Some people argue that economic development should take priority over environmental protection. Do you agree? Give reasons for your answer.",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph taken at the coast — possibly Sentosa or East Coast — showing a beach with patches of litter visible among the sand. In the foreground, a plastic bottle is half-buried in the sand. The sea is visible in the background, blue and calm. The contrast between the natural beauty of the beach and the litter is striking. No people are in the frame.`,
-      imageSearchSuggestion: `Singapore beach litter plastic bottle sand pollution coast`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A striking photograph showing the contrast between nature and urbanisation in Singapore. In the foreground, a lush mangrove area at Sungei Buloh Wetland Reserve is teeming with life: birds perch on branches, mudskippers hop along the mudflats, and green mangrove roots reach into the water. In the background, the skyline of industrial buildings and construction cranes is visible across the strait. A wooden boardwalk runs through the mangrove, and a group of students with clipboards are taking notes as part of a nature study. An information board near the boardwalk shows facts about rising sea levels and their impact on coastal ecosystems. The sky is overcast with heavy grey clouds.",
+      imageSearchSuggestion:
+        "Sungei Buloh mangrove Singapore nature urban contrast climate change wetland students",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 18: Food Waste and Responsibility (Advanced, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Food Waste and Responsibility — Reading Aloud`,
-      topic: `Food Waste and Responsibility`,
-      difficulty: "P6",
-      preambleText: `You are a student who visited the SembWaste food waste recycling facility during a school excursion. Back in school, you have been asked to give a short presentation to your class about what you saw and learned, and why you found the experience meaningful.`,
-      passageText: `Last Tuesday, our class visited a food waste recycling facility, and I want to be honest — I did not expect it to affect me the way it did.
-
-Before we went, I thought food waste was simple: you throw food away, it goes to a landfill, end of story. But what I saw was far more complex — and far more avoidable than I had assumed.
-
-The facility processes hundreds of tonnes of food waste every week — collected from hotels, supermarkets, hawker centres and households across Singapore. The workers there sort through it by hand. And the things they find that should never have been thrown away — sealed packets, unopened bread, fruits with only a small bruise — were genuinely shocking to see.
-
-In 2022, Singapore generated around 817,000 tonnes of food waste. That is the equivalent of about two bowls of rice wasted per person per day. Think about that — two bowls of rice, every day, per person.
-
-Here is what struck me most: the workers at the facility were not despairing. They were focused, almost proud of what they were turning the waste into — compost, animal feed, biogas energy. They were finding value where others had given up.
-
-I came home that afternoon and looked at my lunch differently. Not with guilt — but with awareness. And I think that shift is the beginning of change.`,
+      title: "The Cost of Wasted Food",
+      topic: "Food Waste and Responsibility",
+      difficulty: "Advanced",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "I was queuing at the school canteen when I noticed something disturbing. The boy in front of me scraped nearly half his plate of rice and vegetables into the bin without a second thought. I looked around and saw similar scenes at almost every table: untouched fruit, half-eaten sandwiches, and full bowls of soup being dumped carelessly.\n\nAccording to the National Environment Agency, Singapore generates over eight hundred thousand tonnes of food waste every year. That is enough to fill more than a thousand Olympic swimming pools. What makes this even more troubling is that Singapore imports over ninety per cent of its food. We are throwing away precious resources that we do not even produce ourselves.\n\nAfter learning these facts in class, our school started a \"Clean Plate Campaign\". Students were encouraged to take only what they could finish and to try every dish before discarding it. The results were remarkable. Within a month, our canteen's food waste dropped by thirty per cent. I learnt that reducing food waste does not require drastic changes. It starts with something as simple as being mindful of how much we put on our plates. Every grain of rice matters, and every piece of food saved is a step towards a more sustainable future.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To share findings from a school excursion and raise awareness about food waste\\nAudience: Classmates in a classroom setting\\nContext: Post-excursion sharing session — students have just returned\\nTone: Informative, reflective and gently persuasive`,
-      readingTips: `Start reflective and unhurried — the opening admission ('I did not expect it to affect me') should feel genuine. The statistics should be delivered with clear pauses — 817,000 tonnes and two bowls of rice deserve time to land. The workers' pride section should feel like a discovery. End quietly and warmly.`,
+      preamblePact:
+        '{"purpose":"To raise awareness about food waste in Singapore","audience":"School community at an assembly","context":"A school campaign to reduce canteen food waste","tone":"Concerned, factual, and motivational"}',
+      readingTips:
+        "Express mild shock and disapproval when describing the wasted food. Deliver the statistics with emphasis and clarity. Use an encouraging tone when discussing the campaign results. End with a hopeful, determined voice.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -931,49 +1018,55 @@ I came home that afternoon and looked at my lunch differently. Not with guilt �
     },
     {
       type: "STIMULUS",
-      title: `Food Waste and Responsibility — Stimulus-Based Conversation`,
-      topic: `Food Waste and Responsibility`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "The Cost of Wasted Food (SBC)",
+      topic: "Food Waste and Responsibility",
+      difficulty: "Advanced",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph taken at a school canteen. In the foreground, a tray of food is visible with a large portion of rice, vegetables and a drumstick left almost completely uneaten. A pair of chopsticks is resting on the tray. In the background, several other trays are also partially full, and students are leaving the canteen. A rubbish bin is visible at the edge of the frame.`,
-      question1: `What does this photograph tell you, and how does it make you feel?`,
-      question2: `Have you ever wasted food without thinking much about it? What changed your perspective?`,
-      question3: `Should Singapore introduce a food waste levy — a tax on food wasted by households or businesses — to encourage people to waste less? What is your view?`,
+      posterDescription:
+        "A photograph of a school canteen in Singapore focusing on a tray return station. Several trays with leftover food are stacked on the counter: half-eaten bowls of noodles, untouched vegetables, and a nearly full plate of rice. A student volunteer wearing a sash reading 'Food Waste Ambassador' is standing beside a large chart that tracks the school's weekly food waste in kilograms. The chart shows a downward trend over the past month. Next to the counter, there is a compost bin with a sign explaining how food scraps are turned into fertiliser for the school garden. In the background, students are eating at tables, and a poster on the wall reads 'Take Only What You Need - Clean Plate Challenge'.",
+      question1:
+        "What clues in this photograph tell you that the school is trying to reduce food waste? Do you think their efforts are working?",
+      question2:
+        "Do you finish all the food on your plate at home and in school? What happens to the food you do not finish?",
+      question3:
+        "Should schools be allowed to punish students who repeatedly waste food? What do you think would be a fair approach?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph taken at a school canteen. In the foreground, a tray of food is visible with a large portion of rice, vegetables and a drumstick left almost completely uneaten. A pair of chopsticks is resting on the tray. In the background, several other trays are also partially full, and students are leaving the canteen. A rubbish bin is visible at the edge of the frame.`,
-      imageSearchSuggestion: `school canteen tray food uneaten waste rice Singapore`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph of a school canteen in Singapore focusing on a tray return station. Several trays with leftover food are stacked on the counter: half-eaten bowls of noodles, untouched vegetables, and a nearly full plate of rice. A student volunteer wearing a sash reading 'Food Waste Ambassador' is standing beside a large chart that tracks the school's weekly food waste in kilograms. The chart shows a downward trend over the past month. Next to the counter, there is a compost bin with a sign explaining how food scraps are turned into fertiliser for the school garden. In the background, students are eating at tables, and a poster on the wall reads 'Take Only What You Need - Clean Plate Challenge'.",
+      imageSearchSuggestion:
+        "school canteen food waste tray return Singapore clean plate campaign compost",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 19: Home and Family (Advanced, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Home and Family — Reading Aloud`,
-      topic: `Home and Family`,
-      difficulty: "P6",
-      preambleText: `You are a student who won a school creative writing competition with a piece about your family. At the prize presentation ceremony, you have been asked to read an adapted version of your essay to the audience of students, teachers and parents.`,
-      passageText: `My home is not quiet. There is always someone talking, something cooking, a door opening or closing. My grandmother hums while she folds laundry. My father whistles the same three bars of an old song over and over without realising it. My younger brother narrates his own Lego creations as he builds them, a running commentary that never quite finishes.
-
-For a long time, I found this constant noise exhausting. I would retreat to my room with earphones in, grateful for the silence. But somewhere in Primary Five — I cannot tell you exactly when — something shifted.
-
-I started to notice that the noise had texture. That my grandmother's humming changed depending on her mood. That my father's whistling was most persistent on the days he was most worried. That my brother's commentary was how he thought out loud — how he processed the world.
-
-The sounds of my home are not just background. They are the language my family speaks when words are not enough. And learning to listen to that language — not just to what is said, but to how and when and why — has taught me more about the people I love than years of direct conversation ever did.
-
-I used to think a perfect home was a quiet one. Now I think a perfect home is one where you know the sounds well enough to understand them.`,
+      title: "What Home Means to Me",
+      topic: "Home and Family",
+      difficulty: "Advanced",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "Home. It is a small word, but it holds a universe of meaning. For me, home is not just the four walls of our three-room flat in Tampines. It is the sound of my father humming Tamil songs while he cooks dinner. It is the warmth of my mother's hand on my forehead when I am unwell. It is my sister's laughter ringing through the corridor as she chases our cat around the living room.\n\nWe may not live in a big house with a swimming pool. Our flat is modest, and we share a bedroom, my sister and I. But every evening, when the four of us gather around our small dining table, eating simple home-cooked food and talking about our day, I feel richer than anyone in the world.\n\nLast Deepavali, my father lost his job unexpectedly. For weeks, I noticed my parents whispering in the kitchen late at night, worry etched on their faces. Yet they never let it affect us. My mother picked up extra shifts at the clinic, and my father took on part-time work while searching for a new position. They showed me that a family's strength is not measured by its wealth but by the love and resilience that hold it together. Home is wherever my family is, and that is the greatest blessing I know.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To share a personal and creative piece about family with the school community\\nAudience: Students, teachers and parents at a prize presentation ceremony\\nContext: School hall, formal but celebratory ceremony — audience is warm and attentive\\nTone: Personal, warm, reflective and tender`,
-      readingTips: `This is poetic prose — it should be read like music, not like a speech. Slow and deliberate throughout. The three family sound descriptions should each have their own tiny pause, as if you are seeing each person. The final two sentences are the emotional core — deliver them gently but with quiet conviction.`,
+      preamblePact:
+        '{"purpose":"To express what home and family truly mean","audience":"Classmates during an English oral presentation","context":"A personal reflection on family life in an HDB flat","tone":"Intimate, loving, and deeply heartfelt"}',
+      readingTips:
+        "Open with a quiet, contemplative pause after the word 'Home'. Use sensory, warm descriptions. Lower your voice slightly when describing the father's job loss. Show admiration when speaking about the parents' resilience. End with deep feeling.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -983,51 +1076,55 @@ I used to think a perfect home was a quiet one. Now I think a perfect home is on
     },
     {
       type: "STIMULUS",
-      title: `Home and Family — Stimulus-Based Conversation`,
-      topic: `Home and Family`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "What Home Means to Me (SBC)",
+      topic: "Home and Family",
+      difficulty: "Advanced",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph taken at a family dinner table. Four family members — grandparents, a parent, and a child around 11 to 12 — are seated around a simple table with several dishes in the centre. The child is leaning over to serve food onto the grandmother's plate. Everyone is mid-conversation, slightly animated. The setting is a modest HDB flat dining area. Warm overhead lighting. The mood is familial and relaxed.`,
-      question1: `What do you see in this photograph, and what does it tell you about this family?`,
-      question2: `Tell me about a family tradition or ritual that is special to you. Why does it matter?`,
-      question3: `Some people say that in modern Singapore, family bonds are weakening because everyone is too busy. Do you agree, and what can families do about it?`,
+      posterDescription:
+        "A warm photograph of a family of four having dinner together in their HDB flat. The father is serving curry from a pot onto plates while the mother pours drinks. Two children, a boy and a girl around ten to twelve years old, are seated at the table smiling. The table is set simply with rice, a vegetable dish, and a bowl of soup. The flat is modest but tidy, with family photographs on the wall, school bags hanging on hooks, and a small television in the background. Warm yellow light from a ceiling lamp creates a cosy atmosphere. Through the kitchen window, the lights of neighbouring HDB blocks twinkle in the evening sky.",
+      question1:
+        "What do you notice about the atmosphere in this photograph? What details suggest that this family is close?",
+      question2:
+        "Describe a typical evening meal with your family. What do you enjoy most about spending time together at home?",
+      question3:
+        "In Singapore, many families live in small flats. Do you think the size of a home affects how happy a family can be? Explain your view.",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph taken at a family dinner table. Four family members — grandparents, a parent, and a child around 11 to 12 — are seated around a simple table with several dishes in the centre. The child is leaning over to serve food onto the grandmother's plate. Everyone is mid-conversation, slightly animated. The setting is a modest HDB flat dining area. Warm overhead lighting. The mood is familial and relaxed.`,
-      imageSearchSuggestion: `family dinner table grandmother grandchild HDB flat Singapore serving food`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A warm photograph of a family of four having dinner together in their HDB flat. The father is serving curry from a pot onto plates while the mother pours drinks. Two children, a boy and a girl around ten to twelve years old, are seated at the table smiling. The table is set simply with rice, a vegetable dish, and a bowl of soup. The flat is modest but tidy, with family photographs on the wall, school bags hanging on hooks, and a small television in the background. Warm yellow light from a ceiling lamp creates a cosy atmosphere. Through the kitchen window, the lights of neighbouring HDB blocks twinkle in the evening sky.",
+      imageSearchSuggestion:
+        "Singapore HDB family dinner together home cosy flat evening meal",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
+
+    // ============================================================
+    // Theme 20: Gratitude and Privilege (Advanced, isDaily: false)
+    // ============================================================
     {
       type: "READING",
-      title: `Future Goals and Aspiration — Reading Aloud`,
-      topic: `Future Goals and Aspiration`,
-      difficulty: "P6",
-      preambleText: `You are presenting at your school's 'Future Me' showcase, an event where Primary Six students share their aspirations and what they hope to contribute to Singapore and the world when they grow up. Your audience includes your classmates, teachers and parents.`,
-      passageText: `When I was younger, someone asked me what I wanted to be when I grew up. I said 'a superhero.' I remember my teacher smiling and writing it down. She did not correct me.
-
-Now that I am older, I understand what she probably understood then: that the question is not really about a job title. It is about what you want to do with your one life. What problems you want to solve. What kind of presence you want to be in the world.
-
-I do not know exactly what career I will have. That is something I am still discovering. But I do know a few things about what I want my life to stand for.
-
-I want to be someone who listens — who gives people the experience of being genuinely heard, which is rarer than it sounds. I want to be someone who makes things better — whether that is a neighbourhood, a system, a conversation, or a person's day. And I want to be someone who does not wait to be important before trying to matter.
-
-Because here is what I believe: making a difference is not reserved for people with impressive titles and large platforms. It starts now. It starts small. It starts with the choices we make today about who we want to be — in our homes, in our schools, in our city.
-
-I am not sure what I will become. But I am quite sure of who I want to be. And I think that is a very good place to start.`,
+      title: "Counting Our Blessings",
+      topic: "Gratitude and Privilege",
+      difficulty: "Advanced",
+      preambleText: "Read the following passage aloud clearly and expressively.",
+      passageText:
+        "Last month, our school organised a trip to a children's home as part of our Values in Action programme. I went expecting to cheer the children up. Instead, they ended up teaching me one of the most important lessons of my life.\n\nThe children at the home did not have many material possessions. Their clothes were simple, their toys were few, and they shared bedrooms with five or six others. Yet what struck me was how happy they seemed. They laughed freely, played together with boundless energy, and welcomed us with the warmest smiles I had ever seen. A girl named Sarah, who was about my age, showed me a drawing she had made of her dream house. \"One day,\" she said with sparkling eyes, \"I will build this for my family.\"\n\nOn the bus ride home, I sat in silence, looking out the window at the world I had always taken for granted: my own bedroom, three meals a day, a school bag full of textbooks, parents who drove me to tuition. For the first time, I truly understood the meaning of privilege. Gratitude is not just saying thank you. It is recognising how fortunate we are and using that awareness to be kinder, more generous, and more compassionate towards those who have less.",
       posterImageResName: "",
       posterDescription: "",
-      question1: "Read the passage aloud with expression.",
+      question1: "",
       question2: "",
       question3: "",
       isDaily: false,
-      preamblePact: `Purpose: To share your future aspirations and why they matter — to yourself and to society\\nAudience: Classmates, teachers and parents at a 'Future Me' showcase\\nContext: School hall, celebratory showcase event with displays and student presentations\\nTone: Confident, genuine, idealistic but grounded`,
-      readingTips: `Begin with a light, warm memory of 'superhero' — let it breathe before the pivot. The three 'I want to be' statements should each feel considered and personal — not rushed through. The final three sentences are the heart of the speech — deliver them slowly, with conviction, as if you mean every word. You do.`,
+      preamblePact:
+        '{"purpose":"To reflect on gratitude and privilege after visiting a children\'s home","audience":"School community at an end-of-year reflection assembly","context":"A Values in Action visit to a children\'s home in Singapore","tone":"Thoughtful, humbled, and deeply reflective"}',
+      readingTips:
+        "Begin with expectation and confidence. Use a warm, surprised tone when describing the children's happiness. Voice Sarah's words with innocent hope. Grow quiet and reflective on the bus ride home. Deliver the closing message with weight and sincerity.",
       photographDescription: "",
       imageSearchSuggestion: "",
       sbcQ1Type: "",
@@ -1037,24 +1134,31 @@ I am not sure what I will become. But I am quite sure of who I want to be. And I
     },
     {
       type: "STIMULUS",
-      title: `Future Goals and Aspiration — Stimulus-Based Conversation`,
-      topic: `Future Goals and Aspiration`,
-      difficulty: "P6",
-      preambleText: "",
+      title: "Counting Our Blessings (SBC)",
+      topic: "Gratitude and Privilege",
+      difficulty: "Advanced",
+      preambleText:
+        "Look at the photograph below and answer the questions that follow.",
       passageText: "",
       posterImageResName: "",
-      posterDescription: `A real-life photograph of a teenage boy — around 12 to 13 years old — standing in front of a whiteboard covered in mind maps, diagrams and sticky notes in different colours. He appears to be in the middle of explaining something, pointing at one section of the board, expression animated and engaged. The setting looks like a classroom or project room. Other students are slightly out of focus in the background, watching him.`,
-      question1: `What can you tell about this student from this photograph? What does his expression and the whiteboard tell you?`,
-      question2: `Tell me about something you care about or are passionate about — a subject, a cause, an activity — and how you became interested in it.`,
-      question3: `Some people believe that young people today are too focused on grades and academic success, and not enough on discovering who they truly are. Do you agree?`,
+      posterDescription:
+        "A photograph taken during a school visit to a children's home in Singapore. A group of primary school students are seated on the floor in a circle with children from the home, playing a board game together. The students are wearing their school PE attire, and the home's children are in casual clothes. Everyone is laughing and engaged. Behind them, a simply furnished common room has a bookshelf with well-worn books, a few soft toys on a shelf, and children's artwork pinned to a corkboard. One piece of artwork shows a crayon drawing of a house with the words 'My Dream Home' written underneath. A caretaker stands in the doorway, watching with a gentle smile. The room is clean but sparse, with fluorescent lighting overhead.",
+      question1:
+        "What can you infer about the children's home from the details in this photograph? How do the visiting students and the home's children seem to be getting along?",
+      question2:
+        "Think about something you have that you often take for granted. What is it, and why are you grateful for it?",
+      question3:
+        "Do you believe that happiness depends on having many material things? Why or why not?",
       isDaily: false,
       preamblePact: "",
       readingTips: "",
-      photographDescription: `A real-life photograph of a teenage boy — around 12 to 13 years old — standing in front of a whiteboard covered in mind maps, diagrams and sticky notes in different colours. He appears to be in the middle of explaining something, pointing at one section of the board, expression animated and engaged. The setting looks like a classroom or project room. Other students are slightly out of focus in the background, watching him.`,
-      imageSearchSuggestion: `teenager student presenting whiteboard mind map classroom animated Singapore`,
-      sbcQ1Type: `Picture inference`,
-      sbcQ2Type: `Personal experience`,
-      sbcQ3Type: `Opinion`,
+      photographDescription:
+        "A photograph taken during a school visit to a children's home in Singapore. A group of primary school students are seated on the floor in a circle with children from the home, playing a board game together. The students are wearing their school PE attire, and the home's children are in casual clothes. Everyone is laughing and engaged. Behind them, a simply furnished common room has a bookshelf with well-worn books, a few soft toys on a shelf, and children's artwork pinned to a corkboard. One piece of artwork shows a crayon drawing of a house with the words 'My Dream Home' written underneath. A caretaker stands in the doorway, watching with a gentle smile. The room is clean but sparse, with fluorescent lighting overhead.",
+      imageSearchSuggestion:
+        "school visit children home Singapore students playing together VIA programme",
+      sbcQ1Type: "inference",
+      sbcQ2Type: "experience",
+      sbcQ3Type: "opinion",
       generatedImageUrl: null,
     },
   ];
