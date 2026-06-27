@@ -12,14 +12,26 @@ type DifficultyFilter = "ALL" | "Foundation" | "Intermediate" | "Advanced";
 export default function HomePage() {
   const [exercises, setExercises] = useState<OralExercise[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("ALL");
 
   useEffect(() => {
     fetch("/api/exercises")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) return r.json().then((d) => { throw new Error(d.error || `HTTP ${r.status}`); });
+        return r.json();
+      })
       .then((data) => {
-        setExercises(data);
+        if (Array.isArray(data)) {
+          setExercises(data);
+        } else {
+          throw new Error(data?.error || "Invalid response from server");
+        }
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(e.message || "Failed to load exercises");
         setLoading(false);
       });
   }, []);
@@ -103,7 +115,19 @@ export default function HomePage() {
             </div>
           )}
 
-          {loading ? (
+          {error ? (
+            <div className="error-banner" style={{ marginTop: 16 }}>
+              <strong>Error loading exercises:</strong>
+              <p style={{ marginTop: 4, wordBreak: "break-all" }}>{error}</p>
+              <button
+                className="btn btn-sm btn-primary"
+                style={{ marginTop: 12, width: "auto" }}
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          ) : loading ? (
             <div className="loading">
               <div className="spinner" />
               <span>Loading exercises...</span>
