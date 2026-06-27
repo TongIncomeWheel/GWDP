@@ -4,40 +4,45 @@ import { getEffectiveApiKey } from "@/lib/db";
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 
 export async function POST(request: NextRequest) {
-  const { exerciseId, description } = await request.json();
-  if (!exerciseId || !description) {
-    return NextResponse.json(
-      { error: "exerciseId and description required" },
-      { status: 400 }
-    );
-  }
+  try {
+    const { exerciseId, description } = await request.json();
+    if (!exerciseId || !description) {
+      return NextResponse.json(
+        { error: "exerciseId and description required" },
+        { status: 400 }
+      );
+    }
 
-  const apiKey = await getEffectiveApiKey();
-  if (!apiKey) {
+    const apiKey = await getEffectiveApiKey();
+    if (!apiKey) {
+      return NextResponse.json({
+        imageUrl: null,
+        description,
+        error: "No Gemini API key configured. Set it in Parent > Settings to enable image generation.",
+      });
+    }
+
+    const prompt = `Generate a realistic photograph suitable for a Singapore primary school English oral examination stimulus-based conversation exercise. The image should depict: ${description}. The image should be appropriate for children aged 11-12, realistic, and clearly show the described scene. Do NOT include any text or words in the image.`;
+
+    const errors: string[] = [];
+
+    // Try new Interactions API (gemini-3.1-flash-image)
+    const imageUrl = await tryInteractionsAPI(apiKey, prompt, errors);
+    if (imageUrl) return NextResponse.json({ imageUrl, description });
+
     return NextResponse.json({
       imageUrl: null,
       description,
-      error: "No Gemini API key configured. Set it in Parent > Settings to enable image generation.",
+      error: `Image generation failed: ${errors.join(" | ")}`,
     });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
-
-  const prompt = `Generate a realistic photograph suitable for a Singapore primary school English oral examination stimulus-based conversation exercise. The image should depict: ${description}. The image should be appropriate for children aged 11-12, realistic, and clearly show the described scene. Do NOT include any text or words in the image.`;
-
-  const errors: string[] = [];
-
-  // Try new Interactions API (gemini-3.1-flash-image)
-  const imageUrl = await tryInteractionsAPI(apiKey, prompt, errors);
-  if (imageUrl) return NextResponse.json({ imageUrl, description });
-
-  return NextResponse.json({
-    imageUrl: null,
-    description,
-    error: `Image generation failed: ${errors.join(" | ")}`,
-  });
 }
 
 // GET: diagnostic — discover available models and probe image generation
 export async function GET() {
+  try {
   const apiKey = await getEffectiveApiKey();
   if (!apiKey) {
     return NextResponse.json({ hasKey: false, errors: ["No API key configured"] });
@@ -74,6 +79,9 @@ export async function GET() {
   }
 
   return NextResponse.json({ hasKey: true, keyTail: apiKey.slice(-4), results });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 async function tryInteractionsAPI(apiKey: string, prompt: string, errors: string[]): Promise<string | null> {

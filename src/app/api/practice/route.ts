@@ -9,16 +9,21 @@ import {
 import type { PracticeHistory } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
-  const id = request.nextUrl.searchParams.get("id");
-  if (id) {
-    const history = await getPracticeHistoryById(Number(id));
-    if (!history) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(history);
+  try {
+    const id = request.nextUrl.searchParams.get("id");
+    if (id) {
+      const history = await getPracticeHistoryById(Number(id));
+      if (!history) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json(history);
+    }
+    return NextResponse.json(await getAllPracticeHistory());
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
-  return NextResponse.json(await getAllPracticeHistory());
 }
 
 export async function POST(request: NextRequest) {
+  try {
   const body = await request.json();
   const id = await insertPracticeHistory({
     exerciseId: body.exerciseId,
@@ -60,9 +65,13 @@ export async function POST(request: NextRequest) {
     isClosed: false,
   });
   return NextResponse.json({ id });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export async function PUT(request: NextRequest) {
+  try {
   const body = await request.json();
 
   if (body.id) {
@@ -119,11 +128,18 @@ export async function PUT(request: NextRequest) {
   const fullBody: PracticeHistory = body;
   await updatePracticeHistory(fullBody);
   return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: NextRequest) {
-  const id = request.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  await deletePracticeHistoryById(Number(id));
-  return NextResponse.json({ ok: true });
+  try {
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    await deletePracticeHistoryById(Number(id));
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
