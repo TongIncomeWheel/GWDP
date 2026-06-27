@@ -66,13 +66,20 @@ export default function PracticePage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  const imageGenerationTriggered = useRef(false);
+
   useEffect(() => {
     fetch("/api/exercises")
       .then((r) => r.json())
       .then((data: OralExercise[]) => {
         const ex = data.find((e) => e.id === exerciseId);
         setExercise(ex || null);
-        if (ex?.generatedImageUrl) setPosterImage(ex.generatedImageUrl);
+        if (ex?.generatedImageUrl) {
+          setPosterImage(ex.generatedImageUrl);
+        } else if (ex && ex.type === "STIMULUS" && !imageGenerationTriggered.current) {
+          imageGenerationTriggered.current = true;
+          autoGenerateImage(ex);
+        }
         setLoading(false);
       });
   }, [exerciseId]);
@@ -202,17 +209,15 @@ export default function PracticePage() {
     [recordingStates, startRecording, stopRecording]
   );
 
-  const generateImage = async () => {
-    if (!exercise) return;
+  const fetchPosterImage = async (ex: OralExercise) => {
     setGeneratingImage(true);
     try {
       const res = await fetch("/api/poster", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          description:
-            exercise.photographDescription || exercise.posterDescription,
-          exerciseId: exercise.id,
+          description: ex.photographDescription || ex.posterDescription,
+          exerciseId: ex.id,
         }),
       });
       const data = await res.json();
@@ -221,6 +226,14 @@ export default function PracticePage() {
       /* ignore */
     }
     setGeneratingImage(false);
+  };
+
+  const autoGenerateImage = (ex: OralExercise) => {
+    fetchPosterImage(ex);
+  };
+
+  const generateImage = () => {
+    if (exercise) fetchPosterImage(exercise);
   };
 
   const allRecorded =
@@ -396,8 +409,20 @@ export default function PracticePage() {
                       onClick={generateImage}
                       disabled={generatingImage}
                     >
-                      {generatingImage ? "Generating..." : "Regenerate Image"}
+                      {generatingImage ? "Generating..." : "Regenerate"}
                     </button>
+                  </div>
+                ) : generatingImage ? (
+                  <div className="poster-image-area" style={{
+                    flexDirection: "column",
+                    gap: 12,
+                    padding: 24,
+                  }}>
+                    <NanoBanana mood="thinking" message="Generating your visual stimulus..." compact />
+                    <div className="spinner" />
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                      This may take a few seconds...
+                    </div>
                   </div>
                 ) : (
                   <div className="poster-desc">
@@ -408,10 +433,9 @@ export default function PracticePage() {
                       <button
                         className="btn btn-sm btn-outline"
                         onClick={generateImage}
-                        disabled={generatingImage}
                         style={{ width: "auto" }}
                       >
-                        {generatingImage ? "Generating..." : "Generate Image"}
+                        Generate Image
                       </button>
                     </div>
                   </div>
