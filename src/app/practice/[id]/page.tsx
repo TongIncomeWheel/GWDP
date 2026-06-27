@@ -44,6 +44,14 @@ export default function PracticePage() {
   const [loading, setLoading] = useState(true);
   const [currentQuestion, setCurrentQuestion] = useState(0);
 
+  interface Attempt {
+    transcripts: string[];
+    audioBlobs: (string | null)[];
+    id?: number;
+    evaluated?: boolean;
+    scores?: { s1: number; s2: number; s3: number; total: number; max: number };
+  }
+
   const [transcripts, setTranscripts] = useState<string[]>(["", "", ""]);
   const [audioBlobs, setAudioBlobs] = useState<(string | null)[]>([
     null,
@@ -59,6 +67,10 @@ export default function PracticePage() {
   const [mascotMood, setMascotMood] = useState<"smiling" | "thinking">(
     "smiling"
   );
+
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [confirming, setConfirming] = useState(false);
+  const [selectedAttempt, setSelectedAttempt] = useState<number | null>(null);
   const [posterImage, setPosterImage] = useState<string | null>(null);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [imageError, setImageError] = useState("");
@@ -66,6 +78,7 @@ export default function PracticePage() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntentRef = useRef<boolean>(false);
 
   const imageGenerationTriggered = useRef(false);
 
@@ -98,18 +111,32 @@ export default function PracticePage() {
         return;
       }
 
+      recordingIntentRef.current = true;
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
-        const mediaRecorder = new MediaRecorder(stream);
+
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : MediaRecorder.isTypeSupported("audio/webm")
+            ? "audio/webm"
+            : MediaRecorder.isTypeSupported("audio/mp4")
+              ? "audio/mp4"
+              : "";
+
+        const mediaRecorder = mimeType
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
+
         audioChunksRef.current = [];
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) audioChunksRef.current.push(e.data);
         };
         mediaRecorder.onstop = () => {
           const blob = new Blob(audioChunksRef.current, {
-            type: "audio/webm",
+            type: mediaRecorder.mimeType || "audio/webm",
           });
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -122,7 +149,7 @@ export default function PracticePage() {
           reader.readAsDataURL(blob);
           stream.getTracks().forEach((t) => t.stop());
         };
-        mediaRecorder.start();
+        mediaRecorder.start(1000);
         mediaRecorderRef.current = mediaRecorder;
       } catch {
         console.warn(
@@ -135,23 +162,25 @@ export default function PracticePage() {
       recognition.interimResults = true;
       recognition.lang = "en-SG";
 
+      let finalTranscript = "";
+
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let final = "";
         let interim = "";
         for (let i = 0; i < event.results.length; i++) {
           if (event.results[i].isFinal)
-            final += event.results[i][0].transcript + " ";
+            finalTranscript += event.results[i][0].transcript + " ";
           else interim += event.results[i][0].transcript;
         }
         setTranscripts((prev) => {
           const next = [...prev];
-          next[questionIdx] = (final + interim).trim();
+          next[questionIdx] = (finalTranscript + interim).trim();
           return next;
         });
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (event.error !== "aborted") {
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          recordingIntentRef.current = false;
           setRecordingStates((prev) => {
             const n = [...prev];
             n[questionIdx] = "done";
@@ -159,13 +188,36 @@ export default function PracticePage() {
           });
         }
       };
+
       recognition.onend = () => {
+        if (recordingIntentRef.current) {
+          try {
+            const newRecognition = new SpeechRecognitionClass();
+            newRecognition.continuous = true;
+            newRecognition.interimResults = true;
+            newRecognition.lang = "en-SG";
+            newRecognition.onresult = recognition.onresult;
+            newRecognition.onerror = recognition.onerror;
+            newRecognition.onend = recognition.onend;
+            recognitionRef.current = newRecognition;
+            newRecognition.start();
+          } catch {
+            recordingIntentRef.current = false;
+            setRecordingStates((prev) => {
+              const n = [...prev];
+              n[questionIdx] = "done";
+              return n;
+            });
+          }
+          return;
+        }
         setRecordingStates((prev) => {
           const n = [...prev];
           if (n[questionIdx] === "recording") n[questionIdx] = "done";
           return n;
         });
       };
+
       recognitionRef.current = recognition;
       recognition.start();
       setRecordingStates((prev) => {
@@ -178,6 +230,7 @@ export default function PracticePage() {
   );
 
   const stopRecording = useCallback((questionIdx: number) => {
+    recordingIntentRef.current = false;
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     mediaRecorderRef.current?.stop();
@@ -266,8 +319,12 @@ export default function PracticePage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSaveAttempt = async () => {
     if (!exercise || !allRecorded) return;
+    if (attempts.length >= 3) {
+      alert("Maximum 3 attempts reached. Please confirm one to submit.");
+      return;
+    }
     setSubmitting(true);
     setMascotMood("thinking");
 
@@ -305,17 +362,52 @@ export default function PracticePage() {
         }),
       });
       const { id } = await res.json();
-      await fetch("/api/evaluate", {
+
+      const evalRes = await fetch("/api/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ historyId: id }),
       });
-      router.push(`/results/${id}`);
+      const evalData = await evalRes.json();
+
+      const newAttempt: Attempt = {
+        transcripts: [...transcripts],
+        audioBlobs: [...audioBlobs],
+        id,
+        evaluated: evalData.isEvaluated,
+        scores: evalData.isEvaluated ? {
+          s1: evalData.score1, s2: evalData.score2, s3: evalData.score3,
+          total: evalData.totalScore, max: evalData.maxScore,
+        } : undefined,
+      };
+      setAttempts((prev) => [...prev, newAttempt]);
+      setSelectedAttempt(attempts.length);
+      setTranscripts(["", "", ""]);
+      setAudioBlobs([null, null, null]);
+      setRecordingStates(["idle", "idle", "idle"]);
+      setMascotMood("smiling");
+
+      if (attempts.length >= 2) {
+        setConfirming(true);
+      }
     } catch {
       alert("Failed to submit. Please try again.");
-      setSubmitting(false);
       setMascotMood("smiling");
     }
+    setSubmitting(false);
+  };
+
+  const handleConfirmAttempt = async (attemptIdx: number) => {
+    const chosen = attempts[attemptIdx];
+    if (!chosen?.id) return;
+    setConfirming(false);
+
+    const toDelete = attempts.filter((_, i) => i !== attemptIdx && _.id);
+    for (const a of toDelete) {
+      await fetch(`/api/practice?id=${a.id}`, { method: "DELETE" }).catch(() => {});
+    }
+
+    router.push(`/results/${chosen.id}`);
   };
 
   const stopAllMedia = () => {
@@ -577,24 +669,87 @@ export default function PracticePage() {
               </div>
             )}
 
+          {/* Previous attempts */}
+          {attempts.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div className="section-label">
+                Your Attempts ({attempts.length}/3)
+              </div>
+              {attempts.map((a, i) => (
+                <div key={i} className="card" style={{
+                  padding: "10px 14px",
+                  marginBottom: 8,
+                  borderLeft: `3px solid ${selectedAttempt === i ? "var(--purple-glow)" : "var(--border)"}`,
+                  cursor: "pointer",
+                  opacity: confirming && selectedAttempt !== i ? 0.7 : 1,
+                }} onClick={() => setSelectedAttempt(i)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                        Attempt {i + 1}
+                      </span>
+                      {a.scores && (
+                        <span style={{ fontSize: 12, color: "var(--teal)", marginLeft: 8 }}>
+                          {a.scores.total}/{a.scores.max}
+                        </span>
+                      )}
+                    </div>
+                    {confirming && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        style={{ width: "auto", padding: "4px 14px", fontSize: 12 }}
+                        onClick={(e) => { e.stopPropagation(); handleConfirmAttempt(i); }}
+                      >
+                        Confirm This
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+                    {a.transcripts[0].slice(0, 80)}{a.transcripts[0].length > 80 ? "..." : ""}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Confirming state */}
+          {confirming && (
+            <div className="info-banner" style={{ marginTop: 12 }}>
+              Select which attempt to keep. The others will be deleted.
+            </div>
+          )}
+
           <div style={{ marginTop: 20, paddingBottom: 24 }}>
-            <button
-              className="btn btn-primary"
-              disabled={!allRecorded || submitting}
-              onClick={handleSubmit}
-            >
-              {submitting ? (
-                <>
-                  <div
-                    className="spinner"
-                    style={{ width: 20, height: 20, borderWidth: 2 }}
-                  />{" "}
-                  Evaluating...
-                </>
-              ) : (
-                "Submit for Evaluation"
-              )}
-            </button>
+            {!confirming && attempts.length < 3 && (
+              <button
+                className="btn btn-primary"
+                disabled={!allRecorded || submitting}
+                onClick={handleSaveAttempt}
+              >
+                {submitting ? (
+                  <>
+                    <div
+                      className="spinner"
+                      style={{ width: 20, height: 20, borderWidth: 2 }}
+                    />{" "}
+                    Evaluating...
+                  </>
+                ) : attempts.length === 0 ? (
+                  "Submit Attempt 1"
+                ) : (
+                  `Submit Attempt ${attempts.length + 1} (${3 - attempts.length} left)`
+                )}
+              </button>
+            )}
+            {attempts.length > 0 && !confirming && (
+              <button
+                className="btn btn-outline"
+                style={{ marginTop: 8 }}
+                onClick={() => setConfirming(true)}
+              >
+                Confirm & Finish ({attempts.length} attempt{attempts.length !== 1 ? "s" : ""})
+              </button>
+            )}
           </div>
         </div>
       </main>

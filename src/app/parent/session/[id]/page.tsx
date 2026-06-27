@@ -136,6 +136,38 @@ export default function ParentSessionDetailPage() {
     setTimeout(() => setSaveMsg(""), 3000);
   };
 
+  const [closing, setClosing] = useState(false);
+
+  const handleCloseExercise = async () => {
+    if (!confirm("Close this exercise? It will be archived and removed from the student's active list."))
+      return;
+    setClosing(true);
+    try {
+      await fetch(`/api/practice`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: sessionId, isClosed: true }),
+      });
+      setHistory((prev) => prev ? { ...prev, isClosed: true } : prev);
+    } catch {
+      alert("Failed to close exercise.");
+    }
+    setClosing(false);
+  };
+
+  const handleReopenExercise = async () => {
+    try {
+      await fetch(`/api/practice`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: sessionId, isClosed: false }),
+      });
+      setHistory((prev) => prev ? { ...prev, isClosed: false } : prev);
+    } catch {
+      alert("Failed to reopen exercise.");
+    }
+  };
+
   const handleDeleteRecordings = async () => {
     if (!confirm("Delete all recordings for this session? This cannot be undone."))
       return;
@@ -649,6 +681,47 @@ export default function ParentSessionDetailPage() {
               >
                 {saveMsg}
               </div>
+            )}
+          </div>
+
+          {/* Close / Reopen Exercise */}
+          <div className="card" style={{ padding: "14px 16px" }}>
+            {!history.isClosed ? (
+              <>
+                <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 10 }}>
+                  Close this exercise to archive it. It will be removed from the student&apos;s active exercise list but kept in history.
+                </div>
+                <button
+                  className="btn btn-outline"
+                  style={{ borderColor: "var(--coral)", color: "var(--coral)" }}
+                  disabled={closing}
+                  onClick={handleCloseExercise}
+                >
+                  {closing ? "Closing..." : "Close & Archive"}
+                </button>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, textTransform: "uppercase",
+                    background: "var(--bg-elevated)", color: "var(--text-muted)",
+                    padding: "2px 8px", borderRadius: 4,
+                  }}>
+                    Archived
+                  </span>
+                  <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                    This exercise is closed.
+                  </span>
+                </div>
+                <button
+                  className="btn btn-outline btn-sm"
+                  style={{ width: "auto" }}
+                  onClick={handleReopenExercise}
+                >
+                  Reopen Exercise
+                </button>
+              </>
             )}
           </div>
 

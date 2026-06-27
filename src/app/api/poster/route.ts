@@ -72,7 +72,7 @@ async function tryImagenGeneration(apiKey: string, prompt: string): Promise<stri
 }
 
 async function tryGeminiGeneration(apiKey: string, prompt: string): Promise<string | null> {
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash-001"];
+  const models = ["gemini-2.0-flash-exp", "gemini-2.5-flash"];
   for (const model of models) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;

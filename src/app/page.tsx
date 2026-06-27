@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import type { OralExercise } from "@/lib/types";
+import type { OralExercise, PracticeHistory } from "@/lib/types";
 import BottomNav from "./BottomNav";
 import NanoBanana from "./NanoBanana";
 
@@ -39,6 +39,8 @@ export default function HomePage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("ALL");
 
+  const [practiceHistory, setPracticeHistory] = useState<PracticeHistory[]>([]);
+
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
   const [genSuccess, setGenSuccess] = useState("");
@@ -73,6 +75,10 @@ export default function HomePage() {
       .then((r) => r.json())
       .then((data) => setGenRemaining(data.remaining))
       .catch(() => {});
+    fetch("/api/practice")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setPracticeHistory(data); })
+      .catch(() => {});
   }, [loadExercises]);
 
   const handleGenerate = async () => {
@@ -104,15 +110,24 @@ export default function HomePage() {
     setGenerating(false);
   };
 
+  const closedExerciseIds = useMemo(() => {
+    return new Set(
+      practiceHistory
+        .filter((h) => h.isClosed)
+        .map((h) => h.exerciseId)
+    );
+  }, [practiceHistory]);
+
   const filtered = useMemo(() => {
     return exercises.filter((e) => {
+      if (closedExerciseIds.has(e.id)) return false;
       if (typeFilter === "DAILY" && !e.isDaily) return false;
       if (typeFilter === "READING" && e.type !== "READING") return false;
       if (typeFilter === "STIMULUS" && e.type !== "STIMULUS") return false;
       if (difficultyFilter !== "ALL" && e.difficulty !== difficultyFilter) return false;
       return true;
     });
-  }, [exercises, typeFilter, difficultyFilter]);
+  }, [exercises, typeFilter, difficultyFilter, closedExerciseIds]);
 
   const grouped = useMemo(() => {
     return filtered.reduce<Record<string, OralExercise[]>>((acc, ex) => {
@@ -143,14 +158,176 @@ export default function HomePage() {
   const stimulusCount = exercises.filter(e => e.type === "STIMULUS").length;
   const dailyCount = exercises.filter(e => e.isDaily).length;
 
+  const streakData = useMemo(() => {
+    if (practiceHistory.length === 0) return { current: 0, best: 0, total: 0, avgScore: 0, todayDone: 0, weekScores: [] as number[] };
+
+    const practiceDays = new Set(
+      practiceHistory.map((h) => {
+        const d = new Date(h.dateMillis);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      })
+    );
+    const sortedDays = Array.from(practiceDays)
+      .map((s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m, d); })
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+    const todayDone = practiceHistory.filter((h) => {
+      const d = new Date(h.dateMillis);
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` === todayKey;
+    }).length;
+
+    let current = 0;
+    if (sortedDays.length > 0) {
+      const firstDayDiff = Math.floor((today.getTime() - sortedDays[0].getTime()) / (24 * 60 * 60 * 1000));
+      if (firstDayDiff <= 1) {
+        current = 1;
+        for (let i = 1; i < sortedDays.length; i++) {
+          const diff = sortedDays[i - 1].getTime() - sortedDays[i].getTime();
+          if (diff <= 24 * 60 * 60 * 1000) current++;
+          else break;
+        }
+      }
+    }
+
+    let best = 0, run = 1;
+    for (let i = 1; i < sortedDays.length; i++) {
+      const diff = sortedDays[i - 1].getTime() - sortedDays[i].getTime();
+      if (diff <= 24 * 60 * 60 * 1000) run++;
+      else { best = Math.max(best, run); run = 1; }
+    }
+    best = Math.max(best, run, current);
+
+    const evaluated = practiceHistory.filter((h) => h.isEvaluated && h.maxScore > 0);
+    const avgScore = evaluated.length > 0
+      ? Math.round(evaluated.reduce((sum, h) => sum + (h.totalScore / h.maxScore) * 100, 0) / evaluated.length)
+      : 0;
+
+    const weekAgo = today.getTime() - 7 * 24 * 60 * 60 * 1000;
+    const weekScores = evaluated
+      .filter((h) => h.dateMillis >= weekAgo)
+      .sort((a, b) => a.dateMillis - b.dateMillis)
+      .slice(-7)
+      .map((h) => Math.round((h.totalScore / h.maxScore) * 100));
+
+    return { current, best, total: practiceHistory.length, avgScore, todayDone, weekScores };
+  }, [practiceHistory]);
+
+  const mascotMood = generating ? "thinking" as const
+    : streakData.current >= 7 ? "cheering" as const
+    : streakData.current >= 3 ? "encouraging" as const
+    : "smiling" as const;
+
+  const mascotMessage = generating ? undefined
+    : streakData.current >= 7 ? `${streakData.current}-day streak! You're on fire!`
+    : streakData.current >= 3 ? `${streakData.current} days strong! Keep going!`
+    : streakData.todayDone > 0 ? "Great job practising today!"
+    : streakData.total > 0 ? "Ready for today's practice?"
+    : undefined;
+
   return (
     <>
       <main>
         <div className="container" style={{ paddingTop: 20, paddingBottom: 100 }}>
-          {/* Hero Section */}
-          <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <NanoBanana mood={generating ? "thinking" : "smiling"} />
+          {/* Hero Section with NanoBanana */}
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <NanoBanana mood={mascotMood} message={mascotMessage} />
           </div>
+
+          {/* Streak Dashboard */}
+          {!loading && practiceHistory.length > 0 && (
+            <div className="card" style={{
+              marginBottom: 16,
+              background: "linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(45, 212, 191, 0.1) 100%)",
+              border: "1px solid rgba(139, 92, 246, 0.3)",
+              padding: "16px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginBottom: 14 }}>
+                {/* Streak Ring */}
+                <div style={{ position: "relative", width: 80, height: 80 }}>
+                  <svg width="80" height="80" viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(139, 92, 246, 0.15)" strokeWidth="6" />
+                    <circle
+                      cx="40" cy="40" r="34" fill="none"
+                      stroke="url(#streakGrad)" strokeWidth="6" strokeLinecap="round"
+                      strokeDasharray={`${Math.min(streakData.current / 7, 1) * 213.6} 213.6`}
+                      transform="rotate(-90 40 40)"
+                    />
+                    <circle cx="40" cy="40" r="24" fill="none" stroke="rgba(45, 212, 191, 0.15)" strokeWidth="5" />
+                    <circle
+                      cx="40" cy="40" r="24" fill="none"
+                      stroke="var(--teal)" strokeWidth="5" strokeLinecap="round"
+                      strokeDasharray={`${Math.min(streakData.todayDone / 2, 1) * 150.8} 150.8`}
+                      transform="rotate(-90 40 40)"
+                    />
+                    <defs>
+                      <linearGradient id="streakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#8B5CF6" />
+                        <stop offset="100%" stopColor="#6366F1" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div style={{
+                    position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+                    fontSize: 20, fontWeight: 800, color: "var(--text-primary)",
+                  }}>
+                    {streakData.current}
+                  </div>
+                </div>
+
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Day Streak
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 2 }}>
+                    Best: {streakData.best} days
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 1 }}>
+                    Today: {streakData.todayDone} session{streakData.todayDone !== 1 ? "s" : ""}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats row */}
+              <div style={{ display: "flex", justifyContent: "space-around", borderTop: "1px solid rgba(139, 92, 246, 0.15)", paddingTop: 12 }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "var(--purple-soft)" }}>{streakData.total}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-muted)" }}>Total</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: streakData.avgScore >= 70 ? "var(--teal)" : streakData.avgScore >= 50 ? "var(--gold)" : "var(--coral)" }}>
+                    {streakData.avgScore}%
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-muted)" }}>Avg Score</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "var(--blue)" }}>{streakData.weekScores.length}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-muted)" }}>This Week</div>
+                </div>
+              </div>
+
+              {/* Mini week sparkline */}
+              {streakData.weekScores.length > 1 && (
+                <div style={{ display: "flex", justifyContent: "center", marginTop: 10 }}>
+                  <svg width="200" height="32" viewBox="0 0 200 32">
+                    {streakData.weekScores.map((score, i, arr) => {
+                      const x = (i / Math.max(arr.length - 1, 1)) * 180 + 10;
+                      const y = 28 - (score / 100) * 24;
+                      const prevX = i > 0 ? ((i - 1) / Math.max(arr.length - 1, 1)) * 180 + 10 : x;
+                      const prevY = i > 0 ? 28 - (arr[i - 1] / 100) * 24 : y;
+                      return (
+                        <g key={i}>
+                          {i > 0 && <line x1={prevX} y1={prevY} x2={x} y2={y} stroke="var(--purple-soft)" strokeWidth="2" strokeLinecap="round" />}
+                          <circle cx={x} cy={y} r="3" fill={score >= 70 ? "var(--teal)" : score >= 50 ? "var(--gold)" : "var(--coral)"} />
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Generate New Practice */}
           {!loading && !error && (
@@ -265,49 +442,20 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Stats Dashboard */}
+          {/* Exercise Stats */}
           {!loading && !error && exercises.length > 0 && (
-            <div className="card" style={{ marginBottom: 16 }}>
-              <div style={{
-                display: "flex",
-                justifyContent: "space-around",
-                textAlign: "center",
-              }}>
-                <div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--purple-soft)" }}>
-                    {exercises.length}
-                  </div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
-                    Total
-                  </div>
-                </div>
-                <div style={{ width: 1, background: "var(--border)" }} />
-                <div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--blue)" }}>
-                    {readingCount}
-                  </div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
-                    Reading
-                  </div>
-                </div>
-                <div style={{ width: 1, background: "var(--border)" }} />
-                <div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--teal)" }}>
-                    {stimulusCount}
-                  </div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
-                    Stimulus
-                  </div>
-                </div>
-                <div style={{ width: 1, background: "var(--border)" }} />
-                <div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--gold)" }}>
-                    {dailyCount}
-                  </div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
-                    Daily
-                  </div>
-                </div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              <div className="card" style={{ flex: 1, padding: "10px 12px", textAlign: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--blue)" }}>{readingCount}</div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Reading</div>
+              </div>
+              <div className="card" style={{ flex: 1, padding: "10px 12px", textAlign: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--teal)" }}>{stimulusCount}</div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>SBC</div>
+              </div>
+              <div className="card" style={{ flex: 1, padding: "10px 12px", textAlign: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>{dailyCount}</div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Daily</div>
               </div>
             </div>
           )}

@@ -103,12 +103,27 @@ CRITERION 2: Rhythm, Fluency & Expressiveness (0-10)
 - Band 1-2 (Poor): Extremely halting, constant stumbling, no expression or rhythm, sounds like word-by-word decoding
 - Band 0 (No attempt): No speech or completely unreadable delivery
 
+PUNCTUATION & DELIVERY EXPECTATIONS:
+- COMMAS (,): Student should pause briefly (0.3-0.5s). No pause at a comma = fluency deduction.
+- FULL STOPS (.): Student should pause longer (0.5-1s) and drop intonation. Running through full stops = major fluency deduction.
+- QUESTION MARKS (?): Voice should rise at the end. Flat delivery of questions = expressiveness deduction.
+- EXCLAMATION MARKS (!): Voice should show emphasis/excitement. Monotone delivery of exclamations = expressiveness deduction.
+- DIALOGUE (quoted speech): Should sound distinctly different from narration — slightly different pitch or character voice. Reading dialogue flatly like narration = expressiveness deduction.
+- ELLIPSIS (...): Should have a thoughtful, drawn-out pause.
+- DASHES (— or -): Should have a brief, abrupt pause.
+
+TONE & MOOD MATCHING:
+- Identify the emotional tone of each paragraph/section (e.g., happy, sad, tense, reflective, urgent).
+- The student's delivery should match the mood. Reading a tense scene cheerfully, or a happy scene flatly, is an expressiveness error.
+- Narrative vs dialogue transitions should be clearly audible.
+
 CRITICAL SCORING RULES:
 1. COMPLETENESS: If the student did not read the ENTIRE passage, deduct heavily. Reading only part of the passage = maximum 4/10 on each criterion. Reading less than a third = maximum 2/10.
 2. ACCURACY: Compare the transcript word-for-word against the passage. Every skipped, added, or mispronounced word counts against the score.
 3. NO CHARITY SCORING: This is a serious examination tool. Parents rely on these scores to assess their child's readiness. Inflated scores are harmful and misleading.
 4. DEFAULT TO LOWER BAND: When in doubt between two bands, choose the LOWER band. It is better to be strict than to give undeserved marks.
 5. EMPTY/MINIMAL TRANSCRIPTS: If the transcript is empty, says "No speech recognized", or contains fewer than 10 words, ALL scores must be 0-1.
+6. PACE: Natural conversational pace with variation. Too fast (rushing) or too slow (plodding) = fluency deduction. Target ~130-160 words per minute for P6 level.
 
 [Syllabus Reading Passage]:
 "${exercise.passageText}"
@@ -119,22 +134,22 @@ ${coverageInfo}
 
 ${!hasTranscript ? "\nCRITICAL: No speech was detected. Both scores MUST be 0." : ""}
 
-Evaluate strictly according to the rubric above. Provide scores out of 10 for:
-1. Pronunciation & Articulation (score1)
-2. Rhythm, Fluency & Expressiveness (score2)
+Evaluate strictly according to the rubric above. For EACH criterion, you must:
+1. Pronunciation & Articulation (score1): List specific words mispronounced, skipped words, substituted words, and added words with corrections.
+2. Rhythm, Fluency & Expressiveness (score2): Assess punctuation awareness (did they pause at commas/full stops? rise at questions?), tone matching (did delivery match the mood?), dialogue vs narration distinction, and pace appropriateness.
 (set score3 to 0 — Reading Aloud has only 2 criteria)
 
-Include specific strengths (with word-level examples from the transcript), specific areas for improvement (citing exact words that were mispronounced or skipped), and a model reading answer with stress marks (UPPERCASE) and pauses (/).
+Include specific strengths (with word-level examples from the transcript), specific areas for improvement (citing exact words that were mispronounced or skipped, AND specific punctuation/tone issues), and a model reading answer with stress marks (UPPERCASE), pauses (/), rising intonation (↑), and mood annotations [calm], [excited], [tense].
 
 Respond in valid JSON with this exact structure:
 {
   "score1": <number 0-10>,
   "score2": <number 0-10>,
   "score3": 0,
-  "generalFeedback": "<string - be honest about performance level>",
+  "generalFeedback": "<string - be honest about performance level, mention completeness, pronunciation accuracy, and delivery quality>",
   "strengths": ["<string with specific examples>", ...],
-  "areasOfImprovement": ["<string with specific examples>", ...],
-  "suggestedResponse1": "<model reading with STRESS marks and / pauses>",
+  "areasOfImprovement": ["<string with specific examples including punctuation/tone issues>", ...],
+  "suggestedResponse1": "<model reading with STRESS marks, / pauses, ↑ rising intonation, and [mood] annotations>",
   "suggestedResponse2": "",
   "suggestedResponse3": ""
 }`.trim();
