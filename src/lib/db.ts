@@ -1,13 +1,24 @@
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 import type { OralExercise, PracticeHistory, AppSettings } from "./types";
 import { getSeedExercises } from "./seed-data";
 
-const DB_PATH = process.env.DB_PATH || (
-  process.env.NODE_ENV === "production"
-    ? "/tmp/oral_practice.db"
-    : path.join(process.cwd(), "oral_practice.db")
-);
+function resolveDbPath(): string {
+  const explicit = process.env.DB_PATH;
+  if (explicit) {
+    fs.mkdirSync(path.dirname(explicit), { recursive: true });
+    return explicit;
+  }
+  if (process.env.NODE_ENV === "production") {
+    const dir = "/tmp/gwdp-data";
+    fs.mkdirSync(dir, { recursive: true });
+    return path.join(dir, "oral_practice.db");
+  }
+  return path.join(process.cwd(), "oral_practice.db");
+}
+
+const DB_PATH = resolveDbPath();
 
 let _db: Database.Database | null = null;
 

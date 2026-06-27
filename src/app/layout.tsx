@@ -1,6 +1,22 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Lora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import ChromeShell from "./ChromeShell";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-lora",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "PSLE Oral Hero",
@@ -17,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${lora.variable} ${jetbrainsMono.variable}`}>
       <body>
         <ChromeShell />
         {children}
