@@ -21,6 +21,7 @@ export default function ParentDashboard() {
 
   const [history, setHistory] = useState<PracticeHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("parentPin");
@@ -371,8 +372,25 @@ export default function ParentDashboard() {
                 </div>
               </div>
 
-              {/* Recent Sessions */}
-              <div className="section-label">Recent Sessions</div>
+              {/* Session filter */}
+              {history.length > 0 && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                  <div className="section-label" style={{ margin: 0 }}>
+                    {showArchived ? "Archived Sessions" : "Active Sessions"}
+                  </div>
+                  <button
+                    onClick={() => setShowArchived((v) => !v)}
+                    style={{
+                      background: "none", border: "none",
+                      color: "var(--purple-soft)", fontSize: 12, fontWeight: 600,
+                      cursor: "pointer", padding: "4px 0",
+                    }}
+                  >
+                    {showArchived ? "Show Active" : `Show Archived (${history.filter(h => h.isClosed).length})`}
+                  </button>
+                </div>
+              )}
+
               {history.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-icon">&#x1F4CA;</div>
@@ -382,58 +400,66 @@ export default function ParentDashboard() {
                   </p>
                 </div>
               ) : (
-                history.map((h) => {
-                  const percentage =
-                    h.maxScore > 0
-                      ? Math.round((h.totalScore / h.maxScore) * 100)
-                      : 0;
-                  const scoreClass =
-                    percentage >= 70
-                      ? "score-high"
-                      : percentage >= 50
-                      ? "score-mid"
-                      : "score-low";
-                  const date = new Date(h.dateMillis);
-                  const dateStr = date.toLocaleDateString("en-SG", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  });
+                history
+                  .filter((h) => showArchived ? h.isClosed : !h.isClosed)
+                  .map((h) => {
+                    const percentage =
+                      h.maxScore > 0
+                        ? Math.round((h.totalScore / h.maxScore) * 100)
+                        : 0;
+                    const scoreClass =
+                      percentage >= 70
+                        ? "score-high"
+                        : percentage >= 50
+                        ? "score-mid"
+                        : "score-low";
+                    const date = new Date(h.dateMillis);
+                    const dateStr = date.toLocaleDateString("en-SG", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    });
 
-                  return (
-                    <div
-                      key={h.id}
-                      className="card"
-                      style={{ cursor: "pointer" }}
-                      onClick={() => router.push(`/parent/session/${h.id}`)}
-                    >
-                      <div className="history-item">
-                        <div className={`hi-score ${scoreClass}`}>
-                          {h.isEvaluated ? `${h.totalScore}` : "..."}
-                        </div>
-                        <div className="hi-info">
-                          <div className="hi-title">{h.exerciseTitle}</div>
-                          <div className="hi-meta">
-                            {dateStr} &middot;{" "}
-                            {h.exerciseType === "READING" ? "Reading" : "SBC"} &middot;{" "}
-                            {h.totalScore}/{h.maxScore}
-                            {h.parentTotalScore != null && (
-                              <span> &middot; Parent: {h.parentTotalScore}</span>
-                            )}
+                    return (
+                      <div
+                        key={h.id}
+                        className="card"
+                        style={{ cursor: "pointer", opacity: h.isClosed ? 0.7 : 1 }}
+                        onClick={() => router.push(`/parent/session/${h.id}`)}
+                      >
+                        <div className="history-item">
+                          <div className={`hi-score ${scoreClass}`}>
+                            {h.isEvaluated ? `${h.totalScore}` : "..."}
                           </div>
+                          <div className="hi-info">
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <div className="hi-title">{h.exerciseTitle}</div>
+                              {h.isClosed && (
+                                <span style={{
+                                  fontSize: 9, fontWeight: 700, textTransform: "uppercase",
+                                  background: "var(--bg-elevated)", color: "var(--text-muted)",
+                                  padding: "1px 6px", borderRadius: 4, flexShrink: 0,
+                                }}>
+                                  Archived
+                                </span>
+                              )}
+                            </div>
+                            <div className="hi-meta">
+                              {dateStr} &middot;{" "}
+                              {h.exerciseType === "READING" ? "Reading" : "SBC"} &middot;{" "}
+                              {h.totalScore}/{h.maxScore}
+                              {h.parentTotalScore != null && (
+                                <span> &middot; Parent: {h.parentTotalScore}</span>
+                              )}
+                            </div>
+                          </div>
+                          <span style={{ fontSize: 18, color: "var(--text-muted)" }}>
+                            &rsaquo;
+                          </span>
                         </div>
-                        <span
-                          style={{
-                            fontSize: 18,
-                            color: "var(--text-muted)",
-                          }}
-                        >
-                          &rsaquo;
-                        </span>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
               )}
             </>
           )}
