@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import type { OralExercise, PracticeHistory } from "@/lib/types";
 import BottomNav from "./BottomNav";
-import NanoBanana from "./NanoBanana";
+import ReRe from "./ReRe";
 
 type TypeFilter = "ALL" | "READING" | "STIMULUS" | "DAILY";
 type DifficultyFilter = "ALL" | "Foundation" | "Intermediate" | "Advanced";
@@ -230,9 +230,9 @@ export default function HomePage() {
     <>
       <main>
         <div className="container" style={{ paddingTop: 20, paddingBottom: 100 }}>
-          {/* Hero Section with NanoBanana */}
+          {/* Hero Section with ReRe */}
           <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <NanoBanana mood={mascotMood} message={mascotMessage} />
+            <ReRe mood={mascotMood} message={mascotMessage} />
           </div>
 
           {/* Streak Dashboard */}

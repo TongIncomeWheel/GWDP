@@ -38,54 +38,85 @@ export async function POST(request: NextRequest) {
   });
 }
 
-// GET: diagnostic endpoint — returns exact API errors without generating
+// GET: diagnostic — lists available image-capable models, then probes each one
 export async function GET() {
   const apiKey = await getEffectiveApiKey();
   if (!apiKey) {
     return NextResponse.json({ hasKey: false, errors: ["No API key configured"] });
   }
 
+  // Step 1: list all models and find image-capable ones
+  let imageModels: string[] = [];
+  let listError = "";
+  try {
+    const listRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${apiKey}`
+    );
+    const listData = await listRes.json();
+    const all: Array<{ name: string; supportedGenerationMethods?: string[] }> = listData.models || [];
+    imageModels = all
+      .filter((m) => {
+        const methods = m.supportedGenerationMethods || [];
+        return (
+          methods.includes("generateImages") ||
+          methods.includes("predict") ||
+          m.name.toLowerCase().includes("image") ||
+          m.name.toLowerCase().includes("imagen")
+        );
+      })
+      .map((m) => m.name.replace("models/", ""));
+  } catch (e) {
+    listError = (e as Error).message;
+  }
+
+  // Step 2: probe known candidates + discovered models
+  const candidates = Array.from(new Set([
+    ...imageModels,
+    "imagen-4.0-fast-generate-001",
+    "imagen-4.0-generate-001",
+    "imagen-3.0-generate-002",
+    "gemini-2.0-flash-preview-image-generation",
+    "gemini-2.5-flash-preview-image-generation",
+  ]));
+
   const results: Record<string, string> = {};
-
-  const imagenModels = [
-    { model: "imagen-4.0-fast-generate-001", body: { prompt: "a red apple", numberOfImages: 1, imageSize: "1K" } },
-    { model: "imagen-4.0-generate-001", body: { prompt: "a red apple", numberOfImages: 1, imageSize: "1K" } },
-    { model: "imagen-3.0-generate-002", body: { prompt: "a red apple", sampleCount: 1 } },
-  ];
-
-  for (const { model, body } of imagenModels) {
+  for (const model of candidates) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateImages?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const text = await res.text();
-      results[model] = `${res.status}: ${text.slice(0, 300)}`;
+      const isImagen = model.startsWith("imagen");
+      if (isImagen) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateImages?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: "a red apple", numberOfImages: 1 }),
+        });
+        const text = await res.text();
+        results[model] = `${res.status}: ${text.slice(0, 300)}`;
+      } else {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "a red apple" }] }],
+            generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+          }),
+        });
+        const text = await res.text();
+        results[model] = `${res.status}: ${text.slice(0, 300)}`;
+      }
     } catch (e) {
       results[model] = `exception: ${(e as Error).message}`;
     }
   }
 
-  // Test gemini-2.0-flash-preview-image-generation
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: "a red apple" }] }],
-        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-      }),
-    });
-    const text = await res.text();
-    results["gemini-2.0-flash-preview-image-generation"] = `${res.status}: ${text.slice(0, 300)}`;
-  } catch (e) {
-    results["gemini-2.0-flash-preview-image-generation"] = `exception: ${(e as Error).message}`;
-  }
-
-  return NextResponse.json({ hasKey: true, keyTail: apiKey.slice(-4), results });
+  return NextResponse.json({
+    hasKey: true,
+    keyTail: apiKey.slice(-4),
+    imageModelsDiscovered: imageModels,
+    listError,
+    results,
+  });
 }
 
 async function tryImagenGeneration(apiKey: string, prompt: string, errors: string[]): Promise<string | null> {

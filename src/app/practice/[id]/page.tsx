@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { OralExercise } from "@/lib/types";
-import NanoBanana from "../../NanoBanana";
+import ReRe from "../../ReRe";
 
 type RecordingState = "idle" | "recording" | "done";
 
@@ -506,7 +506,7 @@ export default function PracticePage() {
 
       <main>
         <div className="container" style={{ paddingTop: 12 }}>
-          <NanoBanana mood={mascotMood} compact />
+          <ReRe mood={mascotMood} compact />
 
           {exercise.preambleText && (
             <div className="info-banner">{exercise.preambleText}</div>
@@ -532,7 +532,7 @@ export default function PracticePage() {
                     gap: 12,
                     padding: 24,
                   }}>
-                    <NanoBanana mood="thinking" message="Generating your visual stimulus..." compact />
+                    <ReRe mood="thinking" message="Generating your visual stimulus..." compact />
                     <div className="spinner" />
                     <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                       This may take a few seconds...

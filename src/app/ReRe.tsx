@@ -42,7 +42,7 @@ const FACE: Record<Mood, string> = {
   confused: "😅",
 };
 
-export default function NanoBanana({
+export default function ReRe({
   mood = "smiling",
   message,
   compact = false,

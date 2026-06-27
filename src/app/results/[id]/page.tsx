@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { PracticeHistory, StructuredTranscript } from "@/lib/types";
-import NanoBanana from "../../NanoBanana";
+import ReRe from "../../ReRe";
 
 export default function ResultsPage() {
   const params = useParams();
@@ -124,8 +124,8 @@ export default function ResultsPage() {
 
       <main>
         <div className="container" style={{ paddingTop: 16 }}>
-          {/* NanoBanana mascot at top */}
-          <NanoBanana mood={bananaMood} />
+          {/* ReRe mascot at top */}
+          <ReRe mood={bananaMood} />
 
           {/* Exercise completed badge */}
           {history.isClosed && (
