@@ -190,7 +190,7 @@ export default function ResultsPage() {
                 label={
                   isReading
                     ? "Pronunciation & Articulation"
-                    : "Personal Response"
+                    : "Question 1"
                 }
                 score={history.score1}
               />
@@ -198,13 +198,13 @@ export default function ResultsPage() {
                 label={
                   isReading
                     ? "Rhythm, Fluency & Expressiveness"
-                    : "Clarity of Expression"
+                    : "Question 2"
                 }
                 score={history.score2}
               />
               {!isReading && (
                 <ScoreRow
-                  label="Engagement in Conversation"
+                  label="Question 3"
                   score={history.score3}
                 />
               )}
@@ -231,7 +231,7 @@ export default function ResultsPage() {
                   label={
                     isReading
                       ? "Pronunciation & Articulation"
-                      : "Personal Response"
+                      : "Question 1"
                   }
                   score={history.parentScore1}
                 />
@@ -240,14 +240,14 @@ export default function ResultsPage() {
                     label={
                       isReading
                         ? "Rhythm, Fluency & Expressiveness"
-                        : "Clarity of Expression"
+                        : "Question 2"
                     }
                     score={history.parentScore2}
                   />
                 )}
                 {!isReading && history.parentScore3 != null && (
                   <ScoreRow
-                    label="Engagement in Conversation"
+                    label="Question 3"
                     score={history.parentScore3}
                   />
                 )}

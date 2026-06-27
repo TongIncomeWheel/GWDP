@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
 
   const errors: string[] = [];
 
+  // Try Imagen 4 (fast) → Imagen 4 (standard) → Imagen 3 → Gemini
   const imagenUrl = await tryImagenGeneration(apiKey, prompt, errors);
   if (imagenUrl) return NextResponse.json({ imageUrl: imagenUrl, description });
 
@@ -46,18 +47,25 @@ export async function GET() {
 
   const results: Record<string, string> = {};
 
-  // Test Imagen
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: "a red apple", sampleCount: 1 }),
-    });
-    const text = await res.text();
-    results["imagen-3.0-generate-002"] = `${res.status}: ${text.slice(0, 200)}`;
-  } catch (e) {
-    results["imagen-3.0-generate-002"] = `exception: ${(e as Error).message}`;
+  const imagenModels = [
+    { model: "imagen-4.0-fast-generate-001", body: { prompt: "a red apple", numberOfImages: 1, imageSize: "1K" } },
+    { model: "imagen-4.0-generate-001", body: { prompt: "a red apple", numberOfImages: 1, imageSize: "1K" } },
+    { model: "imagen-3.0-generate-002", body: { prompt: "a red apple", sampleCount: 1 } },
+  ];
+
+  for (const { model, body } of imagenModels) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateImages?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const text = await res.text();
+      results[model] = `${res.status}: ${text.slice(0, 300)}`;
+    } catch (e) {
+      results[model] = `exception: ${(e as Error).message}`;
+    }
   }
 
   // Test gemini-2.0-flash-preview-image-generation
@@ -72,7 +80,7 @@ export async function GET() {
       }),
     });
     const text = await res.text();
-    results["gemini-2.0-flash-preview-image-generation"] = `${res.status}: ${text.slice(0, 200)}`;
+    results["gemini-2.0-flash-preview-image-generation"] = `${res.status}: ${text.slice(0, 300)}`;
   } catch (e) {
     results["gemini-2.0-flash-preview-image-generation"] = `exception: ${(e as Error).message}`;
   }
@@ -81,50 +89,51 @@ export async function GET() {
 }
 
 async function tryImagenGeneration(apiKey: string, prompt: string, errors: string[]): Promise<string | null> {
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key=${apiKey}`;
-    // REST body format — NOT the Python SDK "config" wrapper
-    const body = {
-      prompt,
-      sampleCount: 1,
-      aspectRatio: "4:3",
-      safetyFilterLevel: "BLOCK_MEDIUM_AND_ABOVE",
-      personGeneration: "ALLOW_ADULT",
-    };
+  // Try Imagen 4 fast first (cheaper, faster), then standard, then Imagen 3
+  const models = [
+    { name: "imagen-4.0-fast-generate-001", body: { prompt, numberOfImages: 1, imageSize: "1K", aspectRatio: "4:3", personGeneration: "ALLOW_ADULT" } },
+    { name: "imagen-4.0-generate-001", body: { prompt, numberOfImages: 1, imageSize: "1K", aspectRatio: "4:3", personGeneration: "ALLOW_ADULT" } },
+    { name: "imagen-3.0-generate-002", body: { prompt, sampleCount: 1, aspectRatio: "4:3", safetyFilterLevel: "BLOCK_MEDIUM_AND_ABOVE", personGeneration: "ALLOW_ADULT" } },
+  ];
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+  for (const { name, body } of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${name}:generateImages?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      const msg = `Imagen ${res.status}: ${errText.slice(0, 200)}`;
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        const msg = `${name} ${res.status}: ${errText.slice(0, 200)}`;
+        console.log(`[POSTER] ${msg}`);
+        errors.push(msg);
+        continue;
+      }
+
+      const data = await res.json();
+      const b64 = data.predictions?.[0]?.bytesBase64Encoded
+        || data.generatedImages?.[0]?.image?.imageBytes;
+      if (b64) {
+        console.log(`[POSTER] ${name}: success`);
+        return `data:image/png;base64,${b64}`;
+      }
+
+      console.log(`[POSTER] ${name}: unexpected response shape`, JSON.stringify(data).slice(0, 200));
+      errors.push(`${name}: no image bytes in response`);
+    } catch (e) {
+      const msg = `${name} exception: ${(e as Error).message}`;
       console.log(`[POSTER] ${msg}`);
       errors.push(msg);
-      return null;
     }
-
-    const data = await res.json();
-    const b64 = data.predictions?.[0]?.bytesBase64Encoded
-      || data.generatedImages?.[0]?.image?.imageBytes;
-    if (b64) return `data:image/png;base64,${b64}`;
-
-    console.log("[POSTER] Imagen: unexpected response shape", JSON.stringify(data).slice(0, 200));
-    errors.push("Imagen: no image bytes in response");
-    return null;
-  } catch (e) {
-    const msg = `Imagen exception: ${(e as Error).message}`;
-    console.log(`[POSTER] ${msg}`);
-    errors.push(msg);
-    return null;
   }
+
+  return null;
 }
 
 async function tryGeminiGeneration(apiKey: string, prompt: string, errors: string[]): Promise<string | null> {
-  // gemini-2.0-flash-preview-image-generation is the current production name
-  // gemini-2.0-flash-exp is the older alias that some keys still support
   const models = [
     "gemini-2.0-flash-preview-image-generation",
     "gemini-2.0-flash-exp",
@@ -163,6 +172,7 @@ async function tryGeminiGeneration(apiKey: string, prompt: string, errors: strin
       const imagePart = parts.find((p: Record<string, unknown>) => p.inlineData);
       if (imagePart?.inlineData) {
         const { mimeType, data: b64 } = imagePart.inlineData as { mimeType: string; data: string };
+        console.log(`[POSTER] ${model}: success`);
         return `data:${mimeType};base64,${b64}`;
       }
       errors.push(`${model}: no inlineData image part`);

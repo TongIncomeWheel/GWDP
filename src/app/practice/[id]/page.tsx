@@ -424,8 +424,11 @@ export default function PracticePage() {
   };
 
   const stopAllMedia = () => {
+    recordingIntentRef.current = false;
     recognitionRef.current?.stop();
+    recognitionRef.current = null;
     mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
   };
 
   if (loading) {

@@ -217,12 +217,13 @@ CRITERION 3: Engagement & Conversational Quality (0-10)
 - Band 0 (No attempt): No response.
 
 CRITICAL SCORING RULES:
-1. COMPLETENESS: The student must answer ALL 3 questions. Score each criterion based on ALL responses combined. If ${3 - answeredCount} question(s) were not answered, this severely limits the maximum score (unanswered = 0 for that question).
-2. NO CHARITY SCORING: Parents rely on accurate scores. Inflated scores are harmful and misleading.
-3. DEFAULT TO LOWER BAND: When in doubt between two bands, choose the LOWER band.
-4. EMPTY/MINIMAL RESPONSES: If a response is empty, says "No speech recognized", or has fewer than 5 words, score that response as 0 for all criteria.
-5. VOCABULARY CHECK: If the student uses only basic words like "good", "bad", "nice", "fun", "happy", "sad" — Criterion 2 CANNOT exceed 5/10.
-6. FRAMEWORK CHECK: If the student does NOT use any structured framework (no clear point, no evidence/example, no explanation) — Criterion 1 CANNOT exceed 5/10.
+1. SCORE EACH QUESTION INDEPENDENTLY: score1 = Q1 only, score2 = Q2 only, score3 = Q3 only. Each question is evaluated holistically across all 3 criteria (content, language, engagement) to produce ONE score for that question.
+2. NO CROSS-QUESTION AVERAGING: A strong Q1 does NOT raise the score for a weak Q2. Each question stands alone.
+3. NO CHARITY SCORING: Parents rely on accurate scores. Inflated scores are harmful and misleading.
+4. DEFAULT TO LOWER BAND: When in doubt between two bands, choose the LOWER band.
+5. EMPTY/MINIMAL RESPONSES: If a response is empty, says "No speech recognized", or has fewer than 5 words, that question's score MUST be 0.
+6. VOCABULARY CHECK: If the student uses only basic words like "good", "bad", "nice", "fun", "happy", "sad" — that question CANNOT score above 5/10.
+7. FRAMEWORK CHECK: If the student does NOT use any structured framework (no clear point, no evidence/example, no explanation) — that question CANNOT score above 5/10.
 
 [Visual Poster Theme]: ${exercise.topic}
 [Detailed Poster Layout & Content]:
@@ -237,20 +238,20 @@ ${frameworkGuidance}
 [Question 3]: "${exercise.question3}"
 [Student's Response 3]: "${hasT3 ? history.transcript3 : "[NO RESPONSE - student did not answer]"}"
 ${structuredSection}
-Questions answered: ${answeredCount}/3${answeredCount < 3 ? ` — INCOMPLETE. ${3 - answeredCount} question(s) unanswered. This must be reflected in scoring.` : ""}
+Questions answered: ${answeredCount}/3${answeredCount < 3 ? ` — INCOMPLETE. ${3 - answeredCount} question(s) unanswered. Unanswered questions MUST score 0.` : ""}
 
-${structuredSection ? "Use the pre-parsed structured transcript analysis above to inform your evaluation. Assess how well the student's responses align with the PEEL/TREES framework breakdown provided." : ""}
+${structuredSection ? "Use the pre-parsed structured transcript analysis above to inform your evaluation per question." : ""}
 
-Evaluate strictly according to the rubric above. Provide model answers for all 3 questions that would secure an AL1 grade, following PEEL framework structure.
+Evaluate each question strictly and independently. score1, score2, score3 represent Q1, Q2, Q3 holistic scores (0-10 each). Total = score1 + score2 + score3 (max 30). Provide model answers for all 3 questions at AL1 grade using PEEL framework.
 
 Respond in valid JSON with this exact structure:
 {
-  "score1": <number 0-10>,
-  "score2": <number 0-10>,
-  "score3": <number 0-10>,
-  "generalFeedback": "<string - be honest about performance level>",
-  "strengths": ["<string with specific examples from transcript>", ...],
-  "areasOfImprovement": ["<string with specific examples>", ...],
+  "score1": <number 0-10, Q1 holistic score>,
+  "score2": <number 0-10, Q2 holistic score>,
+  "score3": <number 0-10, Q3 holistic score>,
+  "generalFeedback": "<string - overall performance summary across all 3 questions>",
+  "strengths": ["<string with specific examples from transcripts>", ...],
+  "areasOfImprovement": ["<string with specific examples per question>", ...],
   "suggestedResponse1": "<AL1 model answer for Q1 using PEEL>",
   "suggestedResponse2": "<AL1 model answer for Q2 using PEEL>",
   "suggestedResponse3": "<AL1 model answer for Q3 using PEEL>"

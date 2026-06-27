@@ -98,7 +98,7 @@ export default function ParentSessionDetailPage() {
 
   const sliderLabels = isReading
     ? ["Pronunciation & Articulation", "Rhythm, Fluency & Expressiveness"]
-    : ["Personal Response", "Clarity of Expression", "Engagement in Conversation"];
+    : ["Question 1", "Question 2", "Question 3"];
 
   const parentTotal = isReading
     ? parentScore1 + parentScore2
