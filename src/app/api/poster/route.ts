@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateExerciseImage, getEffectiveApiKey } from "@/lib/db";
+import { getEffectiveApiKey } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   const { exerciseId, description } = await request.json();
@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
                    await tryGeminiGeneration(apiKey, prompt);
 
   if (imageUrl) {
-    await updateExerciseImage(Number(exerciseId), imageUrl);
     return NextResponse.json({ imageUrl, description });
   }
 
@@ -55,7 +54,8 @@ async function tryImagenGeneration(apiKey: string, prompt: string): Promise<stri
     });
 
     if (!res.ok) {
-      console.log(`[POSTER] Imagen failed: ${res.status}`);
+      const errText = await res.text().catch(() => "");
+      console.log(`[POSTER] Imagen failed ${res.status}: ${errText.slice(0, 300)}`);
       return null;
     }
 
@@ -64,6 +64,7 @@ async function tryImagenGeneration(apiKey: string, prompt: string): Promise<stri
     if (b64) {
       return `data:image/png;base64,${b64}`;
     }
+    console.log("[POSTER] Imagen: no imageBytes in response");
     return null;
   } catch (e) {
     console.log(`[POSTER] Imagen error: ${(e as Error).message}`);
@@ -90,7 +91,8 @@ async function tryGeminiGeneration(apiKey: string, prompt: string): Promise<stri
       });
 
       if (!res.ok) {
-        console.log(`[POSTER] ${model} failed: ${res.status}`);
+        const errText = await res.text().catch(() => "");
+        console.log(`[POSTER] ${model} failed ${res.status}: ${errText.slice(0, 300)}`);
         continue;
       }
 

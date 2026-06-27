@@ -82,21 +82,26 @@ export default function PracticePage() {
 
   const imageGenerationTriggered = useRef(false);
 
+  const CACHE_KEY = `poster_img_${exerciseId}`;
+
   useEffect(() => {
     fetch("/api/exercises")
       .then((r) => r.json())
       .then((data: OralExercise[]) => {
         const ex = data.find((e) => e.id === exerciseId);
         setExercise(ex || null);
-        if (ex?.generatedImageUrl) {
-          setPosterImage(ex.generatedImageUrl);
-        } else if (ex && ex.type === "STIMULUS" && !imageGenerationTriggered.current) {
-          imageGenerationTriggered.current = true;
-          autoGenerateImage(ex);
+        if (ex && ex.type === "STIMULUS") {
+          const cached = localStorage.getItem(CACHE_KEY);
+          if (cached) {
+            setPosterImage(cached);
+          } else if (!imageGenerationTriggered.current) {
+            imageGenerationTriggered.current = true;
+            autoGenerateImage(ex);
+          }
         }
         setLoading(false);
       });
-  }, [exerciseId]);
+  }, [exerciseId, CACHE_KEY]);
 
   const totalQuestions = exercise?.type === "READING" ? 1 : 3;
 
@@ -278,6 +283,11 @@ export default function PracticePage() {
       const data = await res.json();
       if (data.imageUrl) {
         setPosterImage(data.imageUrl);
+        try {
+          localStorage.setItem(CACHE_KEY, data.imageUrl);
+        } catch {
+          // localStorage quota exceeded — still show image, just won't cache
+        }
       } else if (data.error) {
         setImageError(data.error);
       }
@@ -292,7 +302,10 @@ export default function PracticePage() {
   };
 
   const generateImage = () => {
-    if (exercise) fetchPosterImage(exercise);
+    if (exercise) {
+      localStorage.removeItem(CACHE_KEY);
+      fetchPosterImage(exercise);
+    }
   };
 
   const allRecorded =
