@@ -26,45 +26,121 @@ function formatStructuredTranscriptForPrompt(st: StructuredTranscript, label: st
   return lines.join("\n");
 }
 
-function buildEvaluationPrompt(history: PracticeHistory, exercise: OralExercise): string {
-  if (exercise.type === "READING") {
-    return `
-Evaluate the student's Reading Aloud practice.
+function computeWordCoverage(passage: string, transcript: string): { coveragePercent: number; missingWords: string[]; addedWords: string[] } {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+  const passageWords = normalize(passage);
+  const transcriptWords = normalize(transcript);
+
+  const passageSet = new Map<string, number>();
+  for (const w of passageWords) {
+    passageSet.set(w, (passageSet.get(w) || 0) + 1);
+  }
+
+  const transcriptSet = new Map<string, number>();
+  for (const w of transcriptWords) {
+    transcriptSet.set(w, (transcriptSet.get(w) || 0) + 1);
+  }
+
+  let matchedCount = 0;
+  const missing: string[] = [];
+  for (const [word, count] of passageSet) {
+    const tCount = transcriptSet.get(word) || 0;
+    matchedCount += Math.min(count, tCount);
+    if (tCount < count) {
+      for (let i = 0; i < count - tCount; i++) missing.push(word);
+    }
+  }
+
+  const added: string[] = [];
+  for (const [word, count] of transcriptSet) {
+    const pCount = passageSet.get(word) || 0;
+    if (count > pCount) {
+      for (let i = 0; i < count - pCount; i++) added.push(word);
+    }
+  }
+
+  const coveragePercent = passageWords.length > 0 ? Math.round((matchedCount / passageWords.length) * 100) : 0;
+
+  return { coveragePercent, missingWords: missing.slice(0, 20), addedWords: added.slice(0, 20) };
+}
+
+function buildReadingPrompt(history: PracticeHistory, exercise: OralExercise): string {
+  const transcript = history.transcript1 || "";
+  const hasTranscript = transcript && transcript !== "No speech recognized" && transcript.trim().length > 0;
+
+  let coverageInfo = "";
+  if (hasTranscript && exercise.passageText) {
+    const { coveragePercent, missingWords, addedWords } = computeWordCoverage(exercise.passageText, transcript);
+    coverageInfo = `
+[Automated Word Coverage Analysis]:
+- Words in passage: ${exercise.passageText.split(/\s+/).length}
+- Words in transcript: ${transcript.split(/\s+/).length}
+- Word coverage: ${coveragePercent}%
+- Missing/skipped words (sample): ${missingWords.length > 0 ? missingWords.join(", ") : "none detected"}
+- Added/substituted words (sample): ${addedWords.length > 0 ? addedWords.join(", ") : "none detected"}
+
+IMPORTANT: If word coverage is below 70%, the student clearly did not read the full passage. Score MUST reflect this — a student who reads only half the passage cannot score above 4/10 on any criterion. If coverage is below 40%, scores should be 0-2/10.`;
+  }
+
+  return `
+You are a strict, experienced PSLE English Oral examiner for Singapore primary schools. Your role is to evaluate a P6 student's Reading Aloud performance with accuracy and honesty. Do NOT inflate scores. A poor reading MUST receive a poor score.
+
+[SEAB PSLE Reading Aloud Marking Rubric]:
+
+CRITERION 1: Pronunciation & Articulation (0-10)
+- Band 9-10 (Excellent): Near-native clarity, all words pronounced correctly including difficult vocabulary, clear consonant clusters, accurate vowel sounds
+- Band 7-8 (Good): Most words pronounced correctly, minor errors on difficult words only, generally clear articulation
+- Band 5-6 (Adequate): Several pronunciation errors, some words unclear or mispronounced, but meaning is still mostly conveyed
+- Band 3-4 (Below Average): Frequent pronunciation errors, many words mispronounced or unclear, listener must guess at meaning
+- Band 1-2 (Poor): Severe pronunciation issues throughout, most words unrecognizable or heavily accented, passage meaning lost
+- Band 0 (No attempt): No speech or completely unintelligible
+
+CRITERION 2: Rhythm, Fluency & Expressiveness (0-10)
+- Band 9-10 (Excellent): Natural rhythm, appropriate pausing at punctuation, varied intonation matching meaning, expressive delivery
+- Band 7-8 (Good): Generally fluent with minor hesitations, reasonable pausing, some expression
+- Band 5-6 (Adequate): Noticeable hesitations/stumbles, mostly monotone but with some variation, basic pausing
+- Band 3-4 (Below Average): Frequent pauses/restarts, choppy delivery, monotone throughout, rushed or painfully slow
+- Band 1-2 (Poor): Extremely halting, constant stumbling, no expression or rhythm, sounds like word-by-word decoding
+- Band 0 (No attempt): No speech or completely unreadable delivery
+
+CRITICAL SCORING RULES:
+1. COMPLETENESS: If the student did not read the ENTIRE passage, deduct heavily. Reading only part of the passage = maximum 4/10 on each criterion. Reading less than a third = maximum 2/10.
+2. ACCURACY: Compare the transcript word-for-word against the passage. Every skipped, added, or mispronounced word counts against the score.
+3. NO CHARITY SCORING: This is a serious examination tool. Parents rely on these scores to assess their child's readiness. Inflated scores are harmful and misleading.
+4. DEFAULT TO LOWER BAND: When in doubt between two bands, choose the LOWER band. It is better to be strict than to give undeserved marks.
+5. EMPTY/MINIMAL TRANSCRIPTS: If the transcript is empty, says "No speech recognized", or contains fewer than 10 words, ALL scores must be 0-1.
 
 [Syllabus Reading Passage]:
 "${exercise.passageText}"
 
 [Student's Speech Transcription]:
-"${history.transcript1 || "[No voice transcribed]"}"
+"${hasTranscript ? transcript : "[NO SPEECH DETECTED - student did not read or microphone failed]"}"
+${coverageInfo}
 
-Evaluate how closely they read the passage. Look for:
-- Pronunciation of tricky words.
-- Fluency, punctuation pauses, and dramatic expression.
-- Missing or added words compared to the original passage.
+${!hasTranscript ? "\nCRITICAL: No speech was detected. Both scores MUST be 0." : ""}
 
-Provide scores out of 10 for:
-1. Pronunciation & Articulation
-2. Rhythm, Fluency & Expressiveness
-(set score3 to 0).
+Evaluate strictly according to the rubric above. Provide scores out of 10 for:
+1. Pronunciation & Articulation (score1)
+2. Rhythm, Fluency & Expressiveness (score2)
+(set score3 to 0 — Reading Aloud has only 2 criteria)
 
-Include strengths, areas for improvement, and a suggested reading model answer indicating which words to stress and where to pause (e.g. use slash '/' for pauses and UPPERCASE for stressed words).
+Include specific strengths (with word-level examples from the transcript), specific areas for improvement (citing exact words that were mispronounced or skipped), and a model reading answer with stress marks (UPPERCASE) and pauses (/).
 
 Respond in valid JSON with this exact structure:
 {
   "score1": <number 0-10>,
   "score2": <number 0-10>,
   "score3": 0,
-  "generalFeedback": "<string>",
-  "strengths": ["<string>", ...],
-  "areasOfImprovement": ["<string>", ...],
-  "suggestedResponse1": "<model reading with stress marks and pauses>",
+  "generalFeedback": "<string - be honest about performance level>",
+  "strengths": ["<string with specific examples>", ...],
+  "areasOfImprovement": ["<string with specific examples>", ...],
+  "suggestedResponse1": "<model reading with STRESS marks and / pauses>",
   "suggestedResponse2": "",
   "suggestedResponse3": ""
 }`.trim();
-  }
+}
 
-  // SBC (Stimulus-Based Conversation) evaluation prompt
-  // Include structured transcript analysis if available
+function buildSBCPrompt(history: PracticeHistory, exercise: OralExercise): string {
   const st1 = tryParseStructuredTranscript(history.structuredTranscript1);
   const st2 = tryParseStructuredTranscript(history.structuredTranscript2);
   const st3 = tryParseStructuredTranscript(history.structuredTranscript3);
@@ -77,7 +153,6 @@ Respond in valid JSON with this exact structure:
     if (st3) structuredSection += formatStructuredTranscriptForPrompt(st3, "Response 3") + "\n";
   }
 
-  // Determine SBC question types for framework-specific guidance
   const q1Type = exercise.sbcQ1Type || "";
   const q2Type = exercise.sbcQ2Type || "";
   const q3Type = exercise.sbcQ3Type || "";
@@ -89,53 +164,89 @@ Respond in valid JSON with this exact structure:
 - Q1 Type: ${q1Type || "General"} ${q1Type === "personal" ? "(PEEL: Point, Evidence/Example, Explanation, Link)" : ""}
 - Q2 Type: ${q2Type || "General"} ${q2Type === "opinion" ? "(TREES: Topic sentence, Reason, Evidence, Explanation, Summary)" : ""}
 - Q3 Type: ${q3Type || "General"} ${q3Type === "suggestion" ? "(PEEL/TREES: structured argument with personal connection)" : ""}
-
-When evaluating, assess whether the student uses an appropriate oral response framework (PEEL or TREES) to structure their answers. Award higher marks for:
-- Clear topic sentence / point statement
-- Relevant personal examples or evidence
-- Logical explanation connecting evidence to the point
-- Concluding link back to the question or a broader perspective
-- Use of transition words and connectors
 `;
   }
 
+  const hasT1 = !!history.transcript1 && history.transcript1 !== "No speech recognized" && history.transcript1.trim().length > 0;
+  const hasT2 = !!history.transcript2 && history.transcript2 !== "No speech recognized" && history.transcript2.trim().length > 0;
+  const hasT3 = !!history.transcript3 && history.transcript3 !== "No speech recognized" && history.transcript3.trim().length > 0;
+  const answeredCount = [hasT1, hasT2, hasT3].filter(Boolean).length;
+
   return `
-Evaluate the student's Stimulus-Based Conversation practice.
+You are a strict, experienced PSLE English Oral examiner for Singapore primary schools. Your role is to evaluate a P6 student's Stimulus-Based Conversation (SBC) responses with accuracy and honesty. Do NOT inflate scores. A poor response MUST receive a poor score.
+
+[SEAB PSLE SBC Marking Rubric]:
+
+CRITERION 1: Personal Response & Content (0-10)
+- Band 9-10 (Excellent): Directly addresses the question with a clear point, relevant personal examples, logical explanation, and a strong link back. Uses PEEL/TREES framework naturally. Shows deep engagement with the stimulus.
+- Band 7-8 (Good): Addresses the question with a reasonable point and some supporting detail. Framework structure is present but may lack depth.
+- Band 5-6 (Adequate): Partially addresses the question. Limited or generic examples. Weak structure — may state a point without proper support.
+- Band 3-4 (Below Average): Vague or off-topic response. No clear structure. Examples are irrelevant or absent. Very short responses.
+- Band 1-2 (Poor): Barely addresses the question. One or two words/sentences with no substance. No connection to the stimulus.
+- Band 0 (No attempt): No response or completely irrelevant.
+
+CRITERION 2: Clarity of Expression & Language (0-10)
+- Band 9-10 (Excellent): Rich, varied vocabulary (e.g., "beneficial", "invigorating" instead of "good", "nice"). Accurate grammar. Sophisticated sentence structures.
+- Band 7-8 (Good): Good vocabulary with some variety. Minor grammar errors. Generally well-constructed sentences.
+- Band 5-6 (Adequate): Basic vocabulary ("good", "bad", "happy", "sad"). Some grammar errors. Simple sentence patterns.
+- Band 3-4 (Below Average): Very limited vocabulary. Frequent grammar errors. Fragmented or incomplete sentences.
+- Band 1-2 (Poor): Minimal language. Severe grammar issues. Cannot form coherent sentences.
+- Band 0 (No attempt): No response.
+
+CRITERION 3: Engagement & Conversational Quality (0-10)
+- Band 9-10 (Excellent): Confident, fluent delivery. Natural elaboration. Cohesive thoughts with clear transitions. Feels like a genuine conversation.
+- Band 7-8 (Good): Mostly fluent. Reasonable elaboration. Some transitions between ideas.
+- Band 5-6 (Adequate): Some hesitation. Limited elaboration — answers are short but coherent. Few transitions.
+- Band 3-4 (Below Average): Frequent hesitation. Very short responses. No elaboration. Disjointed.
+- Band 1-2 (Poor): Extremely hesitant. One-word or incomplete answers. No engagement.
+- Band 0 (No attempt): No response.
+
+CRITICAL SCORING RULES:
+1. COMPLETENESS: The student must answer ALL 3 questions. Score each criterion based on ALL responses combined. If ${3 - answeredCount} question(s) were not answered, this severely limits the maximum score (unanswered = 0 for that question).
+2. NO CHARITY SCORING: Parents rely on accurate scores. Inflated scores are harmful and misleading.
+3. DEFAULT TO LOWER BAND: When in doubt between two bands, choose the LOWER band.
+4. EMPTY/MINIMAL RESPONSES: If a response is empty, says "No speech recognized", or has fewer than 5 words, score that response as 0 for all criteria.
+5. VOCABULARY CHECK: If the student uses only basic words like "good", "bad", "nice", "fun", "happy", "sad" — Criterion 2 CANNOT exceed 5/10.
+6. FRAMEWORK CHECK: If the student does NOT use any structured framework (no clear point, no evidence/example, no explanation) — Criterion 1 CANNOT exceed 5/10.
 
 [Visual Poster Theme]: ${exercise.topic}
 [Detailed Poster Layout & Content]:
 "${exercise.posterDescription}"
 ${frameworkGuidance}
 [Question 1]: "${exercise.question1}"
-[Student's SBC Response 1]: "${history.transcript1 || "[No answer]"}"
+[Student's Response 1]: "${hasT1 ? history.transcript1 : "[NO RESPONSE - student did not answer]"}"
 
 [Question 2]: "${exercise.question2}"
-[Student's SBC Response 2]: "${history.transcript2 || "[No answer]"}"
+[Student's Response 2]: "${hasT2 ? history.transcript2 : "[NO RESPONSE - student did not answer]"}"
 
 [Question 3]: "${exercise.question3}"
-[Student's SBC Response 3]: "${history.transcript3 || "[No answer]"}"
+[Student's Response 3]: "${hasT3 ? history.transcript3 : "[NO RESPONSE - student did not answer]"}"
 ${structuredSection}
-Evaluate their responses under Singapore PSLE criteria:
-1. Personal Response (10m) - Did they address the prompts directly with clear PEEL structure (Point, Explanation, Example, Link)? Did they use an appropriate oral response framework (PEEL or TREES)?
-2. Clarity of Expression (10m) - Did they use good vocabulary (e.g., instead of 'good' or 'nice', did they use words like 'vibrant', 'educational', 'beneficial') and accurate grammar?
-3. Engagement in Conversation (10m) - Cohesion of thoughts, confidence, and fluency.
+Questions answered: ${answeredCount}/3${answeredCount < 3 ? ` — INCOMPLETE. ${3 - answeredCount} question(s) unanswered. This must be reflected in scoring.` : ""}
 
-${structuredSection ? "Use the pre-parsed structured transcript analysis above to inform your evaluation. Assess how well the student's responses align with the PEEL/TREES framework breakdown provided. Comment on the coherence rating and vocabulary highlights in your feedback." : ""}
+${structuredSection ? "Use the pre-parsed structured transcript analysis above to inform your evaluation. Assess how well the student's responses align with the PEEL/TREES framework breakdown provided." : ""}
 
-Provide detailed feedback, list specific vocabulary improvements, and provide model answers for Question 1, 2, and 3 that would secure an A* (AL1) grade. Model answers should follow the PEEL framework structure.
+Evaluate strictly according to the rubric above. Provide model answers for all 3 questions that would secure an AL1 grade, following PEEL framework structure.
 
 Respond in valid JSON with this exact structure:
 {
   "score1": <number 0-10>,
   "score2": <number 0-10>,
   "score3": <number 0-10>,
-  "generalFeedback": "<string>",
-  "strengths": ["<string>", ...],
-  "areasOfImprovement": ["<string>", ...],
-  "suggestedResponse1": "<model answer for Q1>",
-  "suggestedResponse2": "<model answer for Q2>",
-  "suggestedResponse3": "<model answer for Q3>"
+  "generalFeedback": "<string - be honest about performance level>",
+  "strengths": ["<string with specific examples from transcript>", ...],
+  "areasOfImprovement": ["<string with specific examples>", ...],
+  "suggestedResponse1": "<AL1 model answer for Q1 using PEEL>",
+  "suggestedResponse2": "<AL1 model answer for Q2 using PEEL>",
+  "suggestedResponse3": "<AL1 model answer for Q3 using PEEL>"
 }`.trim();
+}
+
+function buildEvaluationPrompt(history: PracticeHistory, exercise: OralExercise): string {
+  if (exercise.type === "READING") {
+    return buildReadingPrompt(history, exercise);
+  }
+  return buildSBCPrompt(history, exercise);
 }
 
 export async function evaluateWithGemini(
@@ -149,6 +260,7 @@ export async function evaluateWithGemini(
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       responseMimeType: "application/json",
+      temperature: 0.2,
     },
   };
 
@@ -170,62 +282,11 @@ export async function evaluateWithGemini(
   if (!textContent) throw new Error("Empty response from Gemini");
 
   const cleaned = textContent.replace(/```json\n?|\n?```/g, "").trim();
-  return JSON.parse(cleaned) as PSLEEvaluationResult;
-}
+  const result = JSON.parse(cleaned) as PSLEEvaluationResult;
 
-export function generateMockEvaluation(
-  history: PracticeHistory,
-  exercise: OralExercise
-): PSLEEvaluationResult {
-  const hasSpeech1 = !!history.transcript1 && history.transcript1 !== "No speech recognized";
-  const hasSpeech2 = !!history.transcript2 && history.transcript2 !== "No speech recognized";
-  const hasSpeech3 = !!history.transcript3 && history.transcript3 !== "No speech recognized";
+  result.score1 = Math.max(0, Math.min(10, Math.round(result.score1)));
+  result.score2 = Math.max(0, Math.min(10, Math.round(result.score2)));
+  result.score3 = Math.max(0, Math.min(10, Math.round(result.score3)));
 
-  if (exercise.type === "READING") {
-    return {
-      score1: hasSpeech1 ? 8 : 5,
-      score2: hasSpeech1 ? 7 : 4,
-      score3: 0,
-      generalFeedback:
-        "Good effort! You read with clear, steady pacing and demonstrated solid pronunciation on key adjectives like 'miniature'. To improve your score further, try to elevate your expression in the narrative sections to reflect the suspense!",
-      strengths: [
-        "Clear articulation of final consonant sounds (e.g., 'leaped', 'starry').",
-        "Steady, moderate reading pace that allows the listener to digest the text.",
-        "Natural pausing at periods and full stops.",
-      ],
-      areasOfImprovement: [
-        "Stress expressive verbs like 'FROZE' and 'HAMMERING' to build dramatic tension.",
-        "Ensure word endings like 's' in 'sparks' are fully articulated.",
-        "Practice keeping your voice up at commas to maintain listener engagement.",
-      ],
-      suggestedResponse1:
-        "The CRACKLE of the campfire / was the ONLY sound that broke the silence of the night. Sparks LEAPED up / into the starry sky / like MINIATURE shooting stars. Sitting CLOSELY in a circle, / we wrapped our blankets TIGHTLY / around our shoulders to keep out the chilly mountain air.",
-      suggestedResponse2: "",
-      suggestedResponse3: "",
-    };
-  }
-
-  return {
-    score1: hasSpeech1 ? 8 : 4,
-    score2: hasSpeech2 ? 8 : 4,
-    score3: hasSpeech3 ? 7 : 3,
-    generalFeedback:
-      "Well done! You expressed your thoughts in a clear, structured manner and engaged well with the poster's contents. Work on incorporating higher-level vocabulary and more elaborate personal anecdotes.",
-    strengths: [
-      "Excellent structure: used Point-Explanation-Example-Link (PEEL) to organize SBC responses.",
-      "Direct connection to visual details on the poster.",
-      "Fluent, audible tone with minimal hesitations.",
-    ],
-    areasOfImprovement: [
-      "Replace basic vocabulary like 'good' and 'happy' with premium vocabulary such as 'extremely beneficial', 'invigorating', or 'vibrant'.",
-      "Elaborate more on your personal experiences, such as describing a specific school sports event.",
-      "Focus on subject-verb agreement (e.g. 'everyone has' instead of 'everyone have').",
-    ],
-    suggestedResponse1:
-      "Personally, I would definitely participate in the Wellness Week activities. Firstly, the step tracking challenge is highly appealing because it is interactive. It would motivate me to stay active with my friends. For instance, we could organize brisk walking sessions during recess to hit the 10,000 steps target together. Furthermore, receiving a beautiful, reusable dynamic water bottle is a wonderful incentive that promotes both fitness and environmental sustainability. Therefore, I believe this is an excellent campaign that I would fully support.",
-    suggestedResponse2:
-      "To maintain a healthy lifestyle, I adopt a two-pronged approach. Firstly, in school, I prioritize balanced nutrition. I make it a habit to purchase sliced fruit from the fruit stall during recess and stay well-hydrated by drinking at least two liters of plain water. Secondly, at home, I engage in regular physical activity. Every Tuesday and Thursday evening, my father and I cycle around the neighborhood park connector.",
-    suggestedResponse3:
-      "In my opinion, canteens should avoid outright bans and instead focus on education and moderation. Banning foods entirely can lead to a 'rebellion effect' where students crave fried items and purchase them outside school premises. A better alternative is the traffic-light system, where healthier options are cheaper and fried items are only sold once a week.",
-  };
+  return result;
 }

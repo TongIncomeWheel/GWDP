@@ -93,34 +93,34 @@ export default function HomePage() {
                 textAlign: "center",
               }}>
                 <div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--royal-blue)" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--purple-soft)" }}>
                     {exercises.length}
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
                     Total
                   </div>
                 </div>
-                <div style={{ width: 1, background: "var(--border-light)" }} />
+                <div style={{ width: 1, background: "var(--border)" }} />
                 <div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--royal-blue)" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--blue)" }}>
                     {readingCount}
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
                     Reading
                   </div>
                 </div>
-                <div style={{ width: 1, background: "var(--border-light)" }} />
+                <div style={{ width: 1, background: "var(--border)" }} />
                 <div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--laurel-teal)" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--teal)" }}>
                     {stimulusCount}
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
                     Stimulus
                   </div>
                 </div>
-                <div style={{ width: 1, background: "var(--border-light)" }} />
+                <div style={{ width: 1, background: "var(--border)" }} />
                 <div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--gold-leaf)" }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--gold)" }}>
                     {dailyCount}
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>
@@ -135,18 +135,18 @@ export default function HomePage() {
           {!loading && !error && (
             <div className="card" style={{
               marginBottom: 20,
-              background: "linear-gradient(135deg, #F0F4FF 0%, #F0FAF6 100%)",
-              border: "1px solid rgba(74, 111, 165, 0.15)",
+              background: "linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(45, 212, 191, 0.06) 100%)",
+              border: "1px solid rgba(139, 92, 246, 0.2)",
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--slate-ink)", marginBottom: 12 }}>
-                📋 Practice Journey
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 12 }}>
+                Practice Journey
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 {[
-                  { num: "1", label: "Pick", color: "var(--royal-blue)" },
-                  { num: "2", label: "Read", color: "var(--gold-leaf)" },
-                  { num: "3", label: "Speak", color: "var(--coral-red)" },
-                  { num: "4", label: "Score", color: "var(--laurel-teal)" },
+                  { num: "1", label: "Pick", color: "var(--purple-glow)" },
+                  { num: "2", label: "Read", color: "var(--gold)" },
+                  { num: "3", label: "Speak", color: "var(--coral)" },
+                  { num: "4", label: "Score", color: "var(--teal)" },
                 ].map((step, i, arr) => (
                   <div key={step.num} style={{ flex: 1, display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{
@@ -225,13 +225,13 @@ export default function HomePage() {
           {error ? (
             <div className="card" style={{
               marginTop: 16,
-              borderLeft: "4px solid var(--coral-red)",
-              background: "var(--danger-bg)",
+              borderLeft: "4px solid var(--coral)",
+              background: "var(--coral-soft)",
             }}>
-              <div style={{ fontWeight: 700, color: "var(--coral-red)", fontSize: 14, marginBottom: 4 }}>
+              <div style={{ fontWeight: 700, color: "var(--coral)", fontSize: 14, marginBottom: 4 }}>
                 Error loading exercises:
               </div>
-              <p style={{ fontSize: 13, color: "var(--text-muted)", wordBreak: "break-all", lineHeight: 1.5 }}>
+              <p style={{ fontSize: 13, color: "var(--text-secondary)", wordBreak: "break-all", lineHeight: 1.5 }}>
                 {error}
               </p>
               <button
@@ -283,7 +283,7 @@ function ExerciseCard({ exercise }: { exercise: OralExercise }) {
         : exercise.photographDescription
       : null;
 
-  const accentColor = exercise.type === "READING" ? "var(--royal-blue)" : "var(--laurel-teal)";
+  const accentColor = exercise.type === "READING" ? "var(--blue)" : "var(--teal)";
 
   return (
     <Link href={`/practice/${exercise.id}`}>
@@ -296,9 +296,9 @@ function ExerciseCard({ exercise }: { exercise: OralExercise }) {
               fontWeight: 700,
               padding: "2px 8px",
               borderRadius: 10,
-              background: "var(--gold-highlight-bg)",
-              color: "var(--gold-highlight-text)",
-              border: "1px solid var(--gold-highlight-border)",
+              background: "var(--gold-soft)",
+              color: "var(--gold)",
+              border: "1px solid rgba(251, 191, 36, 0.25)",
               whiteSpace: "nowrap",
             }}>
               ⭐ DAILY

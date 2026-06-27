@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPracticeHistoryById, getExerciseById, updatePracticeHistory, getEffectiveApiKey, getAllSettings } from "@/lib/db";
-import { evaluateWithGemini, generateMockEvaluation } from "@/lib/gemini";
+import { evaluateWithGemini } from "@/lib/gemini";
 
 async function triggerCompletionNotification(historyId: number) {
   const settings = await getAllSettings();
@@ -35,28 +35,25 @@ export async function POST(request: NextRequest) {
   const apiKey = await getEffectiveApiKey();
 
   if (!apiKey) {
-    const result = generateMockEvaluation(history, exercise);
-    const total = result.score1 + result.score2 + result.score3;
-    const max = exercise.type === "READING" ? 20 : 30;
-    const evaluated = {
+    const errorState = {
       ...history,
-      score1: result.score1,
-      score2: result.score2,
-      score3: result.score3,
-      totalScore: total,
-      maxScore: max,
-      generalFeedback: result.generalFeedback,
-      strengths: result.strengths.join("\n"),
-      areasOfImprovement: result.areasOfImprovement.join("\n"),
-      modelAnswer1: result.suggestedResponse1,
-      modelAnswer2: result.suggestedResponse2,
-      modelAnswer3: result.suggestedResponse3,
-      isEvaluated: true,
+      score1: 0,
+      score2: 0,
+      score3: 0,
+      totalScore: 0,
+      maxScore: exercise.type === "READING" ? 20 : 30,
+      generalFeedback: null,
+      strengths: null,
+      areasOfImprovement: null,
+      modelAnswer1: null,
+      modelAnswer2: null,
+      modelAnswer3: null,
+      isEvaluated: false,
       isEvaluating: false,
-      errorMessage: "No API key configured. Showing simulated assessment for practice purposes.",
+      errorMessage: "Gemini API key is required for evaluation. Please configure your API key in Parent > Settings before submitting practice sessions.",
     };
-    await updatePracticeHistory(evaluated);
-    return NextResponse.json(evaluated);
+    await updatePracticeHistory(errorState);
+    return NextResponse.json(errorState, { status: 503 });
   }
 
   try {
@@ -89,27 +86,24 @@ export async function POST(request: NextRequest) {
     await triggerCompletionNotification(historyId);
     return NextResponse.json(evaluated);
   } catch (e) {
-    const result = generateMockEvaluation(history, exercise);
-    const total = result.score1 + result.score2 + result.score3;
-    const max = exercise.type === "READING" ? 20 : 30;
-    const fallback = {
+    const errorState = {
       ...history,
-      score1: result.score1,
-      score2: result.score2,
-      score3: result.score3,
-      totalScore: total,
-      maxScore: max,
-      generalFeedback: result.generalFeedback,
-      strengths: result.strengths.join("\n"),
-      areasOfImprovement: result.areasOfImprovement.join("\n"),
-      modelAnswer1: result.suggestedResponse1,
-      modelAnswer2: result.suggestedResponse2,
-      modelAnswer3: result.suggestedResponse3,
-      isEvaluated: true,
+      score1: 0,
+      score2: 0,
+      score3: 0,
+      totalScore: 0,
+      maxScore: exercise.type === "READING" ? 20 : 30,
+      generalFeedback: null,
+      strengths: null,
+      areasOfImprovement: null,
+      modelAnswer1: null,
+      modelAnswer2: null,
+      modelAnswer3: null,
+      isEvaluated: false,
       isEvaluating: false,
-      errorMessage: `Network issue occurred. Showing simulated assessment. (${(e as Error).message})`,
+      errorMessage: `Evaluation failed: ${(e as Error).message}. Please check your Gemini API key in Settings and try again.`,
     };
-    await updatePracticeHistory(fallback);
-    return NextResponse.json(fallback);
+    await updatePracticeHistory(errorState);
+    return NextResponse.json(errorState, { status: 502 });
   }
 }
