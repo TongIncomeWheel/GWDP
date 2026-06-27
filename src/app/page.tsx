@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import type { OralExercise } from "@/lib/types";
 import BottomNav from "./BottomNav";
@@ -9,6 +9,29 @@ import NanoBanana from "./NanoBanana";
 type TypeFilter = "ALL" | "READING" | "STIMULUS" | "DAILY";
 type DifficultyFilter = "ALL" | "Foundation" | "Intermediate" | "Advanced";
 
+const PSLE_TOPICS = [
+  "Community and Kindness",
+  "Environment and Sustainability",
+  "Technology and Digital Literacy",
+  "Health and Wellness",
+  "Education and Learning",
+  "Family and Relationships",
+  "Sports and Physical Activities",
+  "Arts and Culture",
+  "Food and Nutrition",
+  "Safety and Responsibility",
+  "Singapore Heritage and Identity",
+  "Animals and Nature",
+  "Travel and Exploration",
+  "Festivals and Celebrations",
+  "Friendship and Teamwork",
+  "Resilience and Perseverance",
+  "Creativity and Innovation",
+  "Civic Responsibility and Values",
+  "Mental Health and Emotions",
+  "Science and Discovery",
+];
+
 export default function HomePage() {
   const [exercises, setExercises] = useState<OralExercise[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +39,15 @@ export default function HomePage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("ALL");
 
-  useEffect(() => {
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState("");
+  const [genSuccess, setGenSuccess] = useState("");
+  const [genRemaining, setGenRemaining] = useState<number | null>(null);
+  const [showGenPanel, setShowGenPanel] = useState(false);
+  const [genTopic, setGenTopic] = useState("");
+  const [genDifficulty, setGenDifficulty] = useState("Intermediate");
+
+  const loadExercises = useCallback(() => {
     fetch("/api/exercises")
       .then((r) => {
         if (!r.ok) return r.json().then((d) => { throw new Error(d.error || `HTTP ${r.status}`); });
@@ -35,6 +66,43 @@ export default function HomePage() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    loadExercises();
+    fetch("/api/generate-exercise")
+      .then((r) => r.json())
+      .then((data) => setGenRemaining(data.remaining))
+      .catch(() => {});
+  }, [loadExercises]);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setGenError("");
+    setGenSuccess("");
+    try {
+      const res = await fetch("/api/generate-exercise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: genTopic || undefined,
+          difficulty: genDifficulty,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setGenError(data.error || "Generation failed");
+        if (data.remaining !== undefined) setGenRemaining(data.remaining);
+      } else {
+        setGenSuccess(`Created: ${data.exercises.map((e: { title: string }) => e.title).join(" + ")}`);
+        setGenRemaining(data.remaining);
+        setShowGenPanel(false);
+        loadExercises();
+      }
+    } catch {
+      setGenError("Network error. Please try again.");
+    }
+    setGenerating(false);
+  };
 
   const filtered = useMemo(() => {
     return exercises.filter((e) => {
@@ -81,8 +149,121 @@ export default function HomePage() {
         <div className="container" style={{ paddingTop: 20, paddingBottom: 100 }}>
           {/* Hero Section */}
           <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <NanoBanana mood="smiling" />
+            <NanoBanana mood={generating ? "thinking" : "smiling"} />
           </div>
+
+          {/* Generate New Practice */}
+          {!loading && !error && (
+            <div className="card" style={{
+              marginBottom: 16,
+              background: "linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)",
+              border: "1px solid rgba(139, 92, 246, 0.25)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: showGenPanel ? 12 : 0 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+                    Generate New Practice
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>
+                    AI creates a Reading + SBC pair{genRemaining !== null ? ` · ${genRemaining}/2 left today` : ""}
+                  </div>
+                </div>
+                {!showGenPanel && (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    style={{ width: "auto", padding: "8px 20px" }}
+                    onClick={() => setShowGenPanel(true)}
+                    disabled={generating || genRemaining === 0}
+                  >
+                    {genRemaining === 0 ? "Limit Reached" : "New"}
+                  </button>
+                )}
+              </div>
+
+              {showGenPanel && (
+                <div>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 4 }}>
+                      Topic (optional — leave blank for random)
+                    </label>
+                    <select
+                      value={genTopic}
+                      onChange={(e) => setGenTopic(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "8px 12px",
+                        borderRadius: 10,
+                        border: "1px solid var(--border)",
+                        background: "var(--bg-elevated)",
+                        color: "var(--text-primary)",
+                        fontSize: 13,
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      <option value="">Random Topic</option>
+                      {PSLE_TOPICS.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 4 }}>
+                      Difficulty
+                    </label>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {["Foundation", "Intermediate", "Advanced"].map((d) => (
+                        <button
+                          key={d}
+                          className={`filter-pill ${genDifficulty === d ? "active" : ""}`}
+                          onClick={() => setGenDifficulty(d)}
+                          style={{ flex: 1 }}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      className="btn btn-outline btn-sm"
+                      style={{ flex: 1 }}
+                      onClick={() => { setShowGenPanel(false); setGenError(""); }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      style={{ flex: 2 }}
+                      onClick={handleGenerate}
+                      disabled={generating}
+                    >
+                      {generating ? (
+                        <>
+                          <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                          Generating...
+                        </>
+                      ) : (
+                        "Generate (1 Reading + 1 SBC)"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {genError && (
+                <div style={{ marginTop: 8, fontSize: 12, color: "var(--coral)", fontWeight: 600 }}>
+                  {genError}
+                </div>
+              )}
+              {genSuccess && (
+                <div style={{ marginTop: 8, fontSize: 12, color: "var(--teal)", fontWeight: 600 }}>
+                  {genSuccess}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Stats Dashboard */}
           {!loading && !error && exercises.length > 0 && (
