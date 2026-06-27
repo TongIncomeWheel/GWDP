@@ -16,7 +16,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 FROM base AS runner
-RUN apk add --no-cache libc6-compat ca-certificates
+RUN apk add --no-cache libc6-compat ca-certificates libstdc++
 
 # Install Litestream for SQLite replication to Google Cloud Storage
 ADD https://github.com/benbjohnson/litestream/releases/download/v0.5.12/litestream-0.5.12-linux-x86_64.tar.gz /tmp/litestream.tar.gz
