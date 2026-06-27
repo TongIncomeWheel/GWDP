@@ -21,6 +21,7 @@ export default function ParentSessionDetailPage() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   useEffect(() => {
     const pin = localStorage.getItem("parentPin");
@@ -135,8 +136,6 @@ export default function ParentSessionDetailPage() {
     setSaving(false);
     setTimeout(() => setSaveMsg(""), 3000);
   };
-
-  const [closing, setClosing] = useState(false);
 
   const handleCloseExercise = async () => {
     if (!confirm("Close this exercise? It will be archived and removed from the student's active list."))
