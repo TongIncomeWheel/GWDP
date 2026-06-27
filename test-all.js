@@ -682,6 +682,393 @@ async function testAPIRoutes() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// GEMINI CONNECTIVITY & CAPABILITIES TESTS
+// ══════════════════════════════════════════════════════════════════════════
+
+const GEMINI_TEXT_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+const GEMINI_IMAGE_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
+
+// Sample data matching app's real content
+const SAMPLE_READING_PASSAGE =
+  "The sun shone brightly as Emma skipped through the park. She saw butterflies dancing around the flowers. The laughter of children echoed in the air as they played games on the grass. Emma felt happy and carefree as she enjoyed this wonderful afternoon.";
+
+const SAMPLE_READING_TRANSCRIPT_GOOD =
+  "The sun shone brightly as Emma skipped through the park. She saw butterflies dancing around the flowers. The laughter of children echoed in the air as they played games on the grass. Emma felt happy and carefree as she enjoyed this wonderful afternoon.";
+
+const SAMPLE_READING_TRANSCRIPT_POOR = "the sun. emma. butterflies. children play. happy.";
+
+const SAMPLE_SBC = {
+  topic: "Technology in Schools",
+  posterDescription: "Students using tablets in a modern classroom with a teacher guiding them.",
+  question1: "What can you see happening in this photograph?",
+  question2: "Tell me about a time when you used technology for learning.",
+  question3: "Do you think schools should use more technology? Why or why not?",
+  response1: "I can see students sitting at desks and using tablets to learn. The teacher is walking around to help them. The classroom looks modern with bright lights and comfortable chairs. Everyone seems focused on their work.",
+  response2: "I used Khan Academy to study Mathematics when I was preparing for my PSLE. The videos were very clear and I could pause and replay them whenever I did not understand. I practised many questions and my score improved significantly.",
+  response3: "Yes, I strongly believe schools should use more technology because it makes learning more engaging and effective. For instance, interactive applications allow students to learn at their own pace and receive immediate feedback. However, schools must also ensure students do not become overly dependent on devices and still develop fundamental skills like handwriting and mental calculation.",
+};
+
+const SAMPLE_SBC_EMPTY = {
+  response1: "",
+  response2: "I don't know.",
+  response3: "",
+};
+
+async function resolveGeminiApiKey() {
+  // 1. Check environment variable
+  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+
+  // 2. Try to read from the app's settings endpoint (works when Firestore is available)
+  try {
+    const res = await fetch(`${BASE}/api/settings`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.geminiApiKey) return data.geminiApiKey;
+      if (data.hasEffectiveApiKey && data.keyTail) {
+        console.log("  ⚠️  Settings endpoint shows API key exists (tail: " + data.keyTail + ") but can't retrieve full key locally");
+      }
+    }
+  } catch { /* ignore */ }
+
+  // 3. Try the poster diagnostic endpoint (it reports key status)
+  try {
+    const res = await fetch(`${BASE}/api/poster`);
+    if (res.ok) {
+      const data = await res.json();
+      if (!data.hasKey) return null;
+      // Has key but we can't retrieve it here — the live tests on the deploy will work
+      console.log("  ℹ️  API key is configured in the app but not available locally. Set GEMINI_API_KEY env var to run live tests.");
+    }
+  } catch { /* ignore */ }
+
+  return null;
+}
+
+function buildReadingEvalPrompt(passage, transcript) {
+  return `You are a PSLE English Oral examiner. Evaluate this P6 student's Reading Aloud performance.
+
+[Passage]: "${passage}"
+[Student Transcript]: "${transcript || "[NO SPEECH DETECTED]"}"
+
+Respond in valid JSON with this exact structure:
+{
+  "score1": <number 0-10, Pronunciation>,
+  "score2": <number 0-10, Fluency/Expressiveness>,
+  "score3": 0,
+  "generalFeedback": "<string>",
+  "strengths": ["<string>"],
+  "areasOfImprovement": ["<string>"],
+  "suggestedResponse1": "<model reading with stress marks>",
+  "suggestedResponse2": "",
+  "suggestedResponse3": ""
+}`;
+}
+
+function buildSBCEvalPrompt(sbc) {
+  return `You are a PSLE English Oral examiner. Evaluate this P6 student's SBC responses.
+
+[Topic]: ${sbc.topic}
+[Q1]: "${sbc.question1}" [Response]: "${sbc.response1 || "[NO RESPONSE]"}"
+[Q2]: "${sbc.question2}" [Response]: "${sbc.response2 || "[NO RESPONSE]"}"
+[Q3]: "${sbc.question3}" [Response]: "${sbc.response3 || "[NO RESPONSE]"}"
+
+CRITICAL: score1=Q1 score, score2=Q2 score, score3=Q3 score — each question scored INDEPENDENTLY 0-10.
+Empty/very short responses MUST score 0.
+
+Respond in valid JSON:
+{
+  "score1": <number 0-10, Q1 holistic>,
+  "score2": <number 0-10, Q2 holistic>,
+  "score3": <number 0-10, Q3 holistic>,
+  "generalFeedback": "<string>",
+  "strengths": ["<string>"],
+  "areasOfImprovement": ["<string>"],
+  "suggestedResponse1": "<AL1 PEEL model answer Q1>",
+  "suggestedResponse2": "<AL1 PEEL model answer Q2>",
+  "suggestedResponse3": "<AL1 PEEL model answer Q3>"
+}`;
+}
+
+function validateEvaluationSchema(data, label) {
+  const issues = [];
+  if (typeof data.score1 !== "number") issues.push("score1 not a number");
+  if (typeof data.score2 !== "number") issues.push("score2 not a number");
+  if (typeof data.score3 !== "number") issues.push("score3 not a number");
+  if (data.score1 < 0 || data.score1 > 10) issues.push(`score1 out of range: ${data.score1}`);
+  if (data.score2 < 0 || data.score2 > 10) issues.push(`score2 out of range: ${data.score2}`);
+  if (data.score3 < 0 || data.score3 > 10) issues.push(`score3 out of range: ${data.score3}`);
+  if (typeof data.generalFeedback !== "string" || !data.generalFeedback) issues.push("missing generalFeedback");
+  if (!Array.isArray(data.strengths) || data.strengths.length === 0) issues.push("strengths not array or empty");
+  if (!Array.isArray(data.areasOfImprovement) || data.areasOfImprovement.length === 0) issues.push("areasOfImprovement not array or empty");
+  if (typeof data.suggestedResponse1 !== "string") issues.push("suggestedResponse1 missing");
+  if (typeof data.suggestedResponse2 !== "string") issues.push("suggestedResponse2 missing");
+  if (typeof data.suggestedResponse3 !== "string") issues.push("suggestedResponse3 missing");
+  return issues;
+}
+
+async function callGeminiText(apiKey, prompt) {
+  const res = await fetch(`${GEMINI_TEXT_URL}?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
+    }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Gemini ${res.status}: ${txt.slice(0, 200)}`);
+  }
+  const raw = await res.json();
+  const text = raw.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Empty response from Gemini — no candidates or parts");
+  return JSON.parse(text.replace(/```json\n?|\n?```/g, "").trim());
+}
+
+async function testGeminiConnectivity(apiKey) {
+  console.log("\n🤖 Gemini Connectivity & Capabilities");
+
+  // ── 1. Basic connectivity ────────────────────────────────────────────────
+  try {
+    const res = await fetch(`${GEMINI_TEXT_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: 'Return JSON: {"ok":true,"model":"gemini-2.5-flash"}' }] }],
+        generationConfig: { responseMimeType: "application/json" },
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      fail("Gemini API reachable", new Error(`HTTP ${res.status}: ${txt.slice(0, 150)}`));
+    } else {
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) pass(`Gemini API reachable (gemini-2.5-flash responds)`);
+      else fail("Gemini API reachable", new Error("No text content in response"));
+    }
+  } catch (e) { fail("Gemini API reachable", e); }
+
+  // ── 2. Reading evaluation — good transcript ──────────────────────────────
+  try {
+    const data = await callGeminiText(apiKey, buildReadingEvalPrompt(SAMPLE_READING_PASSAGE, SAMPLE_READING_TRANSCRIPT_GOOD));
+    const issues = validateEvaluationSchema(data, "reading good");
+    if (issues.length > 0) {
+      fail("Reading eval schema (good transcript)", new Error(issues.join(", ")));
+    } else {
+      const total = data.score1 + data.score2;
+      if (data.score3 !== 0) fail("Reading eval score3=0", new Error(`score3 should be 0, got ${data.score3}`));
+      else if (total < 8) fail("Reading eval good transcript score", new Error(`Good reading scored only ${total}/20 — possible under-scoring`));
+      else pass(`Reading eval (good transcript): ${data.score1}+${data.score2}=${total}/20 — schema valid`);
+    }
+  } catch (e) { fail("Reading eval (good transcript)", e); }
+
+  // ── 3. Reading evaluation — poor/empty transcript ────────────────────────
+  try {
+    const data = await callGeminiText(apiKey, buildReadingEvalPrompt(SAMPLE_READING_PASSAGE, SAMPLE_READING_TRANSCRIPT_POOR));
+    const issues = validateEvaluationSchema(data, "reading poor");
+    if (issues.length > 0) {
+      fail("Reading eval schema (poor transcript)", new Error(issues.join(", ")));
+    } else {
+      const total = data.score1 + data.score2;
+      if (total > 8) fail("Reading eval strict scoring", new Error(`Fragmented reading scored ${total}/20 — model is inflating scores`));
+      else pass(`Reading eval (poor transcript): ${data.score1}+${data.score2}=${total}/20 — strict scoring confirmed`);
+    }
+  } catch (e) { fail("Reading eval (poor transcript)", e); }
+
+  // ── 4. Reading evaluation — empty transcript must score 0 ────────────────
+  try {
+    const data = await callGeminiText(apiKey, buildReadingEvalPrompt(SAMPLE_READING_PASSAGE, ""));
+    if (data.score1 > 1 || data.score2 > 1) {
+      fail("Reading eval empty = score 0", new Error(`Empty transcript scored ${data.score1}+${data.score2} — must be 0-1`));
+    } else {
+      pass(`Reading eval (empty transcript): ${data.score1}+${data.score2}/20 — correctly scored near-zero`);
+    }
+  } catch (e) { fail("Reading eval (empty transcript)", e); }
+
+  // ── 5. SBC evaluation — full responses ──────────────────────────────────
+  try {
+    const data = await callGeminiText(apiKey, buildSBCEvalPrompt({
+      ...SAMPLE_SBC,
+      response1: SAMPLE_SBC.response1,
+      response2: SAMPLE_SBC.response2,
+      response3: SAMPLE_SBC.response3,
+    }));
+    const issues = validateEvaluationSchema(data, "SBC full");
+    if (issues.length > 0) {
+      fail("SBC eval schema (full responses)", new Error(issues.join(", ")));
+    } else {
+      const total = data.score1 + data.score2 + data.score3;
+      // Each question is independently scored; all have real responses
+      const allNonZero = data.score1 > 0 && data.score2 > 0 && data.score3 > 0;
+      // Model answers for all 3 questions should be non-empty
+      const hasAllModelAnswers = data.suggestedResponse1 && data.suggestedResponse2 && data.suggestedResponse3;
+      if (!allNonZero) fail("SBC eval all questions score >0", new Error(`Scores: ${data.score1}/${data.score2}/${data.score3} — one is zero despite real responses`));
+      else if (!hasAllModelAnswers) fail("SBC eval model answers for all 3 Qs", new Error("Missing suggestedResponse2 or suggestedResponse3"));
+      else pass(`SBC eval (full responses): Q1=${data.score1} Q2=${data.score2} Q3=${data.score3} total=${total}/30 — schema valid, all model answers present`);
+    }
+  } catch (e) { fail("SBC eval (full responses)", e); }
+
+  // ── 6. SBC per-question independence — empty Q1 and Q3 must score 0 ─────
+  try {
+    const sbcPartial = {
+      ...SAMPLE_SBC,
+      response1: SAMPLE_SBC_EMPTY.response1,  // ""
+      response2: SAMPLE_SBC.response2,         // good
+      response3: SAMPLE_SBC_EMPTY.response3,   // ""
+    };
+    const data = await callGeminiText(apiKey, buildSBCEvalPrompt(sbcPartial));
+    const issues = validateEvaluationSchema(data, "SBC partial");
+    if (issues.length > 0) {
+      fail("SBC partial schema", new Error(issues.join(", ")));
+    } else {
+      const q1Empty = data.score1 <= 1;
+      const q2Real = data.score2 >= 3;
+      const q3Empty = data.score3 <= 1;
+      if (!q1Empty) fail("SBC Q1 empty = 0", new Error(`Q1 empty but scored ${data.score1} — must be 0-1`));
+      else if (!q3Empty) fail("SBC Q3 empty = 0", new Error(`Q3 empty but scored ${data.score3} — must be 0-1`));
+      else if (!q2Real) fail("SBC Q2 real response scores well", new Error(`Q2 has a real response but only scored ${data.score2}`));
+      else pass(`SBC per-question independence: Q1(empty)=${data.score1} Q2(real)=${data.score2} Q3(empty)=${data.score3} — independent scoring confirmed`);
+    }
+  } catch (e) { fail("SBC per-question independence", e); }
+
+  // ── 7. SBC evaluation — all empty ────────────────────────────────────────
+  try {
+    const sbcAllEmpty = { ...SAMPLE_SBC, response1: "", response2: "", response3: "" };
+    const data = await callGeminiText(apiKey, buildSBCEvalPrompt(sbcAllEmpty));
+    if (data.score1 > 1 || data.score2 > 1 || data.score3 > 1) {
+      fail("SBC all-empty = score 0", new Error(`All empty but scored ${data.score1}/${data.score2}/${data.score3}`));
+    } else {
+      pass(`SBC eval (all empty): ${data.score1}/${data.score2}/${data.score3} — correctly scored near-zero`);
+    }
+  } catch (e) { fail("SBC eval (all empty)", e); }
+
+  // ── Helper: extract image from any Gemini response structure ──────────────
+  function extractImageB64(data) {
+    // Interactions API
+    if (data.output_image?.data) return { b64: data.output_image.data, mime: data.output_image.mime_type || "image/jpeg" };
+    const stepImg = data.steps?.find((s) => s.output_image?.data)?.output_image;
+    if (stepImg?.data) return { b64: stepImg.data, mime: stepImg.mime_type || "image/jpeg" };
+    // Alternative output[] format
+    const imgOut = Array.isArray(data.output) ? data.output.find((o) => o.type === "image" && o.data) : null;
+    if (imgOut?.data) return { b64: imgOut.data, mime: imgOut.mime_type || "image/jpeg" };
+    // generateContent format (inlineData in candidates)
+    const inlineData = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData;
+    if (inlineData?.data) return { b64: inlineData.data, mime: inlineData.mimeType || "image/jpeg" };
+    return null;
+  }
+
+  const imagePrompt = "Singapore primary school students in school uniforms working together on a science experiment in a modern classroom. Photorealistic. No text in image.";
+
+  // ── 8. Image generation — Interactions API ───────────────────────────────
+  let imageApiWorked = false;
+  let workingImageMethod = "";
+
+  // 8a. Try Interactions API dedicated image models
+  for (const model of ["gemini-2.5-flash-image", "gemini-3.1-flash-image"]) {
+    if (imageApiWorked) break;
+    try {
+      const res = await fetch(GEMINI_IMAGE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({
+          model,
+          input: [{ type: "text", text: imagePrompt }],
+          response_format: { type: "image", mime_type: "image/jpeg", aspect_ratio: "4:3", image_size: "1K" },
+        }),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        console.log(`  ℹ️  Interactions/${model} HTTP ${res.status}: ${txt.slice(0, 150)}`);
+        continue;
+      }
+      const data = await res.json();
+      const img = extractImageB64(data);
+      if (!img) {
+        console.log(`  ℹ️  Interactions/${model}: 200 OK but no image data. Keys: ${Object.keys(data).join(",")}. Snippet: ${JSON.stringify(data).slice(0, 200)}`);
+        continue;
+      }
+      const kb = Math.round(img.b64.length * 3 / 4 / 1024);
+      if (kb < 1) { console.log(`  ℹ️  Interactions/${model}: image too small (${kb}KB)`); continue; }
+      pass(`Image gen Interactions API (${model}): ${img.mime} ${kb}KB — works`);
+      imageApiWorked = true;
+      workingImageMethod = `Interactions/${model}`;
+    } catch (e) { console.log(`  ℹ️  Interactions/${model} exception: ${e.message}`); }
+  }
+
+  // 8b. Try generateContent with IMAGE responseModality (flash models)
+  if (!imageApiWorked) {
+    const gcModels = ["gemini-2.0-flash-exp", "gemini-2.5-flash-preview-05-20", "gemini-2.5-flash-preview-04-17", "gemini-2.5-flash"];
+    for (const model of gcModels) {
+      if (imageApiWorked) break;
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: imagePrompt }] }],
+            generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+          }),
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const img = extractImageB64(data);
+        if (!img) continue;
+        const kb = Math.round(img.b64.length * 3 / 4 / 1024);
+        if (kb < 1) continue;
+        pass(`Image gen generateContent (${model}): ${img.mime} ${kb}KB — works`);
+        imageApiWorked = true;
+        workingImageMethod = `generateContent/${model}`;
+      } catch (e) { /* model not available, skip */ }
+    }
+  }
+
+  if (!imageApiWorked) {
+    fail("Image generation capability", new Error("No image model succeeded. App SBC poster generation is broken. Check API key tier/billing."));
+  }
+
+  // ── 9. End-to-end: app-style poster prompt matches real SBC exercise ───────
+  if (imageApiWorked) {
+    const appPrompt = `Generate a realistic photograph suitable for a Singapore primary school English oral examination stimulus-based conversation exercise. The image should depict: ${SAMPLE_SBC.posterDescription}. The image must be appropriate for children aged 11-12, photorealistic, clearly show the described scene, and contain NO text or words.`;
+    try {
+      let result = null;
+      // Use whichever method worked above
+      if (workingImageMethod.startsWith("Interactions/")) {
+        const model = workingImageMethod.replace("Interactions/", "");
+        const res = await fetch(GEMINI_IMAGE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body: JSON.stringify({
+            model,
+            input: [{ type: "text", text: appPrompt }],
+            response_format: { type: "image", mime_type: "image/jpeg", aspect_ratio: "4:3", image_size: "1K" },
+          }),
+        });
+        if (res.ok) result = extractImageB64(await res.json());
+      } else if (workingImageMethod.startsWith("generateContent/")) {
+        const model = workingImageMethod.replace("generateContent/", "");
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: appPrompt }] }],
+            generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+          }),
+        });
+        if (res.ok) result = extractImageB64(await res.json());
+      }
+      if (result) {
+        const kb = Math.round(result.b64.length * 3 / 4 / 1024);
+        pass(`Poster end-to-end (SBC exercise description → image): ${kb}KB via ${workingImageMethod}`);
+      } else {
+        fail("Poster end-to-end", new Error("Failed using working method: " + workingImageMethod));
+      }
+    } catch (e) { fail("Poster end-to-end", e); }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // MAIN
 // ══════════════════════════════════════════════════════════════════════════
 (async () => {
@@ -689,6 +1076,16 @@ async function testAPIRoutes() {
 
   // API structure tests (no browser needed)
   await testAPIRoutes();
+
+  // Gemini connectivity & capabilities (runs without browser)
+  const geminiKey = await resolveGeminiApiKey();
+  if (geminiKey) {
+    await testGeminiConnectivity(geminiKey);
+  } else {
+    console.log("\n🤖 Gemini Connectivity & Capabilities");
+    console.log("  ⚠️  SKIPPED — no API key found. Set GEMINI_API_KEY env var or configure in Parent > Settings.");
+    console.log("  ⚠️  These tests MUST pass before going to production.\n");
+  }
 
   const browser = await chromium.launch({
     executablePath: "/opt/pw-browsers/chromium",
