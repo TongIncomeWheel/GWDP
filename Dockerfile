@@ -15,26 +15,27 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 FROM base AS runner
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat ca-certificates
+
+# Install Litestream for SQLite replication to Google Cloud Storage
+ADD https://github.com/benbjohnson/litestream/releases/download/v0.3.13/litestream-v0.3.13-linux-amd64-static.tar.gz /tmp/litestream.tar.gz
+RUN tar -C /usr/local/bin -xzf /tmp/litestream.tar.gz && rm /tmp/litestream.tar.gz
+
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY litestream.yml /app/litestream.yml
+COPY scripts/start.sh /app/start.sh
 
-RUN mkdir -p /data && chown nextjs:nodejs /data
+RUN mkdir -p /data && chmod +x /app/start.sh
 
 ENV DB_PATH=/data/oral_practice.db
-
-USER nextjs
-
-EXPOSE 3000
-ENV PORT=3000
+EXPOSE 8080
+ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["/app/start.sh"]

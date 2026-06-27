@@ -1,0 +1,6 @@
+dbs:
+  - path: /data/oral_practice.db
+    replicas:
+      - type: gcs
+        bucket: ${LITESTREAM_GCS_BUCKET}
+        path: oral_practice.db
