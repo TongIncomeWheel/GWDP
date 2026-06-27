@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import type { OralExercise } from "@/lib/types";
 import BottomNav from "./BottomNav";
 import NanoBanana from "./NanoBanana";
 
-type TypeFilter = "ALL" | "READING" | "STIMULUS";
+type TypeFilter = "ALL" | "READING" | "STIMULUS" | "DAILY";
+type DifficultyFilter = "ALL" | "Foundation" | "Intermediate" | "Advanced";
 
 export default function HomePage() {
   const [exercises, setExercises] = useState<OralExercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
+  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("ALL");
 
   useEffect(() => {
     fetch("/api/exercises")
@@ -22,19 +24,40 @@ export default function HomePage() {
       });
   }, []);
 
-  const filtered = exercises.filter((e) => {
-    if (typeFilter !== "ALL" && e.type !== typeFilter) return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    return exercises.filter((e) => {
+      if (typeFilter === "DAILY" && !e.isDaily) return false;
+      if (typeFilter === "READING" && e.type !== "READING") return false;
+      if (typeFilter === "STIMULUS" && e.type !== "STIMULUS") return false;
+      if (difficultyFilter !== "ALL" && e.difficulty !== difficultyFilter) return false;
+      return true;
+    });
+  }, [exercises, typeFilter, difficultyFilter]);
 
-  const grouped = filtered.reduce<Record<string, OralExercise[]>>((acc, ex) => {
-    const key = ex.topic;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(ex);
-    return acc;
-  }, {});
+  const grouped = useMemo(() => {
+    return filtered.reduce<Record<string, OralExercise[]>>((acc, ex) => {
+      const key = ex.topic;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(ex);
+      return acc;
+    }, {});
+  }, [filtered]);
 
   const topics = Object.keys(grouped);
+
+  const typeFilters: { value: TypeFilter; label: string }[] = [
+    { value: "ALL", label: "All" },
+    { value: "READING", label: "Reading Aloud" },
+    { value: "STIMULUS", label: "Stimulus-Based" },
+    { value: "DAILY", label: "Daily" },
+  ];
+
+  const difficultyFilters: { value: DifficultyFilter; label: string }[] = [
+    { value: "ALL", label: "All" },
+    { value: "Foundation", label: "Foundation" },
+    { value: "Intermediate", label: "Intermediate" },
+    { value: "Advanced", label: "Advanced" },
+  ];
 
   return (
     <>
@@ -47,17 +70,38 @@ export default function HomePage() {
         <div className="container" style={{ paddingTop: 16 }}>
           <NanoBanana mood="smiling" />
 
+          {/* Type filter pills */}
           <div className="filter-row" style={{ marginTop: 16 }}>
-            {(["ALL", "READING", "STIMULUS"] as TypeFilter[]).map((t) => (
+            {typeFilters.map((t) => (
               <button
-                key={t}
-                className={`filter-pill ${typeFilter === t ? "active" : ""}`}
-                onClick={() => setTypeFilter(t)}
+                key={t.value}
+                className={`filter-pill ${typeFilter === t.value ? "active" : ""}`}
+                onClick={() => setTypeFilter(t.value)}
               >
-                {t === "ALL" ? "All" : t === "READING" ? "Reading Aloud" : "SBC"}
+                {t.label}
               </button>
             ))}
           </div>
+
+          {/* Difficulty filter pills */}
+          <div className="filter-row" style={{ marginTop: 8 }}>
+            {difficultyFilters.map((d) => (
+              <button
+                key={d.value}
+                className={`filter-pill ${difficultyFilter === d.value ? "active" : ""}`}
+                onClick={() => setDifficultyFilter(d.value)}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Exercise count */}
+          {!loading && (
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 12, marginBottom: 4 }}>
+              {filtered.length} exercise{filtered.length !== 1 ? "s" : ""} found
+            </div>
+          )}
 
           {loading ? (
             <div className="loading">
@@ -72,7 +116,12 @@ export default function HomePage() {
           ) : (
             topics.map((topic) => (
               <div key={topic}>
-                <div className="section-label">{topic}</div>
+                <div className="section-label">
+                  {topic}
+                  <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 8, fontWeight: 400 }}>
+                    ({grouped[topic].length})
+                  </span>
+                </div>
                 {grouped[topic].map((ex) => (
                   <ExerciseCard key={ex.id} exercise={ex} />
                 ))}
@@ -88,6 +137,13 @@ export default function HomePage() {
 }
 
 function ExerciseCard({ exercise }: { exercise: OralExercise }) {
+  const photoPreview =
+    exercise.type === "STIMULUS" && exercise.photographDescription
+      ? exercise.photographDescription.length > 60
+        ? exercise.photographDescription.slice(0, 60) + "..."
+        : exercise.photographDescription
+      : null;
+
   return (
     <Link href={`/practice/${exercise.id}`}>
       <div className="card" style={{ cursor: "pointer" }}>
@@ -95,6 +151,19 @@ function ExerciseCard({ exercise }: { exercise: OralExercise }) {
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 8 }}>
           {exercise.topic}
         </div>
+        {photoPreview && (
+          <div
+            style={{
+              fontSize: 12,
+              color: "var(--text-muted)",
+              marginBottom: 8,
+              fontStyle: "italic",
+              lineHeight: 1.4,
+            }}
+          >
+            {photoPreview}
+          </div>
+        )}
         <div className="flex-badges">
           <span className={`badge ${exercise.type === "READING" ? "badge-reading" : "badge-stimulus"}`}>
             {exercise.type === "READING" ? "Reading Aloud" : "Stimulus-Based"}

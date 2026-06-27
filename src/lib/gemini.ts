@@ -1,4 +1,30 @@
-import type { OralExercise, PracticeHistory, PSLEEvaluationResult } from "./types";
+import type { OralExercise, PracticeHistory, PSLEEvaluationResult, StructuredTranscript } from "./types";
+
+function tryParseStructuredTranscript(raw: string | null): StructuredTranscript | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as StructuredTranscript;
+  } catch {
+    return null;
+  }
+}
+
+function formatStructuredTranscriptForPrompt(st: StructuredTranscript, label: string): string {
+  const lines: string[] = [];
+  lines.push(`[${label} - ${st.framework} Breakdown]:`);
+  if (st.point) lines.push(`  Point: ${st.point}`);
+  if (st.evidence) lines.push(`  Evidence: ${st.evidence}`);
+  if (st.explanation) lines.push(`  Explanation: ${st.explanation}`);
+  if (st.link) lines.push(`  Link: ${st.link}`);
+  lines.push(`  Overall Coherence: ${st.overallCoherence}`);
+  if (st.vocabularyHighlights && st.vocabularyHighlights.length > 0) {
+    lines.push(`  Vocabulary Highlights: ${st.vocabularyHighlights.join(", ")}`);
+  }
+  if (st.grammarNotes && st.grammarNotes.length > 0) {
+    lines.push(`  Grammar Notes: ${st.grammarNotes.join("; ")}`);
+  }
+  return lines.join("\n");
+}
 
 function buildEvaluationPrompt(history: PracticeHistory, exercise: OralExercise): string {
   if (exercise.type === "READING") {
@@ -37,13 +63,49 @@ Respond in valid JSON with this exact structure:
 }`.trim();
   }
 
+  // SBC (Stimulus-Based Conversation) evaluation prompt
+  // Include structured transcript analysis if available
+  const st1 = tryParseStructuredTranscript(history.structuredTranscript1);
+  const st2 = tryParseStructuredTranscript(history.structuredTranscript2);
+  const st3 = tryParseStructuredTranscript(history.structuredTranscript3);
+
+  let structuredSection = "";
+  if (st1 || st2 || st3) {
+    structuredSection = "\n\n[Structured Transcript Analysis (pre-parsed PEEL/TREES framework)]:\n";
+    if (st1) structuredSection += formatStructuredTranscriptForPrompt(st1, "Response 1") + "\n";
+    if (st2) structuredSection += formatStructuredTranscriptForPrompt(st2, "Response 2") + "\n";
+    if (st3) structuredSection += formatStructuredTranscriptForPrompt(st3, "Response 3") + "\n";
+  }
+
+  // Determine SBC question types for framework-specific guidance
+  const q1Type = exercise.sbcQ1Type || "";
+  const q2Type = exercise.sbcQ2Type || "";
+  const q3Type = exercise.sbcQ3Type || "";
+
+  let frameworkGuidance = "";
+  if (q1Type || q2Type || q3Type) {
+    frameworkGuidance = `
+[SBC Question Types & Expected Frameworks]:
+- Q1 Type: ${q1Type || "General"} ${q1Type === "personal" ? "(PEEL: Point, Evidence/Example, Explanation, Link)" : ""}
+- Q2 Type: ${q2Type || "General"} ${q2Type === "opinion" ? "(TREES: Topic sentence, Reason, Evidence, Explanation, Summary)" : ""}
+- Q3 Type: ${q3Type || "General"} ${q3Type === "suggestion" ? "(PEEL/TREES: structured argument with personal connection)" : ""}
+
+When evaluating, assess whether the student uses an appropriate oral response framework (PEEL or TREES) to structure their answers. Award higher marks for:
+- Clear topic sentence / point statement
+- Relevant personal examples or evidence
+- Logical explanation connecting evidence to the point
+- Concluding link back to the question or a broader perspective
+- Use of transition words and connectors
+`;
+  }
+
   return `
 Evaluate the student's Stimulus-Based Conversation practice.
 
 [Visual Poster Theme]: ${exercise.topic}
 [Detailed Poster Layout & Content]:
 "${exercise.posterDescription}"
-
+${frameworkGuidance}
 [Question 1]: "${exercise.question1}"
 [Student's SBC Response 1]: "${history.transcript1 || "[No answer]"}"
 
@@ -52,13 +114,15 @@ Evaluate the student's Stimulus-Based Conversation practice.
 
 [Question 3]: "${exercise.question3}"
 [Student's SBC Response 3]: "${history.transcript3 || "[No answer]"}"
-
+${structuredSection}
 Evaluate their responses under Singapore PSLE criteria:
-1. Personal Response (10m) - Did they address the prompts directly with clear PEEL structure (Point, Explanation, Example, Link)?
+1. Personal Response (10m) - Did they address the prompts directly with clear PEEL structure (Point, Explanation, Example, Link)? Did they use an appropriate oral response framework (PEEL or TREES)?
 2. Clarity of Expression (10m) - Did they use good vocabulary (e.g., instead of 'good' or 'nice', did they use words like 'vibrant', 'educational', 'beneficial') and accurate grammar?
 3. Engagement in Conversation (10m) - Cohesion of thoughts, confidence, and fluency.
 
-Provide detailed feedback, list specific vocabulary improvements, and provide model answers for Question 1, 2, and 3 that would secure an A* (AL1) grade.
+${structuredSection ? "Use the pre-parsed structured transcript analysis above to inform your evaluation. Assess how well the student's responses align with the PEEL/TREES framework breakdown provided. Comment on the coherence rating and vocabulary highlights in your feedback." : ""}
+
+Provide detailed feedback, list specific vocabulary improvements, and provide model answers for Question 1, 2, and 3 that would secure an A* (AL1) grade. Model answers should follow the PEEL framework structure.
 
 Respond in valid JSON with this exact structure:
 {
