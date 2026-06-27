@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import type { PracticeHistory, StructuredTranscript } from "@/lib/types";
+import type { OralExercise, PracticeHistory, StructuredTranscript } from "@/lib/types";
 
 export default function ParentSessionDetailPage() {
   const params = useParams();
@@ -10,6 +10,7 @@ export default function ParentSessionDetailPage() {
   const sessionId = Number(params.id);
 
   const [history, setHistory] = useState<PracticeHistory | null>(null);
+  const [exercise, setExercise] = useState<OralExercise | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Parent grading state
@@ -28,14 +29,18 @@ export default function ParentSessionDetailPage() {
       return;
     }
 
-    fetch(`/api/practice?id=${sessionId}`)
-      .then((r) => r.json())
-      .then((data: PracticeHistory) => {
-        setHistory(data);
-        if (data.parentScore1 != null) setParentScore1(data.parentScore1);
-        if (data.parentScore2 != null) setParentScore2(data.parentScore2);
-        if (data.parentScore3 != null) setParentScore3(data.parentScore3);
-        if (data.parentFeedback) setParentFeedback(data.parentFeedback);
+    Promise.all([
+      fetch(`/api/practice?id=${sessionId}`).then((r) => r.json()),
+      fetch("/api/exercises").then((r) => r.json()),
+    ])
+      .then(([historyData, exercisesData]: [PracticeHistory, OralExercise[]]) => {
+        setHistory(historyData);
+        if (historyData.parentScore1 != null) setParentScore1(historyData.parentScore1);
+        if (historyData.parentScore2 != null) setParentScore2(historyData.parentScore2);
+        if (historyData.parentScore3 != null) setParentScore3(historyData.parentScore3);
+        if (historyData.parentFeedback) setParentFeedback(historyData.parentFeedback);
+        const ex = exercisesData.find((e) => e.id === historyData.exerciseId);
+        if (ex) setExercise(ex);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -291,6 +296,61 @@ export default function ParentSessionDetailPage() {
             )}
           </div>
 
+          {/* Exercise Context */}
+          {exercise && (
+            <div className="card">
+              <div className="card-title">
+                {isReading ? "Reading Passage" : "Stimulus-Based Conversation"}
+              </div>
+              <div className="flex-badges" style={{ marginBottom: 10 }}>
+                <span className={`badge ${isReading ? "badge-reading" : "badge-stimulus"}`}>
+                  {isReading ? "📖 Reading Aloud" : "🖼️ SBC"}
+                </span>
+                <span className="badge badge-difficulty">{exercise.difficulty}</span>
+              </div>
+
+              {isReading && exercise.passageText && (
+                <div className="passage-text" style={{ fontSize: 13, lineHeight: 1.7 }}>
+                  {exercise.passageText}
+                </div>
+              )}
+
+              {!isReading && (
+                <>
+                  {exercise.generatedImageUrl && (
+                    <div className="poster-image-area" style={{ marginBottom: 12 }}>
+                      <img src={exercise.generatedImageUrl} alt="Visual stimulus" />
+                    </div>
+                  )}
+                  {!exercise.generatedImageUrl && exercise.photographDescription && (
+                    <div className="poster-desc" style={{ marginBottom: 12 }}>
+                      <strong>Visual Stimulus</strong>
+                      {exercise.photographDescription}
+                    </div>
+                  )}
+                  {exercise.question1 && (
+                    <div className="question-block">
+                      <div className="q-label">Question 1</div>
+                      <div style={{ fontSize: 14 }}>{exercise.question1}</div>
+                    </div>
+                  )}
+                  {exercise.question2 && (
+                    <div className="question-block">
+                      <div className="q-label">Question 2</div>
+                      <div style={{ fontSize: 14 }}>{exercise.question2}</div>
+                    </div>
+                  )}
+                  {exercise.question3 && (
+                    <div className="question-block">
+                      <div className="q-label">Question 3</div>
+                      <div style={{ fontSize: 14 }}>{exercise.question3}</div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           {/* AI Score Breakdown */}
           <div className="card">
             <div className="card-title">AI Score Breakdown</div>
@@ -496,11 +556,11 @@ export default function ParentSessionDetailPage() {
           <div
             className="card"
             style={{
-              border: "2px solid var(--primary-light)",
-              background: "#F5F3FF",
+              border: "2px solid rgba(139, 92, 246, 0.3)",
+              background: "rgba(139, 92, 246, 0.06)",
             }}
           >
-            <div className="card-title" style={{ color: "var(--primary)" }}>
+            <div className="card-title" style={{ color: "var(--purple-soft)" }}>
               Parent Grading
             </div>
             <div style={{ marginTop: 12 }}>
