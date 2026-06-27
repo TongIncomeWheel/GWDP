@@ -46,6 +46,18 @@ export async function POST(request: NextRequest) {
     isEvaluated: false,
     isEvaluating: false,
     errorMessage: null,
+    parentScore1: null,
+    parentScore2: null,
+    parentScore3: null,
+    parentFeedback: null,
+    parentTotalScore: null,
+    audioBlob1: body.audioBlob1 || null,
+    audioBlob2: body.audioBlob2 || null,
+    audioBlob3: body.audioBlob3 || null,
+    structuredTranscript1: body.structuredTranscript1 || null,
+    structuredTranscript2: body.structuredTranscript2 || null,
+    structuredTranscript3: body.structuredTranscript3 || null,
+    isClosed: false,
   });
   return NextResponse.json({ id });
 }

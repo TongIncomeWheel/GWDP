@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import type { PracticeHistory } from "@/lib/types";
+import type { PracticeHistory, StructuredTranscript } from "@/lib/types";
+import NanoBanana from "../../NanoBanana";
 
 export default function ResultsPage() {
   const params = useParams();
@@ -11,6 +12,7 @@ export default function ResultsPage() {
 
   const [history, setHistory] = useState<PracticeHistory | null>(null);
   const [loading, setLoading] = useState(true);
+  const [closing, setClosing] = useState(false);
 
   useEffect(() => {
     fetch(`/api/practice?id=${historyId}`)
@@ -21,6 +23,22 @@ export default function ResultsPage() {
       })
       .catch(() => setLoading(false));
   }, [historyId]);
+
+  const handleClose = async () => {
+    if (!confirm("Close this exercise? Scores will be finalized.")) return;
+    setClosing(true);
+    try {
+      await fetch("/api/practice/close", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: historyId }),
+      });
+      setHistory((prev) => prev ? { ...prev, isClosed: true } : prev);
+    } catch {
+      // ignore
+    }
+    setClosing(false);
+  };
 
   if (loading) {
     return (
@@ -62,6 +80,16 @@ export default function ResultsPage() {
   const isReading = history.exerciseType === "READING";
   const percentage = history.maxScore > 0 ? Math.round((history.totalScore / history.maxScore) * 100) : 0;
   const scoreClass = percentage >= 70 ? "score-high" : percentage >= 50 ? "score-mid" : "score-low";
+  const bananaMood = percentage >= 70 ? "cheering" : percentage >= 50 ? "encouraging" : "confused";
+
+  const parseTranscript = (raw: string | null): StructuredTranscript | null => {
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as StructuredTranscript;
+    } catch {
+      return null;
+    }
+  };
 
   return (
     <>
@@ -71,7 +99,7 @@ export default function ResultsPage() {
             onClick={() => router.push("/")}
             style={{ background: "none", border: "none", color: "white", fontSize: 20, cursor: "pointer", padding: 0 }}
           >
-            ←
+            &larr;
           </button>
           <div>
             <h1>Results</h1>
@@ -82,8 +110,16 @@ export default function ResultsPage() {
 
       <main>
         <div className="container" style={{ paddingTop: 16 }}>
+          <NanoBanana mood={bananaMood} />
+
           {history.errorMessage && (
-            <div className="info-banner">{history.errorMessage}</div>
+            <div className="info-banner" style={{ marginTop: 12 }}>{history.errorMessage}</div>
+          )}
+
+          {history.isClosed && (
+            <div style={{ textAlign: "center", margin: "8px 0", padding: "6px 12px", background: "#E8F5E9", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#2E7D32" }}>
+              Exercise Closed
+            </div>
           )}
 
           <div className="card" style={{ textAlign: "center" }}>
@@ -92,8 +128,13 @@ export default function ResultsPage() {
               <span className="score-max">/ {history.maxScore}</span>
             </div>
             <div style={{ fontSize: 14, color: "var(--text-muted)" }}>
-              {percentage}% — {percentage >= 70 ? "Well Done!" : percentage >= 50 ? "Good Effort!" : "Keep Practising!"}
+              {percentage}% &mdash; {percentage >= 70 ? "Well Done!" : percentage >= 50 ? "Good Effort!" : "Keep Practising!"}
             </div>
+            {history.parentTotalScore != null && (
+              <div style={{ fontSize: 13, color: "var(--primary)", fontWeight: 600, marginTop: 4 }}>
+                Parent Score: {history.parentTotalScore}
+              </div>
+            )}
           </div>
 
           <div className="card">
@@ -112,6 +153,49 @@ export default function ResultsPage() {
               )}
             </div>
           </div>
+
+          {/* Audio Playback */}
+          {(history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
+            <div className="card">
+              <div className="card-title">Your Recordings</div>
+              {history.audioBlob1 && (
+                <div className="audio-player-mini">
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                    {isReading ? "Reading" : "Response 1"}
+                  </span>
+                  <audio controls preload="none" style={{ flex: 1, height: 32 }}>
+                    <source src={history.audioBlob1} />
+                  </audio>
+                </div>
+              )}
+              {!isReading && history.audioBlob2 && (
+                <div className="audio-player-mini">
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap" }}>Response 2</span>
+                  <audio controls preload="none" style={{ flex: 1, height: 32 }}>
+                    <source src={history.audioBlob2} />
+                  </audio>
+                </div>
+              )}
+              {!isReading && history.audioBlob3 && (
+                <div className="audio-player-mini">
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap" }}>Response 3</span>
+                  <audio controls preload="none" style={{ flex: 1, height: 32 }}>
+                    <source src={history.audioBlob3} />
+                  </audio>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Structured Transcripts */}
+          {(history.structuredTranscript1 || history.structuredTranscript2 || history.structuredTranscript3) && (
+            <div className="card feedback-section">
+              <h3>Structured Analysis</h3>
+              <StructuredTranscriptView raw={history.structuredTranscript1} label={isReading ? "Reading" : "Response 1"} />
+              {!isReading && <StructuredTranscriptView raw={history.structuredTranscript2} label="Response 2" />}
+              {!isReading && <StructuredTranscriptView raw={history.structuredTranscript3} label="Response 3" />}
+            </div>
+          )}
 
           {history.generalFeedback && (
             <div className="card feedback-section">
@@ -191,7 +275,17 @@ export default function ResultsPage() {
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 8, paddingBottom: 24, marginTop: 16 }}>
+          <div style={{ display: "flex", gap: 8, paddingBottom: 8, marginTop: 16, flexWrap: "wrap" }}>
+            {!history.isClosed && history.isEvaluated && (
+              <button
+                className="btn btn-outline"
+                disabled={closing}
+                onClick={handleClose}
+                style={{ borderColor: "var(--success)", color: "var(--success)" }}
+              >
+                {closing ? "Closing..." : "Close Exercise"}
+              </button>
+            )}
             <button className="btn btn-outline" onClick={() => router.push(`/practice/${history.exerciseId}`)}>
               Try Again
             </button>
@@ -199,9 +293,75 @@ export default function ResultsPage() {
               Home
             </button>
           </div>
+
+          {history.parentFeedback && (
+            <div className="card" style={{ border: "2px solid var(--primary-light)", background: "#F5F3FF", marginTop: 8 }}>
+              <div className="card-title" style={{ color: "var(--primary)" }}>Parent Feedback</div>
+              <p style={{ fontSize: 13 }}>{history.parentFeedback}</p>
+              {history.parentTotalScore != null && (
+                <div style={{ fontWeight: 700, color: "var(--primary)", marginTop: 4 }}>
+                  Parent Total: {history.parentTotalScore}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ paddingBottom: 24 }} />
         </div>
       </main>
     </>
+  );
+}
+
+function StructuredTranscriptView({ raw, label }: { raw: string | null; label: string }) {
+  if (!raw) return null;
+  let st: StructuredTranscript;
+  try {
+    st = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  return (
+    <div className="structured-transcript">
+      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>
+        {label} &mdash; {st.framework} Framework
+      </div>
+      <div className="st-section st-peel">
+        <div className="st-label">Point</div>
+        <div className="st-text">{st.point}</div>
+      </div>
+      <div className="st-section st-evidence">
+        <div className="st-label">Evidence</div>
+        <div className="st-text">{st.evidence}</div>
+      </div>
+      <div className="st-section st-explain">
+        <div className="st-label">Explanation</div>
+        <div className="st-text">{st.explanation}</div>
+      </div>
+      <div className="st-section st-link">
+        <div className="st-label">Link</div>
+        <div className="st-text">{st.link}</div>
+      </div>
+      <div style={{ marginTop: 8 }}>
+        <span style={{
+          fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 10,
+          background: st.overallCoherence === "strong" ? "#D1FAE5" : st.overallCoherence === "moderate" ? "#FEF3C7" : "#FEE2E2",
+          color: st.overallCoherence === "strong" ? "#065F46" : st.overallCoherence === "moderate" ? "#92400E" : "#991B1B",
+        }}>
+          Coherence: {st.overallCoherence}
+        </span>
+      </div>
+      {st.vocabularyHighlights.length > 0 && (
+        <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
+          <strong>Vocabulary:</strong> {st.vocabularyHighlights.join(", ")}
+        </div>
+      )}
+      {st.grammarNotes.length > 0 && (
+        <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-muted)" }}>
+          <strong>Grammar:</strong> {st.grammarNotes.join("; ")}
+        </div>
+      )}
+    </div>
   );
 }
 

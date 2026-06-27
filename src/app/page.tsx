@@ -4,10 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { OralExercise } from "@/lib/types";
 import BottomNav from "./BottomNav";
+import NanoBanana from "./NanoBanana";
+
+type TypeFilter = "ALL" | "READING" | "STIMULUS";
 
 export default function HomePage() {
   const [exercises, setExercises] = useState<OralExercise[]>([]);
   const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
 
   useEffect(() => {
     fetch("/api/exercises")
@@ -18,8 +22,19 @@ export default function HomePage() {
       });
   }, []);
 
-  const dailyExercises = exercises.filter((e) => e.isDaily);
-  const allExercises = exercises.filter((e) => !e.isDaily);
+  const filtered = exercises.filter((e) => {
+    if (typeFilter !== "ALL" && e.type !== typeFilter) return false;
+    return true;
+  });
+
+  const grouped = filtered.reduce<Record<string, OralExercise[]>>((acc, ex) => {
+    const key = ex.topic;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(ex);
+    return acc;
+  }, {});
+
+  const topics = Object.keys(grouped);
 
   return (
     <>
@@ -30,38 +45,39 @@ export default function HomePage() {
 
       <main>
         <div className="container" style={{ paddingTop: 16 }}>
+          <NanoBanana mood="smiling" />
+
+          <div className="filter-row" style={{ marginTop: 16 }}>
+            {(["ALL", "READING", "STIMULUS"] as TypeFilter[]).map((t) => (
+              <button
+                key={t}
+                className={`filter-pill ${typeFilter === t ? "active" : ""}`}
+                onClick={() => setTypeFilter(t)}
+              >
+                {t === "ALL" ? "All" : t === "READING" ? "Reading Aloud" : "SBC"}
+              </button>
+            ))}
+          </div>
+
           {loading ? (
             <div className="loading">
               <div className="spinner" />
               <span>Loading exercises...</span>
             </div>
+          ) : topics.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">&#x1F4DA;</div>
+              <p>No exercises match your filter.</p>
+            </div>
           ) : (
-            <>
-              {dailyExercises.length > 0 && (
-                <>
-                  <div className="section-label">Daily Practice</div>
-                  {dailyExercises.map((ex) => (
-                    <ExerciseCard key={ex.id} exercise={ex} />
-                  ))}
-                </>
-              )}
-
-              {allExercises.length > 0 && (
-                <>
-                  <div className="section-label">All Exercises</div>
-                  {allExercises.map((ex) => (
-                    <ExerciseCard key={ex.id} exercise={ex} />
-                  ))}
-                </>
-              )}
-
-              {exercises.length === 0 && (
-                <div className="empty-state">
-                  <div className="empty-icon">📚</div>
-                  <p>No exercises available yet.</p>
-                </div>
-              )}
-            </>
+            topics.map((topic) => (
+              <div key={topic}>
+                <div className="section-label">{topic}</div>
+                {grouped[topic].map((ex) => (
+                  <ExerciseCard key={ex.id} exercise={ex} />
+                ))}
+              </div>
+            ))
           )}
         </div>
       </main>

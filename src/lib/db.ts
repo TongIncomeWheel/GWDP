@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import type { OralExercise, PracticeHistory } from "./types";
+import { getSeedExercises } from "./seed-data";
 
 const DB_PATH = path.join(process.cwd(), "oral_practice.db");
 
@@ -24,7 +25,15 @@ function getDb(): Database.Database {
         question1 TEXT NOT NULL DEFAULT '',
         question2 TEXT NOT NULL DEFAULT '',
         question3 TEXT NOT NULL DEFAULT '',
-        isDaily INTEGER NOT NULL DEFAULT 0
+        isDaily INTEGER NOT NULL DEFAULT 0,
+        preamblePact TEXT DEFAULT '',
+        readingTips TEXT DEFAULT '',
+        photographDescription TEXT DEFAULT '',
+        imageSearchSuggestion TEXT DEFAULT '',
+        sbcQ1Type TEXT DEFAULT '',
+        sbcQ2Type TEXT DEFAULT '',
+        sbcQ3Type TEXT DEFAULT '',
+        generatedImageUrl TEXT
       );
 
       CREATE TABLE IF NOT EXISTS practice_history (
@@ -54,9 +63,63 @@ function getDb(): Database.Database {
         isEvaluated INTEGER NOT NULL DEFAULT 0,
         isEvaluating INTEGER NOT NULL DEFAULT 0,
         errorMessage TEXT,
+        parentScore1 INTEGER,
+        parentScore2 INTEGER,
+        parentScore3 INTEGER,
+        parentFeedback TEXT,
+        parentTotalScore INTEGER,
+        audioBlob1 TEXT,
+        audioBlob2 TEXT,
+        audioBlob3 TEXT,
+        structuredTranscript1 TEXT,
+        structuredTranscript2 TEXT,
+        structuredTranscript3 TEXT,
+        isClosed INTEGER DEFAULT 0,
         FOREIGN KEY (exerciseId) REFERENCES exercises(id)
       );
     `);
+
+    // Add new exercise columns (for existing databases)
+    const exerciseColumnsToAdd = [
+      { name: "preamblePact", def: "TEXT DEFAULT ''" },
+      { name: "readingTips", def: "TEXT DEFAULT ''" },
+      { name: "photographDescription", def: "TEXT DEFAULT ''" },
+      { name: "imageSearchSuggestion", def: "TEXT DEFAULT ''" },
+      { name: "sbcQ1Type", def: "TEXT DEFAULT ''" },
+      { name: "sbcQ2Type", def: "TEXT DEFAULT ''" },
+      { name: "sbcQ3Type", def: "TEXT DEFAULT ''" },
+      { name: "generatedImageUrl", def: "TEXT" },
+    ];
+    for (const col of exerciseColumnsToAdd) {
+      try {
+        _db.exec(`ALTER TABLE exercises ADD COLUMN ${col.name} ${col.def}`);
+      } catch {
+        // Column already exists, ignore
+      }
+    }
+
+    // Add new practice_history columns (for existing databases)
+    const historyColumnsToAdd = [
+      { name: "parentScore1", def: "INTEGER" },
+      { name: "parentScore2", def: "INTEGER" },
+      { name: "parentScore3", def: "INTEGER" },
+      { name: "parentFeedback", def: "TEXT" },
+      { name: "parentTotalScore", def: "INTEGER" },
+      { name: "audioBlob1", def: "TEXT" },
+      { name: "audioBlob2", def: "TEXT" },
+      { name: "audioBlob3", def: "TEXT" },
+      { name: "structuredTranscript1", def: "TEXT" },
+      { name: "structuredTranscript2", def: "TEXT" },
+      { name: "structuredTranscript3", def: "TEXT" },
+      { name: "isClosed", def: "INTEGER DEFAULT 0" },
+    ];
+    for (const col of historyColumnsToAdd) {
+      try {
+        _db.exec(`ALTER TABLE practice_history ADD COLUMN ${col.name} ${col.def}`);
+      } catch {
+        // Column already exists, ignore
+      }
+    }
   }
   return _db;
 }
@@ -83,15 +146,19 @@ export function insertExercises(exercises: Omit<OralExercise, "id">[]): void {
   const db = getDb();
   const stmt = db.prepare(`
     INSERT INTO exercises (type, title, topic, difficulty, preambleText, passageText,
-      posterImageResName, posterDescription, question1, question2, question3, isDaily)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      posterImageResName, posterDescription, question1, question2, question3, isDaily,
+      preamblePact, readingTips, photographDescription, imageSearchSuggestion,
+      sbcQ1Type, sbcQ2Type, sbcQ3Type, generatedImageUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const tx = db.transaction((items: Omit<OralExercise, "id">[]) => {
     for (const e of items) {
       stmt.run(
         e.type, e.title, e.topic, e.difficulty, e.preambleText, e.passageText,
         e.posterImageResName, e.posterDescription, e.question1, e.question2, e.question3,
-        e.isDaily ? 1 : 0
+        e.isDaily ? 1 : 0,
+        e.preamblePact, e.readingTips, e.photographDescription, e.imageSearchSuggestion,
+        e.sbcQ1Type, e.sbcQ2Type, e.sbcQ3Type, e.generatedImageUrl
       );
     }
   });
@@ -117,8 +184,12 @@ export function insertPracticeHistory(history: Omit<PracticeHistory, "id">): num
       dateMillis, audioPath1, audioPath2, audioPath3, transcript1, transcript2, transcript3,
       score1, score2, score3, totalScore, maxScore, generalFeedback, strengths,
       areasOfImprovement, modelAnswer1, modelAnswer2, modelAnswer3,
-      isEvaluated, isEvaluating, errorMessage)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      isEvaluated, isEvaluating, errorMessage,
+      parentScore1, parentScore2, parentScore3, parentFeedback, parentTotalScore,
+      audioBlob1, audioBlob2, audioBlob3,
+      structuredTranscript1, structuredTranscript2, structuredTranscript3, isClosed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     history.exerciseId, history.exerciseTitle, history.exerciseType, history.exerciseTopic,
     history.dateMillis, history.audioPath1, history.audioPath2, history.audioPath3,
@@ -126,7 +197,13 @@ export function insertPracticeHistory(history: Omit<PracticeHistory, "id">): num
     history.score1, history.score2, history.score3, history.totalScore, history.maxScore,
     history.generalFeedback, history.strengths, history.areasOfImprovement,
     history.modelAnswer1, history.modelAnswer2, history.modelAnswer3,
-    history.isEvaluated ? 1 : 0, history.isEvaluating ? 1 : 0, history.errorMessage
+    history.isEvaluated ? 1 : 0, history.isEvaluating ? 1 : 0, history.errorMessage,
+    history.parentScore1 ?? null, history.parentScore2 ?? null, history.parentScore3 ?? null,
+    history.parentFeedback ?? null, history.parentTotalScore ?? null,
+    history.audioBlob1 ?? null, history.audioBlob2 ?? null, history.audioBlob3 ?? null,
+    history.structuredTranscript1 ?? null, history.structuredTranscript2 ?? null,
+    history.structuredTranscript3 ?? null,
+    history.isClosed ? 1 : 0
   );
   return Number(result.lastInsertRowid);
 }
@@ -141,7 +218,12 @@ export function updatePracticeHistory(history: PracticeHistory): void {
       score1=?, score2=?, score3=?, totalScore=?, maxScore=?,
       generalFeedback=?, strengths=?, areasOfImprovement=?,
       modelAnswer1=?, modelAnswer2=?, modelAnswer3=?,
-      isEvaluated=?, isEvaluating=?, errorMessage=?
+      isEvaluated=?, isEvaluating=?, errorMessage=?,
+      parentScore1=?, parentScore2=?, parentScore3=?,
+      parentFeedback=?, parentTotalScore=?,
+      audioBlob1=?, audioBlob2=?, audioBlob3=?,
+      structuredTranscript1=?, structuredTranscript2=?, structuredTranscript3=?,
+      isClosed=?
     WHERE id=?
   `).run(
     history.exerciseId, history.exerciseTitle, history.exerciseType, history.exerciseTopic,
@@ -151,13 +233,66 @@ export function updatePracticeHistory(history: PracticeHistory): void {
     history.generalFeedback, history.strengths, history.areasOfImprovement,
     history.modelAnswer1, history.modelAnswer2, history.modelAnswer3,
     history.isEvaluated ? 1 : 0, history.isEvaluating ? 1 : 0, history.errorMessage,
+    history.parentScore1 ?? null, history.parentScore2 ?? null, history.parentScore3 ?? null,
+    history.parentFeedback ?? null, history.parentTotalScore ?? null,
+    history.audioBlob1 ?? null, history.audioBlob2 ?? null, history.audioBlob3 ?? null,
+    history.structuredTranscript1 ?? null, history.structuredTranscript2 ?? null,
+    history.structuredTranscript3 ?? null,
+    history.isClosed ? 1 : 0,
     history.id
   );
+}
+
+export function updateParentGrading(
+  id: number,
+  parentScore1: number,
+  parentScore2: number,
+  parentScore3: number,
+  parentFeedback: string
+): void {
+  const db = getDb();
+  const parentTotalScore = parentScore1 + parentScore2 + parentScore3;
+  db.prepare(`
+    UPDATE practice_history SET
+      parentScore1=?, parentScore2=?, parentScore3=?,
+      parentTotalScore=?, parentFeedback=?
+    WHERE id=?
+  `).run(parentScore1, parentScore2, parentScore3, parentTotalScore, parentFeedback, id);
+}
+
+export function closeExercise(id: number): void {
+  const db = getDb();
+  db.prepare("UPDATE practice_history SET isClosed = 1 WHERE id = ?").run(id);
+}
+
+export function deleteRecordings(id: number): void {
+  const db = getDb();
+  db.prepare(`
+    UPDATE practice_history SET
+      audioBlob1 = NULL, audioBlob2 = NULL, audioBlob3 = NULL,
+      structuredTranscript1 = NULL, structuredTranscript2 = NULL, structuredTranscript3 = NULL
+    WHERE id = ?
+  `).run(id);
+}
+
+export function updateExerciseImage(id: number, imageUrl: string): void {
+  const db = getDb();
+  db.prepare("UPDATE exercises SET generatedImageUrl = ? WHERE id = ?").run(imageUrl, id);
 }
 
 export function deletePracticeHistoryById(id: number): void {
   const db = getDb();
   db.prepare("DELETE FROM practice_history WHERE id = ?").run(id);
+}
+
+export function clearRecordings(id: number): void {
+  const db = getDb();
+  db.prepare(`
+    UPDATE practice_history SET
+      audioBlob1 = NULL, audioBlob2 = NULL, audioBlob3 = NULL,
+      structuredTranscript1 = NULL, structuredTranscript2 = NULL, structuredTranscript3 = NULL
+    WHERE id = ?
+  `).run(id);
 }
 
 export function prepopulateExercisesIfNeeded(): void {
@@ -181,6 +316,14 @@ function mapExerciseRow(row: Record<string, unknown>): OralExercise {
     question2: (row.question2 as string) || "",
     question3: (row.question3 as string) || "",
     isDaily: Boolean(row.isDaily),
+    preamblePact: (row.preamblePact as string) || "",
+    readingTips: (row.readingTips as string) || "",
+    photographDescription: (row.photographDescription as string) || "",
+    imageSearchSuggestion: (row.imageSearchSuggestion as string) || "",
+    sbcQ1Type: (row.sbcQ1Type as string) || "",
+    sbcQ2Type: (row.sbcQ2Type as string) || "",
+    sbcQ3Type: (row.sbcQ3Type as string) || "",
+    generatedImageUrl: (row.generatedImageUrl as string) ?? null,
   };
 }
 
@@ -212,66 +355,21 @@ function mapHistoryRow(row: Record<string, unknown>): PracticeHistory {
     isEvaluated: Boolean(row.isEvaluated),
     isEvaluating: Boolean(row.isEvaluating),
     errorMessage: row.errorMessage as string | null,
+    parentScore1: (row.parentScore1 as number | null) ?? null,
+    parentScore2: (row.parentScore2 as number | null) ?? null,
+    parentScore3: (row.parentScore3 as number | null) ?? null,
+    parentFeedback: (row.parentFeedback as string | null) ?? null,
+    parentTotalScore: (row.parentTotalScore as number | null) ?? null,
+    audioBlob1: (row.audioBlob1 as string | null) ?? null,
+    audioBlob2: (row.audioBlob2 as string | null) ?? null,
+    audioBlob3: (row.audioBlob3 as string | null) ?? null,
+    structuredTranscript1: (row.structuredTranscript1 as string | null) ?? null,
+    structuredTranscript2: (row.structuredTranscript2 as string | null) ?? null,
+    structuredTranscript3: (row.structuredTranscript3 as string | null) ?? null,
+    isClosed: Boolean(row.isClosed),
   };
 }
 
 function getDefaultExercises(): Omit<OralExercise, "id">[] {
-  return [
-    {
-      type: "READING",
-      title: "The Campfire Adventure",
-      topic: "Adventure & Nature",
-      difficulty: "Intermediate",
-      preambleText: "Read the following passage aloud clearly and expressively.",
-      passageText: "The crackle of the campfire was the only sound that broke the silence of the night. Sparks leaped up into the starry sky like miniature shooting stars. Sitting closely in a circle, we wrapped our blankets tightly around our shoulders to keep out the chilly mountain air.\n\n\"Did you hear that?\" whispered Mei Ling, her eyes wide with alarm. Everyone froze. From somewhere in the dense forest, a twig snapped. My heart was hammering so loudly that I was sure the others could hear it.\n\nMr. Tan, our scout leader, chuckled softly. \"It is probably just a deer,\" he said reassuringly. \"There is nothing to be afraid of.\" Despite his calm words, I noticed he kept his torchlight aimed steadily at the tree line.",
-      posterImageResName: "",
-      posterDescription: "",
-      question1: "",
-      question2: "",
-      question3: "",
-      isDaily: true,
-    },
-    {
-      type: "READING",
-      title: "The School Library",
-      topic: "School Life",
-      difficulty: "Easy",
-      preambleText: "Read the following passage aloud clearly and expressively.",
-      passageText: "The school library was my favourite place in the whole school. Every recess, while my classmates rushed to the canteen, I would slip away quietly to the second floor where rows upon rows of books awaited me.\n\nMrs. Lim, the librarian, always greeted me with a warm smile. \"Back again, Arun?\" she would say, adjusting her spectacles. She knew exactly which shelf I would head to — the adventure section at the far corner near the window.\n\nThere, bathed in the golden afternoon sunlight, I would lose myself in tales of brave explorers and distant lands. The noise from the field below seemed to fade away as I turned each page, transported to a world far beyond the boundaries of our little school.",
-      posterImageResName: "",
-      posterDescription: "",
-      question1: "",
-      question2: "",
-      question3: "",
-      isDaily: false,
-    },
-    {
-      type: "STIMULUS",
-      title: "Wellness Week Campaign",
-      topic: "Health & Wellness",
-      difficulty: "Intermediate",
-      preambleText: "Look at the poster below and answer the questions that follow.",
-      passageText: "",
-      posterImageResName: "poster_wellness",
-      posterDescription: "A colourful school poster advertising 'Wellness Week'. It features: (1) A '10,000 Steps Challenge' section with a cartoon steps tracker showing students walking, (2) A 'Healthy Eating Corner' with discounted fruit packs at 50 cents, (3) A prize section offering a reusable water bottle for top participants, (4) The school motto 'Healthy Body, Healthy Mind' at the bottom, (5) Dates shown as 'March 10-14' with the school logo.",
-      question1: "Would you like to take part in the activities shown in the poster? Why or why not?",
-      question2: "What do you do to keep healthy in school and at home?",
-      question3: "Some people say that school canteens should ban all fried food. Do you agree? Why or why not?",
-      isDaily: true,
-    },
-    {
-      type: "STIMULUS",
-      title: "Community Clean-Up Day",
-      topic: "Environment & Community",
-      difficulty: "Advanced",
-      preambleText: "Look at the poster below and answer the questions that follow.",
-      passageText: "",
-      posterImageResName: "poster_cleanup",
-      posterDescription: "A vibrant community poster for 'Community Clean-Up Day'. It shows: (1) Volunteers of all ages picking up litter at a park and beach, (2) Recycling stations with bins labelled 'Paper', 'Plastic', 'Glass', (3) A scoreboard showing 'Cleanest Block Competition' with prizes, (4) Date: 'Saturday, 15 June, 8am-12pm', (5) A slogan 'Our Neighbourhood, Our Responsibility' with the town council logo.",
-      question1: "Would you encourage your family to join this event? Why or why not?",
-      question2: "What are some things you and your neighbours can do to keep your neighbourhood clean?",
-      question3: "Do you think giving prizes is the best way to encourage people to care for the environment? Why or why not?",
-      isDaily: false,
-    },
-  ];
+  return getSeedExercises();
 }

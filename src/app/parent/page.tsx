@@ -1,0 +1,429 @@
+"use client";
+
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import type { PracticeHistory } from "@/lib/types";
+import BottomNav from "../BottomNav";
+
+type PinMode = "set" | "verify";
+
+export default function ParentDashboard() {
+  const router = useRouter();
+  const [authenticated, setAuthenticated] = useState(false);
+  const [showPin, setShowPin] = useState(true);
+  const [pinMode, setPinMode] = useState<PinMode>("set");
+  const [pinDigits, setPinDigits] = useState(["", "", "", ""]);
+  const [pinError, setPinError] = useState("");
+  const [confirmDigits, setConfirmDigits] = useState(["", "", "", ""]);
+  const [confirmStep, setConfirmStep] = useState(false);
+  const pinRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const confirmRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const [history, setHistory] = useState<PracticeHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("parentPin");
+    if (stored) {
+      setPinMode("verify");
+    } else {
+      setPinMode("set");
+    }
+  }, []);
+
+  const handleAuthenticated = useCallback(() => {
+    setAuthenticated(true);
+    setShowPin(false);
+    fetch("/api/practice")
+      .then((r) => r.json())
+      .then((data: PracticeHistory[]) => {
+        setHistory(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const handlePinInput = (
+    index: number,
+    value: string,
+    digits: string[],
+    setDigits: (d: string[]) => void,
+    refs: React.MutableRefObject<(HTMLInputElement | null)[]>
+  ) => {
+    if (!/^\d?$/.test(value)) return;
+    const next = [...digits];
+    next[index] = value;
+    setDigits(next);
+    setPinError("");
+
+    if (value && index < 3) {
+      refs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePinKeyDown = (
+    index: number,
+    e: React.KeyboardEvent,
+    digits: string[],
+    setDigits: (d: string[]) => void,
+    refs: React.MutableRefObject<(HTMLInputElement | null)[]>
+  ) => {
+    if (e.key === "Backspace" && !digits[index] && index > 0) {
+      const next = [...digits];
+      next[index - 1] = "";
+      setDigits(next);
+      refs.current[index - 1]?.focus();
+    }
+  };
+
+  const submitPin = () => {
+    const pin = pinDigits.join("");
+    if (pin.length < 4) return;
+
+    if (pinMode === "set") {
+      if (!confirmStep) {
+        setConfirmStep(true);
+        setConfirmDigits(["", "", "", ""]);
+        setTimeout(() => confirmRefs.current[0]?.focus(), 50);
+        return;
+      }
+      const confirmPin = confirmDigits.join("");
+      if (pin !== confirmPin) {
+        setPinError("PINs do not match. Try again.");
+        setConfirmStep(false);
+        setPinDigits(["", "", "", ""]);
+        setConfirmDigits(["", "", "", ""]);
+        setTimeout(() => pinRefs.current[0]?.focus(), 50);
+        return;
+      }
+      localStorage.setItem("parentPin", pin);
+      handleAuthenticated();
+    } else {
+      const stored = localStorage.getItem("parentPin");
+      if (pin === stored) {
+        handleAuthenticated();
+      } else {
+        setPinError("Incorrect PIN. Try again.");
+        setPinDigits(["", "", "", ""]);
+        setTimeout(() => pinRefs.current[0]?.focus(), 50);
+      }
+    }
+  };
+
+  // Auto-submit when all digits filled
+  useEffect(() => {
+    if (pinMode === "verify" && pinDigits.every((d) => d !== "")) {
+      submitPin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pinDigits, pinMode]);
+
+  useEffect(() => {
+    if (confirmStep && confirmDigits.every((d) => d !== "")) {
+      submitPin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmDigits, confirmStep]);
+
+  // Focus first input on mount
+  useEffect(() => {
+    setTimeout(() => pinRefs.current[0]?.focus(), 100);
+  }, []);
+
+  // Calculate stats
+  const evaluated = history.filter((h) => h.isEvaluated);
+  const totalSessions = evaluated.length;
+  const avgScore =
+    totalSessions > 0
+      ? Math.round(
+          evaluated.reduce((sum, h) => {
+            const pct = h.maxScore > 0 ? (h.totalScore / h.maxScore) * 100 : 0;
+            return sum + pct;
+          }, 0) / totalSessions
+        )
+      : 0;
+  const bestScore =
+    totalSessions > 0
+      ? Math.round(
+          Math.max(
+            ...evaluated.map((h) =>
+              h.maxScore > 0 ? (h.totalScore / h.maxScore) * 100 : 0
+            )
+          )
+        )
+      : 0;
+
+  // Calculate streak: consecutive days with at least one practice
+  const streak = (() => {
+    if (evaluated.length === 0) return 0;
+    const daySet = new Set<string>();
+    evaluated.forEach((h) => {
+      const d = new Date(h.dateMillis);
+      daySet.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    });
+    const days = Array.from(daySet)
+      .map((s) => {
+        const [y, m, d] = s.split("-").map(Number);
+        return new Date(y, m, d).getTime();
+      })
+      .sort((a, b) => b - a);
+
+    let count = 1;
+    const oneDay = 86400000;
+    for (let i = 0; i < days.length - 1; i++) {
+      if (days[i] - days[i + 1] <= oneDay) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    // Check if most recent day is today or yesterday
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    if (days[0] < today - oneDay) return 0;
+    return count;
+  })();
+
+  if (showPin) {
+    return (
+      <>
+        <div className="pin-overlay">
+          <div className="pin-modal">
+            <div style={{ fontSize: 40, marginBottom: 8 }}>&#x1F512;</div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
+              {pinMode === "set"
+                ? confirmStep
+                  ? "Confirm Your PIN"
+                  : "Set Parent PIN"
+                : "Enter Parent PIN"}
+            </h2>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>
+              {pinMode === "set"
+                ? confirmStep
+                  ? "Enter the same PIN again to confirm."
+                  : "Create a 4-digit PIN to protect the parent portal."
+                : "Enter your 4-digit PIN to access the parent portal."}
+            </p>
+
+            {pinError && (
+              <div
+                style={{
+                  color: "var(--danger)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginTop: 8,
+                }}
+              >
+                {pinError}
+              </div>
+            )}
+
+            {!confirmStep ? (
+              <div className="pin-input">
+                {pinDigits.map((d, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => { pinRefs.current[i] = el; }}
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={(e) =>
+                      handlePinInput(i, e.target.value, pinDigits, setPinDigits, pinRefs)
+                    }
+                    onKeyDown={(e) =>
+                      handlePinKeyDown(i, e, pinDigits, setPinDigits, pinRefs)
+                    }
+                    autoComplete="off"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="pin-input">
+                {confirmDigits.map((d, i) => (
+                  <input
+                    key={`c-${i}`}
+                    ref={(el) => { confirmRefs.current[i] = el; }}
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={(e) =>
+                      handlePinInput(
+                        i,
+                        e.target.value,
+                        confirmDigits,
+                        setConfirmDigits,
+                        confirmRefs
+                      )
+                    }
+                    onKeyDown={(e) =>
+                      handlePinKeyDown(
+                        i,
+                        e,
+                        confirmDigits,
+                        setConfirmDigits,
+                        confirmRefs
+                      )
+                    }
+                    autoComplete="off"
+                  />
+                ))}
+              </div>
+            )}
+
+            {pinMode === "set" && !confirmStep && (
+              <button
+                className="btn btn-primary"
+                disabled={pinDigits.some((d) => d === "")}
+                onClick={submitPin}
+              >
+                Continue
+              </button>
+            )}
+
+            {pinMode === "set" && confirmStep && (
+              <button
+                className="btn btn-primary"
+                disabled={confirmDigits.some((d) => d === "")}
+                onClick={submitPin}
+              >
+                Set PIN
+              </button>
+            )}
+          </div>
+        </div>
+
+        <BottomNav active="parent" />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <header className="page-header">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h1>Parent Dashboard</h1>
+          <button
+            onClick={() => router.push("/")}
+            style={{
+              background: "rgba(255,255,255,0.2)",
+              border: "none",
+              color: "white",
+              padding: "6px 14px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Back to Student
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <div className="container" style={{ paddingTop: 16 }}>
+          {loading ? (
+            <div className="loading">
+              <div className="spinner" />
+              <span>Loading data...</span>
+            </div>
+          ) : (
+            <>
+              {/* Stats Grid */}
+              <div className="card">
+                <div className="card-title">Overview</div>
+                <div className="stat-grid">
+                  <div className="stat-card">
+                    <div className="stat-value">{totalSessions}</div>
+                    <div className="stat-label">Total Sessions</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-value">{avgScore}%</div>
+                    <div className="stat-label">Average Score</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-value">{bestScore}%</div>
+                    <div className="stat-label">Best Score</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-value">{streak}</div>
+                    <div className="stat-label">Current Streak</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Sessions */}
+              <div className="section-label">Recent Sessions</div>
+              {history.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">&#x1F4CA;</div>
+                  <p>No practice sessions yet.</p>
+                  <p style={{ marginTop: 4, fontSize: 13 }}>
+                    Sessions will appear here once your child completes a practice.
+                  </p>
+                </div>
+              ) : (
+                history.map((h) => {
+                  const percentage =
+                    h.maxScore > 0
+                      ? Math.round((h.totalScore / h.maxScore) * 100)
+                      : 0;
+                  const scoreClass =
+                    percentage >= 70
+                      ? "score-high"
+                      : percentage >= 50
+                      ? "score-mid"
+                      : "score-low";
+                  const date = new Date(h.dateMillis);
+                  const dateStr = date.toLocaleDateString("en-SG", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  });
+
+                  return (
+                    <div
+                      key={h.id}
+                      className="card"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => router.push(`/parent/session/${h.id}`)}
+                    >
+                      <div className="history-item">
+                        <div className={`hi-score ${scoreClass}`}>
+                          {h.isEvaluated ? `${h.totalScore}` : "..."}
+                        </div>
+                        <div className="hi-info">
+                          <div className="hi-title">{h.exerciseTitle}</div>
+                          <div className="hi-meta">
+                            {dateStr} &middot;{" "}
+                            {h.exerciseType === "READING" ? "Reading" : "SBC"} &middot;{" "}
+                            {h.totalScore}/{h.maxScore}
+                            {h.parentTotalScore != null && (
+                              <span> &middot; Parent: {h.parentTotalScore}</span>
+                            )}
+                          </div>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 18,
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          &rsaquo;
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </>
+          )}
+        </div>
+      </main>
+
+      <BottomNav active="parent" />
+    </>
+  );
+}
