@@ -10,10 +10,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const apiKey = getEffectiveApiKey();
+  const apiKey = await getEffectiveApiKey();
 
   if (!apiKey) {
-    // No API key: return a placeholder description instead of generating
     return NextResponse.json({
       imageUrl: null,
       description: description,
@@ -56,20 +55,18 @@ export async function POST(request: NextRequest) {
         data: string;
       };
       const dataUrl = `data:${mimeType};base64,${b64}`;
-      updateExerciseImage(Number(exerciseId), dataUrl);
+      await updateExerciseImage(Number(exerciseId), dataUrl);
       return NextResponse.json({
         imageUrl: dataUrl,
         description: description,
       });
     }
 
-    // Image generation did not return inline data
     return NextResponse.json({
       imageUrl: null,
       description: description,
     });
   } catch (e) {
-    // On error, return null imageUrl with description as fallback
     return NextResponse.json({
       imageUrl: null,
       description: description,

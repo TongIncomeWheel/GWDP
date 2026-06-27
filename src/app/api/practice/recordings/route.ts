@@ -6,6 +6,6 @@ export async function DELETE(request: NextRequest) {
   if (!id) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
-  clearRecordings(Number(id));
+  await clearRecordings(Number(id));
   return NextResponse.json({ ok: true });
 }

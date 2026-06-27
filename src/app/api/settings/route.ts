@@ -4,7 +4,7 @@ import type { AppSettings } from "@/lib/types";
 
 export async function GET() {
   try {
-    const settings = getAllSettings();
+    const settings = await getAllSettings();
     const masked = {
       ...settings,
       geminiApiKey: settings.geminiApiKey ? "••••" + settings.geminiApiKey.slice(-4) : "",
@@ -18,7 +18,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body: AppSettings = await request.json();
-    const current = getAllSettings();
+    const current = await getAllSettings();
     const toSave: AppSettings = {
       geminiApiKey: body.geminiApiKey === "••••" + current.geminiApiKey.slice(-4)
         ? current.geminiApiKey
@@ -29,7 +29,7 @@ export async function PUT(request: NextRequest) {
       childName: body.childName ?? "",
       dailyPracticeGoal: Number(body.dailyPracticeGoal) || 1,
     };
-    saveAllSettings(toSave);
+    await saveAllSettings(toSave);
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

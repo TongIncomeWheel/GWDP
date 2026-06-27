@@ -6,6 +6,6 @@ export async function POST(request: NextRequest) {
   if (!id) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
-  closeExercise(Number(id));
+  await closeExercise(Number(id));
   return NextResponse.json({ ok: true });
 }

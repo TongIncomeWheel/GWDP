@@ -3,7 +3,7 @@ import { getAllSettings, getAllPracticeHistory } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   const { type, historyId } = await request.json();
-  const settings = getAllSettings();
+  const settings = await getAllSettings();
 
   if (!settings.notificationEmail) {
     return NextResponse.json({ skipped: true, reason: "No notification email configured" });
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   let body = "";
 
   if (type === "completion") {
-    const history = getAllPracticeHistory();
+    const history = await getAllPracticeHistory();
     const session = history.find((h) => h.id === historyId);
     const score = session ? `${session.totalScore}/${session.maxScore}` : "N/A";
     const exercise = session?.exerciseTitle || "an exercise";
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       .filter(Boolean)
       .join("\n");
   } else if (type === "missed") {
-    const history = getAllPracticeHistory();
+    const history = await getAllPracticeHistory();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayMs = today.getTime();
@@ -63,7 +63,6 @@ export async function POST(request: NextRequest) {
     ].join("\n");
   }
 
-  // For now, log the notification (actual email sending requires SMTP/Gmail API setup in Phase 4)
   console.log(`[NOTIFICATION] To: ${settings.notificationEmail}`);
   console.log(`[NOTIFICATION] Subject: ${subject}`);
   console.log(`[NOTIFICATION] Body:\n${body}`);

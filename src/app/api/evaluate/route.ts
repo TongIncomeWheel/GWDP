@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPracticeHistoryById, getExerciseById, updatePracticeHistory, getEffectiveApiKey, getAllSettings } from "@/lib/db";
 import { evaluateWithGemini, generateMockEvaluation } from "@/lib/gemini";
 
-function triggerCompletionNotification(historyId: number) {
-  const settings = getAllSettings();
+async function triggerCompletionNotification(historyId: number) {
+  const settings = await getAllSettings();
   if (settings.notificationEmail && settings.emailOnCompletion) {
     console.log(`[NOTIFY] Triggering completion notification for session ${historyId}`);
     const { notificationEmail, childName } = settings;
-    const history = getPracticeHistoryById(historyId);
+    const history = await getPracticeHistoryById(historyId);
     const exercise = history?.exerciseTitle || "an exercise";
     const score = history ? `${history.totalScore}/${history.maxScore}` : "N/A";
     console.log(`[NOTIFY] To: ${notificationEmail}`);
@@ -18,21 +18,21 @@ function triggerCompletionNotification(historyId: number) {
 export async function POST(request: NextRequest) {
   const { historyId } = await request.json();
 
-  const history = getPracticeHistoryById(historyId);
+  const history = await getPracticeHistoryById(historyId);
   if (!history) {
     return NextResponse.json({ error: "Practice history not found" }, { status: 404 });
   }
 
-  updatePracticeHistory({ ...history, isEvaluating: true, errorMessage: null });
+  await updatePracticeHistory({ ...history, isEvaluating: true, errorMessage: null });
 
-  const exercise = getExerciseById(history.exerciseId);
+  const exercise = await getExerciseById(history.exerciseId);
   if (!exercise) {
     const errorState = { ...history, isEvaluating: false, errorMessage: "Corresponding exercise not found." };
-    updatePracticeHistory(errorState);
+    await updatePracticeHistory(errorState);
     return NextResponse.json(errorState);
   }
 
-  const apiKey = getEffectiveApiKey();
+  const apiKey = await getEffectiveApiKey();
 
   if (!apiKey) {
     const result = generateMockEvaluation(history, exercise);
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       isEvaluating: false,
       errorMessage: "No API key configured. Showing simulated assessment for practice purposes.",
     };
-    updatePracticeHistory(evaluated);
+    await updatePracticeHistory(evaluated);
     return NextResponse.json(evaluated);
   }
 
@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
       isEvaluating: false,
       errorMessage: null,
     };
-    updatePracticeHistory(evaluated);
-    triggerCompletionNotification(historyId);
+    await updatePracticeHistory(evaluated);
+    await triggerCompletionNotification(historyId);
     return NextResponse.json(evaluated);
   } catch (e) {
     const result = generateMockEvaluation(history, exercise);
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       isEvaluating: false,
       errorMessage: `Network issue occurred. Showing simulated assessment. (${(e as Error).message})`,
     };
-    updatePracticeHistory(fallback);
+    await updatePracticeHistory(fallback);
     return NextResponse.json(fallback);
   }
 }

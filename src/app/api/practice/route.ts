@@ -11,16 +11,16 @@ import type { PracticeHistory } from "@/lib/types";
 export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get("id");
   if (id) {
-    const history = getPracticeHistoryById(Number(id));
+    const history = await getPracticeHistoryById(Number(id));
     if (!history) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(history);
   }
-  return NextResponse.json(getAllPracticeHistory());
+  return NextResponse.json(await getAllPracticeHistory());
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const id = insertPracticeHistory({
+  const id = await insertPracticeHistory({
     exerciseId: body.exerciseId,
     exerciseTitle: body.exerciseTitle || "",
     exerciseType: body.exerciseType || "READING",
@@ -65,16 +65,14 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const body = await request.json();
 
-  // If an id is provided, fetch the existing record and merge
   if (body.id) {
-    const existing = getPracticeHistoryById(Number(body.id));
+    const existing = await getPracticeHistoryById(Number(body.id));
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     const updated: PracticeHistory = {
       ...existing,
-      // Allow updating all standard fields
       exerciseId: body.exerciseId ?? existing.exerciseId,
       exerciseTitle: body.exerciseTitle ?? existing.exerciseTitle,
       exerciseType: body.exerciseType ?? existing.exerciseType,
@@ -100,36 +98,32 @@ export async function PUT(request: NextRequest) {
       isEvaluated: body.isEvaluated !== undefined ? body.isEvaluated : existing.isEvaluated,
       isEvaluating: body.isEvaluating !== undefined ? body.isEvaluating : existing.isEvaluating,
       errorMessage: body.errorMessage !== undefined ? body.errorMessage : existing.errorMessage,
-      // Parent grading fields
       parentScore1: body.parentScore1 !== undefined ? body.parentScore1 : existing.parentScore1,
       parentScore2: body.parentScore2 !== undefined ? body.parentScore2 : existing.parentScore2,
       parentScore3: body.parentScore3 !== undefined ? body.parentScore3 : existing.parentScore3,
       parentFeedback: body.parentFeedback !== undefined ? body.parentFeedback : existing.parentFeedback,
       parentTotalScore: body.parentTotalScore !== undefined ? body.parentTotalScore : existing.parentTotalScore,
-      // Audio blob fields
       audioBlob1: body.audioBlob1 !== undefined ? body.audioBlob1 : existing.audioBlob1,
       audioBlob2: body.audioBlob2 !== undefined ? body.audioBlob2 : existing.audioBlob2,
       audioBlob3: body.audioBlob3 !== undefined ? body.audioBlob3 : existing.audioBlob3,
-      // Structured transcript fields
       structuredTranscript1: body.structuredTranscript1 !== undefined ? body.structuredTranscript1 : existing.structuredTranscript1,
       structuredTranscript2: body.structuredTranscript2 !== undefined ? body.structuredTranscript2 : existing.structuredTranscript2,
       structuredTranscript3: body.structuredTranscript3 !== undefined ? body.structuredTranscript3 : existing.structuredTranscript3,
       isClosed: body.isClosed !== undefined ? body.isClosed : existing.isClosed,
     };
 
-    updatePracticeHistory(updated);
+    await updatePracticeHistory(updated);
     return NextResponse.json({ ok: true });
   }
 
-  // Fallback: treat body as full PracticeHistory object
   const fullBody: PracticeHistory = body;
-  updatePracticeHistory(fullBody);
+  await updatePracticeHistory(fullBody);
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(request: NextRequest) {
   const id = request.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  deletePracticeHistoryById(Number(id));
+  await deletePracticeHistoryById(Number(id));
   return NextResponse.json({ ok: true });
 }

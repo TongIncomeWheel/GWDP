@@ -3,8 +3,8 @@ import { getAllExercises, prepopulateExercisesIfNeeded } from "@/lib/db";
 
 export async function GET() {
   try {
-    prepopulateExercisesIfNeeded();
-    const exercises = getAllExercises();
+    await prepopulateExercisesIfNeeded();
+    const exercises = await getAllExercises();
     return NextResponse.json(exercises);
   } catch (e) {
     console.error("[EXERCISES API ERROR]", e);
