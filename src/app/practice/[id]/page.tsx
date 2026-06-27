@@ -61,6 +61,7 @@ export default function PracticePage() {
   );
   const [posterImage, setPosterImage] = useState<string | null>(null);
   const [generatingImage, setGeneratingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -211,6 +212,7 @@ export default function PracticePage() {
 
   const fetchPosterImage = async (ex: OralExercise) => {
     setGeneratingImage(true);
+    setImageError("");
     try {
       const res = await fetch("/api/poster", {
         method: "POST",
@@ -221,9 +223,13 @@ export default function PracticePage() {
         }),
       });
       const data = await res.json();
-      if (data.imageUrl) setPosterImage(data.imageUrl);
+      if (data.imageUrl) {
+        setPosterImage(data.imageUrl);
+      } else if (data.error) {
+        setImageError(data.error);
+      }
     } catch {
-      /* ignore */
+      setImageError("Network error generating image.");
     }
     setGeneratingImage(false);
   };
@@ -429,13 +435,25 @@ export default function PracticePage() {
                     <strong>Visual Stimulus: {exercise.topic}</strong>
                     {exercise.photographDescription ||
                       exercise.posterDescription}
+                    {imageError && (
+                      <div style={{
+                        marginTop: 8,
+                        fontSize: 12,
+                        color: "var(--coral)",
+                        padding: "6px 10px",
+                        background: "var(--coral-soft)",
+                        borderRadius: 8,
+                      }}>
+                        {imageError}
+                      </div>
+                    )}
                     <div style={{ marginTop: 8 }}>
                       <button
                         className="btn btn-sm btn-outline"
                         onClick={generateImage}
                         style={{ width: "auto" }}
                       >
-                        Generate Image
+                        {imageError ? "Retry Image Generation" : "Generate Image"}
                       </button>
                     </div>
                   </div>

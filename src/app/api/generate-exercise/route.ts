@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
   const selectedTopic = topic || PSLE_TOPICS[Math.floor(Math.random() * PSLE_TOPICS.length)];
   const selectedDifficulty = difficulty || "Intermediate";
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   try {
     const [readingRes, sbcRes] = await Promise.all([

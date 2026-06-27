@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const prompt = `Generate a realistic photograph suitable for a Singapore primary school English oral examination stimulus-based conversation exercise. The image should depict: ${description}. The image should be appropriate for children aged 11-12, realistic, and clearly show the described scene. Do NOT include any text or words in the image.`;
 
   const imageUrl = await tryImagenGeneration(apiKey, prompt) ||
-                   await tryGeminiFlashGeneration(apiKey, prompt);
+                   await tryGeminiGeneration(apiKey, prompt);
 
   if (imageUrl) {
     await updateExerciseImage(Number(exerciseId), imageUrl);
@@ -33,19 +33,18 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     imageUrl: null,
     description,
-    error: "Image generation failed. The API may not support image output with your current plan.",
+    error: "Image generation failed. Your API key may not have access to image generation models.",
   });
 }
 
 async function tryImagenGeneration(apiKey: string, prompt: string): Promise<string | null> {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key=${apiKey}`;
     const body = {
-      instances: [{ prompt }],
-      parameters: {
-        sampleCount: 1,
+      prompt,
+      config: {
+        numberOfImages: 1,
         aspectRatio: "4:3",
-        safetyFilterLevel: "block_few",
       },
     };
 
@@ -55,48 +54,58 @@ async function tryImagenGeneration(apiKey: string, prompt: string): Promise<stri
       body: JSON.stringify(body),
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log(`[POSTER] Imagen failed: ${res.status}`);
+      return null;
+    }
 
     const data = await res.json();
-    const b64 = data.predictions?.[0]?.bytesBase64Encoded;
+    const b64 = data.generatedImages?.[0]?.image?.imageBytes;
     if (b64) {
       return `data:image/png;base64,${b64}`;
     }
     return null;
-  } catch {
+  } catch (e) {
+    console.log(`[POSTER] Imagen error: ${(e as Error).message}`);
     return null;
   }
 }
 
-async function tryGeminiFlashGeneration(apiKey: string, prompt: string): Promise<string | null> {
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
-    const body = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseModalities: ["IMAGE", "TEXT"],
-      },
-    };
+async function tryGeminiGeneration(apiKey: string, prompt: string): Promise<string | null> {
+  const models = ["gemini-2.5-flash", "gemini-2.0-flash-001"];
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const body = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseModalities: ["IMAGE", "TEXT"],
+        },
+      };
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-    if (!res.ok) return null;
+      if (!res.ok) {
+        console.log(`[POSTER] ${model} failed: ${res.status}`);
+        continue;
+      }
 
-    const data = await res.json();
-    const parts = data.candidates?.[0]?.content?.parts;
-    if (!parts) return null;
+      const data = await res.json();
+      const parts = data.candidates?.[0]?.content?.parts;
+      if (!parts) continue;
 
-    const imagePart = parts.find((p: Record<string, unknown>) => p.inlineData);
-    if (imagePart?.inlineData) {
-      const { mimeType, data: b64 } = imagePart.inlineData as { mimeType: string; data: string };
-      return `data:${mimeType};base64,${b64}`;
+      const imagePart = parts.find((p: Record<string, unknown>) => p.inlineData);
+      if (imagePart?.inlineData) {
+        const { mimeType, data: b64 } = imagePart.inlineData as { mimeType: string; data: string };
+        return `data:${mimeType};base64,${b64}`;
+      }
+    } catch (e) {
+      console.log(`[POSTER] ${model} error: ${(e as Error).message}`);
     }
-    return null;
-  } catch {
-    return null;
   }
+  return null;
 }
