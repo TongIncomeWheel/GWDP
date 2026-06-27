@@ -19,12 +19,16 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
+  const [hasEnvApiKey, setHasEnvApiKey] = useState(false);
+  const [hasEffectiveApiKey, setHasEffectiveApiKey] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
-      .then((data: AppSettings) => {
-        setSettings(data);
+      .then((data) => {
+        setSettings(data as AppSettings);
+        setHasEnvApiKey(!!data.hasEnvApiKey);
+        setHasEffectiveApiKey(!!data.hasEffectiveApiKey);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -161,8 +165,23 @@ export default function SettingsPage() {
                 <span style={{ color: "var(--primary)", fontWeight: 600 }}>
                   aistudio.google.com
                 </span>
-                . If left empty, the app uses the server environment variable.
+                . Settings are saved in Firestore and persist across deployments.
               </p>
+              {hasEnvApiKey && (
+                <p style={{ ...helpStyle, color: "var(--teal, #2DD4BF)", marginTop: 6 }}>
+                  Server environment variable GEMINI_API_KEY is set. This is used as a fallback if no key is entered above.
+                </p>
+              )}
+              {hasEffectiveApiKey && !settings.geminiApiKey && (
+                <p style={{ ...helpStyle, color: "var(--teal, #2DD4BF)", marginTop: 4 }}>
+                  Using server environment variable for API access.
+                </p>
+              )}
+              {!hasEffectiveApiKey && (
+                <p style={{ ...helpStyle, color: "var(--coral, #F87171)", marginTop: 6 }}>
+                  No API key configured. Enter one above or set GEMINI_API_KEY in Cloud Run environment variables.
+                </p>
+              )}
             </div>
           </div>
 
@@ -254,8 +273,8 @@ export default function SettingsPage() {
           {saved && (
             <div
               style={{
-                background: "#f0fdf4",
-                color: "#16a34a",
+                background: "var(--teal-soft, #f0fdf4)",
+                color: "var(--teal, #16a34a)",
                 padding: "10px 14px",
                 borderRadius: 10,
                 fontSize: 13,
@@ -318,9 +337,11 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 10,
   border: "1.5px solid var(--border, #e5e7eb)",
   fontSize: 14,
-  background: "var(--card-bg, #fff)",
+  background: "var(--bg-elevated, #2A254A)",
+  color: "var(--text-primary, #F1F0F7)",
   outline: "none",
   boxSizing: "border-box",
+  fontFamily: "inherit",
 };
 
 const helpStyle: React.CSSProperties = {

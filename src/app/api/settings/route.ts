@@ -5,9 +5,13 @@ import type { AppSettings } from "@/lib/types";
 export async function GET() {
   try {
     const settings = await getAllSettings();
+    const envKey = process.env.GEMINI_API_KEY || "";
+    const effectiveKey = settings.geminiApiKey || envKey;
     const masked = {
       ...settings,
       geminiApiKey: settings.geminiApiKey ? "••••" + settings.geminiApiKey.slice(-4) : "",
+      hasEnvApiKey: !!envKey,
+      hasEffectiveApiKey: !!effectiveKey,
     };
     return NextResponse.json(masked);
   } catch (e) {
