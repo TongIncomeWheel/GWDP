@@ -40,11 +40,14 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Server error ${res.status}`);
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch {
-      setError("Failed to save settings. Please try again.");
+    } catch (e) {
+      setError(`Failed to save: ${(e as Error).message}`);
     } finally {
       setSaving(false);
     }
