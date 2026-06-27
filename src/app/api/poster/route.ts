@@ -15,36 +15,81 @@ export async function POST(request: NextRequest) {
   if (!apiKey) {
     return NextResponse.json({
       imageUrl: null,
-      description: description,
+      description,
       error: "No Gemini API key configured. Set it in Parent > Settings to enable image generation.",
     });
   }
 
   const prompt = `Generate a realistic photograph suitable for a Singapore primary school English oral examination stimulus-based conversation exercise. The image should depict: ${description}. The image should be appropriate for children aged 11-12, realistic, and clearly show the described scene. Do NOT include any text or words in the image.`;
 
-  const imageUrl = await tryImagenGeneration(apiKey, prompt) ||
-                   await tryGeminiGeneration(apiKey, prompt);
+  const errors: string[] = [];
 
-  if (imageUrl) {
-    return NextResponse.json({ imageUrl, description });
-  }
+  const imagenUrl = await tryImagenGeneration(apiKey, prompt, errors);
+  if (imagenUrl) return NextResponse.json({ imageUrl: imagenUrl, description });
+
+  const geminiUrl = await tryGeminiGeneration(apiKey, prompt, errors);
+  if (geminiUrl) return NextResponse.json({ imageUrl: geminiUrl, description });
 
   return NextResponse.json({
     imageUrl: null,
     description,
-    error: "Image generation failed. Your API key may not have access to image generation models.",
+    error: `Image generation failed: ${errors.join(" | ")}`,
   });
 }
 
-async function tryImagenGeneration(apiKey: string, prompt: string): Promise<string | null> {
+// GET: diagnostic endpoint — returns exact API errors without generating
+export async function GET() {
+  const apiKey = await getEffectiveApiKey();
+  if (!apiKey) {
+    return NextResponse.json({ hasKey: false, errors: ["No API key configured"] });
+  }
+
+  const results: Record<string, string> = {};
+
+  // Test Imagen
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: "a red apple", sampleCount: 1 }),
+    });
+    const text = await res.text();
+    results["imagen-3.0-generate-002"] = `${res.status}: ${text.slice(0, 200)}`;
+  } catch (e) {
+    results["imagen-3.0-generate-002"] = `exception: ${(e as Error).message}`;
+  }
+
+  // Test gemini-2.0-flash-preview-image-generation
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: "a red apple" }] }],
+        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+      }),
+    });
+    const text = await res.text();
+    results["gemini-2.0-flash-preview-image-generation"] = `${res.status}: ${text.slice(0, 200)}`;
+  } catch (e) {
+    results["gemini-2.0-flash-preview-image-generation"] = `exception: ${(e as Error).message}`;
+  }
+
+  return NextResponse.json({ hasKey: true, keyTail: apiKey.slice(-4), results });
+}
+
+async function tryImagenGeneration(apiKey: string, prompt: string, errors: string[]): Promise<string | null> {
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key=${apiKey}`;
+    // REST body format — NOT the Python SDK "config" wrapper
     const body = {
       prompt,
-      config: {
-        numberOfImages: 1,
-        aspectRatio: "4:3",
-      },
+      sampleCount: 1,
+      aspectRatio: "4:3",
+      safetyFilterLevel: "BLOCK_MEDIUM_AND_ABOVE",
+      personGeneration: "ALLOW_ADULT",
     };
 
     const res = await fetch(url, {
@@ -55,25 +100,35 @@ async function tryImagenGeneration(apiKey: string, prompt: string): Promise<stri
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      console.log(`[POSTER] Imagen failed ${res.status}: ${errText.slice(0, 300)}`);
+      const msg = `Imagen ${res.status}: ${errText.slice(0, 200)}`;
+      console.log(`[POSTER] ${msg}`);
+      errors.push(msg);
       return null;
     }
 
     const data = await res.json();
-    const b64 = data.generatedImages?.[0]?.image?.imageBytes;
-    if (b64) {
-      return `data:image/png;base64,${b64}`;
-    }
-    console.log("[POSTER] Imagen: no imageBytes in response");
+    const b64 = data.predictions?.[0]?.bytesBase64Encoded
+      || data.generatedImages?.[0]?.image?.imageBytes;
+    if (b64) return `data:image/png;base64,${b64}`;
+
+    console.log("[POSTER] Imagen: unexpected response shape", JSON.stringify(data).slice(0, 200));
+    errors.push("Imagen: no image bytes in response");
     return null;
   } catch (e) {
-    console.log(`[POSTER] Imagen error: ${(e as Error).message}`);
+    const msg = `Imagen exception: ${(e as Error).message}`;
+    console.log(`[POSTER] ${msg}`);
+    errors.push(msg);
     return null;
   }
 }
 
-async function tryGeminiGeneration(apiKey: string, prompt: string): Promise<string | null> {
-  const models = ["gemini-2.0-flash-exp", "gemini-2.5-flash"];
+async function tryGeminiGeneration(apiKey: string, prompt: string, errors: string[]): Promise<string | null> {
+  // gemini-2.0-flash-preview-image-generation is the current production name
+  // gemini-2.0-flash-exp is the older alias that some keys still support
+  const models = [
+    "gemini-2.0-flash-preview-image-generation",
+    "gemini-2.0-flash-exp",
+  ];
   for (const model of models) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -92,21 +147,29 @@ async function tryGeminiGeneration(apiKey: string, prompt: string): Promise<stri
 
       if (!res.ok) {
         const errText = await res.text().catch(() => "");
-        console.log(`[POSTER] ${model} failed ${res.status}: ${errText.slice(0, 300)}`);
+        const msg = `${model} ${res.status}: ${errText.slice(0, 200)}`;
+        console.log(`[POSTER] ${msg}`);
+        errors.push(msg);
         continue;
       }
 
       const data = await res.json();
       const parts = data.candidates?.[0]?.content?.parts;
-      if (!parts) continue;
+      if (!parts) {
+        errors.push(`${model}: no content parts`);
+        continue;
+      }
 
       const imagePart = parts.find((p: Record<string, unknown>) => p.inlineData);
       if (imagePart?.inlineData) {
         const { mimeType, data: b64 } = imagePart.inlineData as { mimeType: string; data: string };
         return `data:${mimeType};base64,${b64}`;
       }
+      errors.push(`${model}: no inlineData image part`);
     } catch (e) {
-      console.log(`[POSTER] ${model} error: ${(e as Error).message}`);
+      const msg = `${model} exception: ${(e as Error).message}`;
+      console.log(`[POSTER] ${msg}`);
+      errors.push(msg);
     }
   }
   return null;
