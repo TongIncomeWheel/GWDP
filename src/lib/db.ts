@@ -1,5 +1,6 @@
 import { initializeApp, applicationDefault, cert, getApps, App } from "firebase-admin/app";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import type { OralExercise, PracticeHistory, AppSettings } from "./types";
 import { getSeedExercises } from "./seed-data";
 
@@ -29,6 +30,28 @@ function getDb(): Firestore {
   return _db;
 }
 
+function getBucket() {
+  getDb(); // ensures app is initialized
+  const projectId = process.env.GCLOUD_PROJECT || "gen-lang-client-0684149502";
+  const bucketName = process.env.GCLOUD_STORAGE_BUCKET || `${projectId}.appspot.com`;
+  return getStorage().bucket(bucketName);
+}
+
+export async function uploadAudioToStorage(base64Data: string, mimeType: string): Promise<string> {
+  const bucket = getBucket();
+  const raw = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
+  const buffer = Buffer.from(raw, "base64");
+  const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+  const filename = `audio/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const file = bucket.file(filename);
+  await file.save(buffer, {
+    contentType: mimeType,
+    metadata: { cacheControl: "public, max-age=31536000" },
+  });
+  await file.makePublic();
+  return `https://storage.googleapis.com/${bucket.name}/${filename}`;
+}
+
 // ── Exercises ──
 
 export async function getAllExercises(): Promise<OralExercise[]> {
@@ -39,9 +62,9 @@ export async function getAllExercises(): Promise<OralExercise[]> {
 
 export async function getExerciseById(id: number): Promise<OralExercise | undefined> {
   const db = getDb();
-  const snap = await db.collection("exercises").where("id", "==", id).limit(1).get();
-  if (snap.empty) return undefined;
-  return snap.docs[0].data() as OralExercise;
+  const snap = await db.collection("exercises").doc(String(id)).get();
+  if (!snap.exists) return undefined;
+  return snap.data() as OralExercise;
 }
 
 export async function getExerciseCount(): Promise<number> {
@@ -126,6 +149,22 @@ export async function getAllPracticeHistory(): Promise<PracticeHistory[]> {
   return snap.docs.map((d) => d.data() as PracticeHistory);
 }
 
+// List view — excludes audio blobs and large transcript fields to keep payloads small
+export async function getAllPracticeHistoryMeta(): Promise<Partial<PracticeHistory>[]> {
+  const db = getDb();
+  const snap = await db
+    .collection("practice_history")
+    .orderBy("dateMillis", "desc")
+    .select(
+      "id", "exerciseId", "exerciseTitle", "exerciseType", "exerciseTopic",
+      "dateMillis", "totalScore", "maxScore", "isEvaluated", "isEvaluating",
+      "parentScore1", "parentScore2", "parentScore3", "parentTotalScore",
+      "isClosed", "errorMessage", "audioPath1", "audioPath2", "audioPath3"
+    )
+    .get();
+  return snap.docs.map((d) => d.data() as Partial<PracticeHistory>);
+}
+
 export async function getPracticeHistoryById(id: number): Promise<PracticeHistory | undefined> {
   const db = getDb();
   const doc = await db.collection("practice_history").doc(String(id)).get();
@@ -170,6 +209,25 @@ export async function updateParentGrading(
     parentTotalScore,
     parentFeedback,
   });
+}
+
+export async function updateEvaluationResult(
+  id: number,
+  fields: {
+    score1: number; score2: number; score3: number;
+    totalScore: number; maxScore: number;
+    generalFeedback: string | null; strengths: string | null; areasOfImprovement: string | null;
+    modelAnswer1: string | null; modelAnswer2: string | null; modelAnswer3: string | null;
+    isEvaluated: boolean; isEvaluating: boolean; errorMessage: string | null;
+  }
+): Promise<void> {
+  const db = getDb();
+  await db.collection("practice_history").doc(String(id)).update(fields);
+}
+
+export async function setEvaluating(id: number, isEvaluating: boolean, errorMessage: string | null = null): Promise<void> {
+  const db = getDb();
+  await db.collection("practice_history").doc(String(id)).update({ isEvaluating, errorMessage });
 }
 
 export async function closeExercise(id: number): Promise<void> {

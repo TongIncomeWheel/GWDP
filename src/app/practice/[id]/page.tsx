@@ -58,6 +58,8 @@ export default function PracticePage() {
     null,
     null,
   ]);
+  const [audioPaths, setAudioPaths] = useState<(string | null)[]>([null, null, null]);
+  const [uploadingAudio, setUploadingAudio] = useState<boolean[]>([false, false, false]);
   const [recordingStates, setRecordingStates] = useState<RecordingState[]>([
     "idle",
     "idle",
@@ -92,12 +94,12 @@ export default function PracticePage() {
   const CACHE_KEY = `poster_img_${exerciseId}`;
 
   useEffect(() => {
-    fetch("/api/exercises")
+    fetch(`/api/exercises/${exerciseId}`)
       .then((r) => r.json())
-      .then((data: OralExercise[]) => {
-        const ex = data.find((e) => e.id === exerciseId);
-        setExercise(ex || null);
-        if (ex && ex.type === "STIMULUS") {
+      .then((ex: OralExercise & { error?: string }) => {
+        if (ex && !ex.error) setExercise(ex);
+        else setExercise(null);
+        if (ex && !ex.error && ex.type === "STIMULUS") {
           if (ex.generatedImageUrl) {
             // Already persisted in Firestore — use it directly, no API call needed
             setPosterImage(ex.generatedImageUrl);
@@ -166,11 +168,32 @@ export default function PracticePage() {
           });
           const reader = new FileReader();
           reader.onloadend = () => {
+            const base64 = reader.result as string;
             setAudioBlobs((prev) => {
               const next = [...prev];
-              next[questionIdx] = reader.result as string;
+              next[questionIdx] = base64;
               return next;
             });
+            // Upload to Cloud Storage in background — clears the path if re-recording
+            setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
+            setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
+            fetch("/api/practice/audio", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ data: base64, mimeType: mediaRecorder.mimeType || "audio/webm" }),
+            })
+              .then((r) => r.json())
+              .then((data) => {
+                if (data.url) {
+                  setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = data.url; return n; });
+                }
+              })
+              .catch(() => {
+                // Upload failed — will retry on submit or fall back gracefully
+              })
+              .finally(() => {
+                setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+              });
           };
           reader.readAsDataURL(blob);
           stream.getTracks().forEach((t) => t.stop());
@@ -352,6 +375,7 @@ export default function PracticePage() {
       } else {
         setTranscripts((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
         setAudioBlobs((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
+        setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
         setSpeechWarnings((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
         startRecording(questionIdx);
       }
@@ -414,10 +438,11 @@ export default function PracticePage() {
 
   // "Recorded" means the user pressed stop — transcript may be empty if speech
   // recognition failed on Android, but audio capture still happened.
+  const uploadsComplete = uploadingAudio.every((u) => !u);
   const allRecorded =
-    exercise?.type === "READING"
+    (exercise?.type === "READING"
       ? recordingStates[0] === "done"
-      : recordingStates.slice(0, 3).every((s) => s === "done");
+      : recordingStates.slice(0, 3).every((s) => s === "done")) && uploadsComplete;
 
   const missingQuestions =
     exercise?.type === "STIMULUS"
@@ -473,9 +498,9 @@ export default function PracticePage() {
           transcript1: transcripts[0] || null,
           transcript2: transcripts[1] || null,
           transcript3: transcripts[2] || null,
-          audioBlob1: audioBlobs[0],
-          audioBlob2: audioBlobs[1],
-          audioBlob3: audioBlobs[2],
+          audioPath1: audioPaths[0] || null,
+          audioPath2: audioPaths[1] || null,
+          audioPath3: audioPaths[2] || null,
           structuredTranscript1: structuredTranscripts[0],
           structuredTranscript2: structuredTranscripts[1],
           structuredTranscript3: structuredTranscripts[2],
@@ -895,6 +920,8 @@ export default function PracticePage() {
                     />{" "}
                     Evaluating...
                   </>
+                ) : uploadingAudio.some((u) => u) ? (
+                  "Uploading audio..."
                 ) : attempts.length === 0 ? (
                   "Submit Attempt 1"
                 ) : (

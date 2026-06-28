@@ -283,20 +283,20 @@ export default function ResultsPage() {
           )}
 
           {/* Audio Playback */}
-          {(history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
+          {(history.audioPath1 || history.audioPath2 || history.audioPath3 || history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
             <div className="card">
               <div className="card-title">Your Recordings</div>
-              {history.audioBlob1 && (
+              {(history.audioPath1 || history.audioBlob1) && (
                 <AudioPlayback
-                  base64={history.audioBlob1}
+                  src={history.audioPath1 || history.audioBlob1!}
                   label={isReading ? "Reading" : "Response 1"}
                 />
               )}
-              {!isReading && history.audioBlob2 && (
-                <AudioPlayback base64={history.audioBlob2} label="Response 2" />
+              {!isReading && (history.audioPath2 || history.audioBlob2) && (
+                <AudioPlayback src={history.audioPath2 || history.audioBlob2!} label="Response 2" />
               )}
-              {!isReading && history.audioBlob3 && (
-                <AudioPlayback base64={history.audioBlob3} label="Response 3" />
+              {!isReading && (history.audioPath3 || history.audioBlob3) && (
+                <AudioPlayback src={history.audioPath3 || history.audioBlob3!} label="Response 3" />
               )}
             </div>
           )}
@@ -543,43 +543,15 @@ function ScoreRow({ label, score }: { label: string; score: number }) {
   );
 }
 
-function AudioPlayback({
-  base64,
-  label,
-}: {
-  base64: string;
-  label: string;
-}) {
-  const src = base64.startsWith("data:")
-    ? base64
-    : `data:audio/webm;base64,${base64}`;
-
+function AudioPlayback({ src, label }: { src: string; label: string }) {
+  const audioSrc = src.startsWith("http") ? src : (src.startsWith("data:") ? src : `data:audio/webm;base64,${src}`);
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        marginTop: 8,
-      }}
-    >
-      <span
-        style={{
-          fontSize: 12,
-          fontWeight: 600,
-          color: "var(--text-muted)",
-          whiteSpace: "nowrap",
-        }}
-      >
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
         {label}
       </span>
-      <audio
-        controls
-        preload="none"
-        style={{ flex: 1, height: 32 }}
-        aria-label={`Playback: ${label}`}
-      >
-        <source src={src} />
+      <audio controls preload="none" style={{ flex: 1, height: 32 }} aria-label={`Playback: ${label}`}>
+        <source src={audioSrc} />
         Your browser does not support audio playback.
       </audio>
     </div>

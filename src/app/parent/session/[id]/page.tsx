@@ -32,38 +32,25 @@ export default function ParentSessionDetailPage() {
   const [showModelAnswers, setShowModelAnswers] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/practice?id=${sessionId}`).then((r) => r.json()),
-      fetch("/api/exercises").then((r) => r.json()),
-    ])
-      .then(([historyData, exercisesData]: [PracticeHistory, OralExercise[]]) => {
+    fetch(`/api/practice?id=${sessionId}`)
+      .then((r) => r.json())
+      .then((historyData: PracticeHistory) => {
         setHistory(historyData);
         if (historyData.parentScore1 != null) setParentScore1(historyData.parentScore1);
         if (historyData.parentScore2 != null) setParentScore2(historyData.parentScore2);
         if (historyData.parentScore3 != null) setParentScore3(historyData.parentScore3);
         if (historyData.parentFeedback) setParentFeedback(historyData.parentFeedback);
-        if (Array.isArray(exercisesData)) {
-          const ex = exercisesData.find((e) => e.id === historyData.exerciseId);
-          if (ex) {
-            setExercise(ex);
-            setRepracticeRequested(!!ex.repracticeRequested);
-          }
+        return fetch(`/api/exercises/${historyData.exerciseId}`).then((r) => r.json());
+      })
+      .then((ex: OralExercise & { error?: string }) => {
+        if (ex && !ex.error) {
+          setExercise(ex);
+          setRepracticeRequested(!!ex.repracticeRequested);
         }
         setLoading(false);
       })
       .catch(() => {
-        // Try to at least load the history even if exercises failed
-        fetch(`/api/practice?id=${sessionId}`)
-          .then((r) => r.json())
-          .then((historyData: PracticeHistory) => {
-            setHistory(historyData);
-            if (historyData.parentScore1 != null) setParentScore1(historyData.parentScore1);
-            if (historyData.parentScore2 != null) setParentScore2(historyData.parentScore2);
-            if (historyData.parentScore3 != null) setParentScore3(historyData.parentScore3);
-            if (historyData.parentFeedback) setParentFeedback(historyData.parentFeedback);
-          })
-          .catch(() => {})
-          .finally(() => setLoading(false));
+        setLoading(false);
       });
   }, [sessionId]);
 
@@ -243,15 +230,15 @@ export default function ParentSessionDetailPage() {
     }
   };
 
-  const renderAudio = (blob: string | null, label: string) => {
-    if (!blob) return null;
+  const renderAudio = (src: string | null, label: string) => {
+    if (!src) return null;
     return (
       <div className="audio-player-mini">
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
           {label}
         </span>
         <audio controls preload="none" style={{ flex: 1, height: 32 }}>
-          <source src={blob} />
+          <source src={src} />
         </audio>
       </div>
     );
@@ -466,7 +453,7 @@ export default function ParentSessionDetailPage() {
           )}
 
           {/* Recordings — collapsible */}
-          {(history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
+          {(history.audioPath1 || history.audioPath2 || history.audioPath3 || history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
             <div className="card">
               <SectionHeader
                 title="Recordings"
@@ -475,9 +462,9 @@ export default function ParentSessionDetailPage() {
               />
               {showRecordings && (
                 <div style={{ marginTop: 12 }}>
-                  {renderAudio(history.audioBlob1, isReading ? "Reading" : "Response 1")}
-                  {!isReading && renderAudio(history.audioBlob2, "Response 2")}
-                  {!isReading && renderAudio(history.audioBlob3, "Response 3")}
+                  {renderAudio(history.audioPath1 || history.audioBlob1, isReading ? "Reading" : "Response 1")}
+                  {!isReading && renderAudio(history.audioPath2 || history.audioBlob2, "Response 2")}
+                  {!isReading && renderAudio(history.audioPath3 || history.audioBlob3, "Response 3")}
                 </div>
               )}
             </div>
@@ -787,7 +774,7 @@ export default function ParentSessionDetailPage() {
 
           {/* Delete Recordings */}
           {history.isClosed &&
-            (history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
+            (history.audioPath1 || history.audioPath2 || history.audioPath3 || history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
               <div className="card" style={{ borderColor: "var(--danger)" }}>
                 <div className="card-title" style={{ color: "var(--danger)" }}>
                   Storage Management
