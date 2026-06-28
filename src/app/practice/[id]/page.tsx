@@ -244,22 +244,35 @@ export default function PracticePage() {
           return;
         }
         // Restart speech recognition while the user is still recording.
-        // Cap restarts to avoid an infinite error loop on Android.
+        // Android Chrome requires a 300ms gap between sessions — immediate restart
+        // causes the new instance to start without receiving audio input (silent fail).
+        // Cap restarts to avoid an infinite error loop.
         if (speechRestartCountRef.current < 20) {
           speechRestartCountRef.current += 1;
-          try {
-            const newR = makeSpeechInstance();
-            newR.onresult = onresult;
-            newR.onerror = onerror;
-            newR.onend = onend;
-            recognitionRef.current = newR;
-            newR.start();
-          } catch {
-            recordingIntentRef.current = false;
-            setRecordingStates((prev) => {
-              const n = [...prev]; n[questionIdx] = "done"; return n;
-            });
-          }
+          setTimeout(() => {
+            // Re-check intent: user may have tapped stop during the delay
+            if (!recordingIntentRef.current) {
+              setRecordingStates((prev) => {
+                const n = [...prev];
+                if (n[questionIdx] === "recording") n[questionIdx] = "done";
+                return n;
+              });
+              return;
+            }
+            try {
+              const newR = makeSpeechInstance();
+              newR.onresult = onresult;
+              newR.onerror = onerror;
+              newR.onend = onend;
+              recognitionRef.current = newR;
+              newR.start();
+            } catch {
+              recordingIntentRef.current = false;
+              setRecordingStates((prev) => {
+                const n = [...prev]; n[questionIdx] = "done"; return n;
+              });
+            }
+          }, 300);
         } else {
           // Too many restarts — give up on transcript, audio capture continues
           setSpeechWarnings((prev) => {
