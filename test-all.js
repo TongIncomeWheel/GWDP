@@ -946,6 +946,21 @@ async function testGeminiConnectivity(apiKey) {
   // ── Helper: recursive image extractor (mirrors poster/route.ts logic) ────
   function extractImageB64(node, depth = 0) {
     if (!node || typeof node !== "object" || depth > 10) return null;
+    // Interactions API canonical path: steps[step_type=model_output].model_output.parts[].image.image_bytes
+    if (depth === 0 && !Array.isArray(node)) {
+      const steps = node.steps;
+      if (Array.isArray(steps)) {
+        for (const step of steps) {
+          if (step.step_type !== "model_output") continue;
+          const parts = step.model_output?.parts;
+          if (!Array.isArray(parts)) continue;
+          for (const part of parts) {
+            if (part.image?.image_bytes)
+              return { b64: part.image.image_bytes, mime: part.image.mime_type || "image/jpeg" };
+          }
+        }
+      }
+    }
     if (Array.isArray(node)) {
       for (const item of node) { const r = extractImageB64(item, depth + 1); if (r) return r; }
       return null;

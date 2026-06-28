@@ -4,16 +4,42 @@ import { getEffectiveApiKey } from "@/lib/db";
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 const GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
-// Recursively search any object/array for a base64 image payload.
-// Handles every Interactions API response shape we've observed:
+// Extract base64 image from Gemini Interactions API (raw REST) or generateContent response.
+//
+// Interactions API canonical path (confirmed):
+//   steps[] → step_type === "model_output" → model_output.parts[] → image.image_bytes
+//
+// Fallback paths for other shapes / generateContent:
 //   { output_image: { data, mime_type } }
-//   { steps: [ { output_image: { data, mime_type } } ] }
-//   { steps: [ { content: [ { type:"image_url", image_url:{ url:"data:..." } } ] } ] }
-//   { steps: [ { content: [ { type:"image", data, media_type } ] } ] }
-//   { steps: [ { output: { b64_json, mime_type } } ] }
-//   { candidates: [ { content: { parts: [ { inlineData:{ data, mimeType } } ] } } ] }
+//   { candidates[].content.parts[].inlineData.{ data, mimeType } }
+//   { steps[].content[].image_url.url }  (OpenAI-compat wrapper)
+//   { b64_json }  (DALL-E style)
 function extractImage(node: unknown, depth = 0): { b64: string; mime: string } | null {
   if (!node || typeof node !== "object" || depth > 10) return null;
+
+  // ── Interactions API canonical path (raw REST, confirmed) ──────────────
+  // steps[] → step_type === "model_output" → model_output.parts[] → image.image_bytes
+  if (depth === 0 && !Array.isArray(node)) {
+    const root = node as Record<string, unknown>;
+    const steps = root.steps as Array<Record<string, unknown>> | undefined;
+    if (Array.isArray(steps)) {
+      for (const step of steps) {
+        if (step.step_type !== "model_output") continue;
+        const mo = step.model_output as Record<string, unknown> | undefined;
+        const parts = mo?.parts as Array<Record<string, unknown>> | undefined;
+        if (!Array.isArray(parts)) continue;
+        for (const part of parts) {
+          const img = part.image as Record<string, unknown> | undefined;
+          if (img?.image_bytes) {
+            return {
+              b64: img.image_bytes as string,
+              mime: (img.mime_type as string | undefined) || "image/jpeg",
+            };
+          }
+        }
+      }
+    }
+  }
 
   if (Array.isArray(node)) {
     for (const item of node) {
