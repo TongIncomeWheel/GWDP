@@ -374,7 +374,9 @@ export default function PracticePage() {
           structuredTranscript3: structuredTranscripts[2],
         }),
       });
+      if (!res.ok) throw new Error(`Failed to save practice session (${res.status})`);
       const { id } = await res.json();
+      if (!id) throw new Error("No session ID returned from server");
 
       const evalRes = await fetch("/api/evaluate", {
         method: "POST",
@@ -761,7 +763,13 @@ export default function PracticePage() {
               <button
                 className="btn btn-outline"
                 style={{ marginTop: 8 }}
-                onClick={() => setConfirming(true)}
+                onClick={() => {
+                  if (attempts.length === 1) {
+                    handleConfirmAttempt(0);
+                  } else {
+                    setConfirming(true);
+                  }
+                }}
               >
                 Confirm & Finish ({attempts.length} attempt{attempts.length !== 1 ? "s" : ""})
               </button>
