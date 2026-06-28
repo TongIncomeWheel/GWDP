@@ -943,18 +943,42 @@ async function testGeminiConnectivity(apiKey) {
     }
   } catch (e) { fail("SBC eval (all empty)", e); }
 
-  // ── Helper: extract image from any Gemini response structure ──────────────
-  function extractImageB64(data) {
-    // Interactions API
-    if (data.output_image?.data) return { b64: data.output_image.data, mime: data.output_image.mime_type || "image/jpeg" };
-    const stepImg = data.steps?.find((s) => s.output_image?.data)?.output_image;
-    if (stepImg?.data) return { b64: stepImg.data, mime: stepImg.mime_type || "image/jpeg" };
-    // Alternative output[] format
-    const imgOut = Array.isArray(data.output) ? data.output.find((o) => o.type === "image" && o.data) : null;
-    if (imgOut?.data) return { b64: imgOut.data, mime: imgOut.mime_type || "image/jpeg" };
-    // generateContent format (inlineData in candidates)
-    const inlineData = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData;
-    if (inlineData?.data) return { b64: inlineData.data, mime: inlineData.mimeType || "image/jpeg" };
+  // ── Helper: recursive image extractor (mirrors poster/route.ts logic) ────
+  function extractImageB64(node, depth = 0) {
+    if (!node || typeof node !== "object" || depth > 10) return null;
+    if (Array.isArray(node)) {
+      for (const item of node) { const r = extractImageB64(item, depth + 1); if (r) return r; }
+      return null;
+    }
+    const obj = node;
+    if (typeof obj.b64_json === "string" && obj.b64_json.length > 100)
+      return { b64: obj.b64_json, mime: obj.mime_type || "image/jpeg" };
+    if (typeof obj.data === "string" && obj.data.length > 100 &&
+        (obj.type === "image" || obj.mime_type || obj.media_type || obj.mimeType))
+      return { b64: obj.data, mime: String(obj.mime_type || obj.media_type || obj.mimeType || "image/jpeg") };
+    for (const key of ["inlineData", "inline_data"]) {
+      const id = obj[key];
+      if (id && typeof id.data === "string" && id.data.length > 100)
+        return { b64: id.data, mime: String(id.mimeType || id.mime_type || "image/jpeg") };
+    }
+    const iu = obj.image_url;
+    if (iu && typeof iu.url === "string" && iu.url.startsWith("data:image")) {
+      const [hdr, b64] = iu.url.split(",");
+      if (b64 && b64.length > 100) return { b64, mime: hdr.replace("data:", "").replace(";base64", "") };
+    }
+    if (typeof obj.url === "string" && obj.url.startsWith("data:image")) {
+      const [hdr, b64] = obj.url.split(",");
+      if (b64 && b64.length > 100) return { b64, mime: hdr.replace("data:", "").replace(";base64", "") };
+    }
+    for (const key of ["output_image","output","content","parts","steps","candidates","message","choices","outputs"]) {
+      if (obj[key]) { const r = extractImageB64(obj[key], depth + 1); if (r) return r; }
+    }
+    for (const [k, v] of Object.entries(obj)) {
+      if (["id","model","object","status","usage","created","updated","service_tier",
+           "type","role","text","finish_reason","index"].includes(k)) continue;
+      const r = extractImageB64(v, depth + 1);
+      if (r) return r;
+    }
     return null;
   }
 
@@ -985,7 +1009,11 @@ async function testGeminiConnectivity(apiKey) {
       const data = await res.json();
       const img = extractImageB64(data);
       if (!img) {
-        console.log(`  ℹ️  Interactions/${model}: 200 OK but no image data. Keys: ${Object.keys(data).join(",")}. Snippet: ${JSON.stringify(data).slice(0, 200)}`);
+        const steps = data.steps;
+        const step0 = Array.isArray(steps) ? steps[0] : null;
+        const step0Keys = step0 ? Object.keys(step0).join(",") : "n/a";
+        console.log(`  ℹ️  Interactions/${model}: 200 OK but no image. top-keys=${Object.keys(data).join(",")} step[0]-keys=${step0Keys}`);
+        console.log(`       step[0] = ${JSON.stringify(step0).slice(0, 400)}`);
         continue;
       }
       const kb = Math.round(img.b64.length * 3 / 4 / 1024);

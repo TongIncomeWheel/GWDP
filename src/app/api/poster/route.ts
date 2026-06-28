@@ -4,29 +4,78 @@ import { getEffectiveApiKey } from "@/lib/db";
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 const GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
-// Extract base64 image from any Gemini API response structure
-function extractImage(data: Record<string, unknown>): { b64: string; mime: string } | null {
-  // ── Interactions API: top-level output_image ──────────────────────────
-  const outImg = data.output_image as { data?: string; mime_type?: string } | undefined;
-  if (outImg?.data) return { b64: outImg.data, mime: outImg.mime_type || "image/jpeg" };
+// Recursively search any object/array for a base64 image payload.
+// Handles every Interactions API response shape we've observed:
+//   { output_image: { data, mime_type } }
+//   { steps: [ { output_image: { data, mime_type } } ] }
+//   { steps: [ { content: [ { type:"image_url", image_url:{ url:"data:..." } } ] } ] }
+//   { steps: [ { content: [ { type:"image", data, media_type } ] } ] }
+//   { steps: [ { output: { b64_json, mime_type } } ] }
+//   { candidates: [ { content: { parts: [ { inlineData:{ data, mimeType } } ] } } ] }
+function extractImage(node: unknown, depth = 0): { b64: string; mime: string } | null {
+  if (!node || typeof node !== "object" || depth > 10) return null;
 
-  // ── Interactions API: steps[] containing output_image ─────────────────
-  const steps = data.steps as Array<{ output_image?: { data?: string; mime_type?: string } }> | undefined;
-  const stepImg = steps?.find((s) => s.output_image?.data)?.output_image;
-  if (stepImg?.data) return { b64: stepImg.data, mime: stepImg.mime_type || "image/jpeg" };
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const r = extractImage(item, depth + 1);
+      if (r) return r;
+    }
+    return null;
+  }
 
-  // ── generateContent format: candidates[].content.parts[].inlineData ───
-  type Part = { inlineData?: { data?: string; mimeType?: string }; text?: string };
-  type Candidate = { content?: { parts?: Part[] } };
-  const candidates = data.candidates as Candidate[] | undefined;
-  const inlineData = candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData;
-  if (inlineData?.data) return { b64: inlineData.data, mime: inlineData.mimeType || "image/jpeg" };
+  const obj = node as Record<string, unknown>;
 
-  // ── Interactions API: output[] array format ───────────────────────────
-  const outputs = data.output as Array<{ type?: string; data?: string; mime_type?: string }> | undefined;
-  if (Array.isArray(outputs)) {
-    const imgOut = outputs.find((o) => o.type === "image" && o.data);
-    if (imgOut?.data) return { b64: imgOut.data, mime: imgOut.mime_type || "image/jpeg" };
+  // ── OpenAI image-gen style: { b64_json: "..." } ──────────────────────
+  if (typeof obj.b64_json === "string" && obj.b64_json.length > 100) {
+    const mime = (typeof obj.mime_type === "string" && obj.mime_type) || "image/jpeg";
+    return { b64: obj.b64_json, mime };
+  }
+
+  // ── Interactions / direct: { data: "base64...", (mime_type|media_type) } ─
+  if (typeof obj.data === "string" && obj.data.length > 100 &&
+      (obj.type === "image" || obj.mime_type || obj.media_type || obj.mimeType)) {
+    const mime = String(obj.mime_type || obj.media_type || obj.mimeType || "image/jpeg");
+    return { b64: obj.data, mime };
+  }
+
+  // ── inlineData / inline_data (generateContent format) ─────────────────
+  for (const key of ["inlineData", "inline_data"]) {
+    const id = obj[key] as Record<string, unknown> | undefined;
+    if (id && typeof id.data === "string" && id.data.length > 100) {
+      const mime = String(id.mimeType || id.mime_type || "image/jpeg");
+      return { b64: id.data, mime };
+    }
+  }
+
+  // ── image_url: { url: "data:image/jpeg;base64,..." } ──────────────────
+  const iu = obj.image_url as Record<string, unknown> | undefined;
+  if (iu && typeof iu.url === "string" && iu.url.startsWith("data:image")) {
+    const [header, b64] = iu.url.split(",");
+    const mime = header.replace("data:", "").replace(";base64", "");
+    if (b64 && b64.length > 100) return { b64, mime };
+  }
+  if (typeof obj.url === "string" && obj.url.startsWith("data:image")) {
+    const [header, b64] = obj.url.split(",");
+    const mime = header.replace("data:", "").replace(";base64", "");
+    if (b64 && b64.length > 100) return { b64, mime };
+  }
+
+  // ── Recurse into known container fields first (fast-path) ─────────────
+  for (const key of ["output_image", "output", "content", "parts", "steps",
+                     "candidates", "message", "choices", "outputs"]) {
+    if (obj[key]) {
+      const r = extractImage(obj[key], depth + 1);
+      if (r) return r;
+    }
+  }
+
+  // ── Recurse into all other object values ──────────────────────────────
+  for (const [k, v] of Object.entries(obj)) {
+    if (["id","model","object","status","usage","created","updated",
+         "service_tier","type","role","text","finish_reason",
+         "index","prompt_tokens","completion_tokens","total_tokens"].includes(k)) continue;
+    const r = extractImage(v, depth + 1);
+    if (r) return r;
   }
 
   return null;
@@ -65,9 +114,13 @@ async function tryInteractionsAPI(
         return `data:${img.mime};base64,${img.b64}`;
       }
 
-      const snippet = JSON.stringify(data).slice(0, 500);
-      console.log(`[POSTER] ${model}: Interactions response has no image. snippet=${snippet}`);
-      errors.push(`${model}: no image in Interactions response (keys: ${Object.keys(data).join(",")})`);
+      // Log step[0] structure to help diagnose unknown formats
+      const steps = (data as Record<string, unknown>).steps as unknown[] | undefined;
+      const step0 = steps?.[0];
+      const step0Keys = step0 && typeof step0 === "object" ? Object.keys(step0 as object).join(",") : "none";
+      const snippet = JSON.stringify(step0 || data).slice(0, 600);
+      console.log(`[POSTER] ${model}: no image found. top-keys=${Object.keys(data).join(",")} step[0]-keys=${step0Keys} snippet=${snippet}`);
+      errors.push(`${model}: no image in Interactions response (top-keys: ${Object.keys(data).join(",")}, step[0]-keys: ${step0Keys})`);
     } catch (e) {
       const msg = `${model} exception: ${(e as Error).message}`;
       console.log(`[POSTER] ${msg}`);
