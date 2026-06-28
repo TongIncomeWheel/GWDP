@@ -80,6 +80,21 @@ export default function ParentDashboard() {
           <h1>Parent Dashboard</h1>
           <div style={{ display: "flex", gap: 8 }}>
             <button
+              onClick={() => router.push("/test-plan")}
+              style={{
+                background: "rgba(255,255,255,0.2)",
+                border: "none",
+                color: "white",
+                padding: "6px 14px",
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              &#9989; UAT
+            </button>
+            <button
               onClick={() => router.push("/parent/settings")}
               style={{
                 background: "rgba(255,255,255,0.2)",

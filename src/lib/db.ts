@@ -181,6 +181,34 @@ export async function resetAllPracticeHistory(): Promise<void> {
   await db.collection("counters").doc("practice_history").set({ next: 1 });
 }
 
+// ── Test Results ──
+
+export interface TestResultEntry {
+  status: "untested" | "pass" | "fail" | "blocked";
+  notes: string;
+  tester: string;
+  updatedAt: number;
+}
+
+export async function getTestResults(): Promise<Record<string, TestResultEntry>> {
+  const db = getDb();
+  const doc = await db.collection("test_results").doc("all").get();
+  return doc.exists ? (doc.data() as Record<string, TestResultEntry>) : {};
+}
+
+export async function saveTestResult(
+  id: string,
+  status: string,
+  notes: string,
+  tester: string
+): Promise<void> {
+  const db = getDb();
+  await db.collection("test_results").doc("all").set(
+    { [id]: { status, notes, tester, updatedAt: Date.now() } },
+    { merge: true }
+  );
+}
+
 // ── Settings ──
 
 export async function getSetting(key: string): Promise<string> {
