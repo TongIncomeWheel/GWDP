@@ -164,7 +164,8 @@ export async function getAllPracticeHistoryMeta(): Promise<Partial<PracticeHisto
       "id", "exerciseId", "exerciseTitle", "exerciseType", "exerciseTopic",
       "dateMillis", "totalScore", "maxScore", "isEvaluated", "isEvaluating",
       "parentScore1", "parentScore2", "parentScore3", "parentTotalScore",
-      "isClosed", "errorMessage", "audioPath1", "audioPath2", "audioPath3"
+      "isClosed", "errorMessage", "audioPath1", "audioPath2", "audioPath3",
+      "strengths", "areasOfImprovement"
     )
     .get();
   return snap.docs.map((d) => d.data() as Partial<PracticeHistory>);
