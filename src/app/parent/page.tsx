@@ -437,8 +437,9 @@ export default function ParentDashboard() {
                               {h.isClosed && (
                                 <span style={{
                                   fontSize: 9, fontWeight: 700, textTransform: "uppercase",
-                                  background: "var(--bg-elevated)", color: "var(--text-muted)",
-                                  padding: "1px 6px", borderRadius: 4, flexShrink: 0,
+                                  background: "rgba(110,106,142,0.2)", color: "var(--text-secondary)",
+                                  padding: "2px 7px", borderRadius: 4, flexShrink: 0,
+                                  border: "1px solid rgba(110,106,142,0.3)",
                                 }}>
                                   Archived
                                 </span>
@@ -453,7 +454,7 @@ export default function ParentDashboard() {
                               )}
                             </div>
                           </div>
-                          <span style={{ fontSize: 18, color: "var(--text-muted)" }}>
+                          <span style={{ fontSize: 20, color: "var(--purple-soft)", fontWeight: 700 }}>
                             &rsaquo;
                           </span>
                         </div>
