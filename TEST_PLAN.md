@@ -490,7 +490,317 @@ Run TC-01 (Reading session end-to-end) on each device below and record result:
 
 ---
 
-## Section 8 — Known Issues & Accepted Exceptions
+## Section 8 — iOS Safari (iPhone/iPad)
+
+These tests must be run on a **real device** — not browser DevTools emulation.
+
+### IOS-01: Add to Home Screen (PWA Install)
+
+1. Open the app URL in Safari on iPhone.
+2. Tap the Share button → **Add to Home Screen**.
+3. Confirm the icon name. Tap **Add**.
+4. Tap the new icon on the iOS home screen.
+
+**Pass criteria:**
+- App opens full-screen — no Safari address bar visible ✓
+- Icon shows on the home screen ✓
+
+---
+
+### IOS-02: Microphone Permission
+
+1. Open any exercise in Safari (first time or after clearing site permissions).
+2. Tap **Start Recording**.
+3. Confirm the iOS system dialog: *"[App] Would Like to Access the Microphone"* appears.
+4. Tap **Allow**. Confirm recording starts.
+
+**Pass criteria:**
+- iOS system dialog appears ✓
+- Allowing grants access and recording starts ✓
+- Reloading the page does not re-prompt (IOS-03) ✓
+
+---
+
+### IOS-04: Audio Playback on iOS Safari
+
+1. Record for 10 seconds. Tap **Stop**.
+2. Tap play on the audio player.
+
+**Pass criteria:**
+- Audio plays through the speaker ✓
+- Duration shown is approximately 10 seconds ✓
+
+---
+
+### IOS-05: Live Transcript on iOS Safari
+
+1. Record and speak clearly for 15 seconds.
+
+**Pass criteria:**
+- Words appear in the transcript area in real time ✓
+- Transcript is not empty when speech is clearly detected ✓
+
+---
+
+### IOS-06: Recording Survives Screen Dim
+
+1. Start recording. Set phone down — let the screen auto-dim (do **not** press the power button to lock).
+2. Tap the screen to wake it.
+3. Tap **Stop**.
+
+**Pass criteria:**
+- Recording still active after screen dim ✓
+- Stopping produces valid audio ✓
+
+---
+
+### IOS-07: App Backgrounded Mid-Recording
+
+1. Start recording. Press the **Home button** to background the app. Wait 5 seconds.
+2. Return to the app.
+
+**Pass criteria:**
+- App returns to a defined state (not crashed) ✓
+- Either: recording gracefully stopped with a message, or still recording ✓
+- Submit completes with whatever audio was captured ✓
+
+---
+
+### IOS-08: Virtual Keyboard Doesn't Obscure Record Button
+
+1. On the practice page, tap any text input field (notes, etc.) to open the keyboard.
+2. Confirm the **Record** button is still visible or reachable by scrolling.
+3. Dismiss keyboard.
+
+**Pass criteria:**
+- Record button reachable while keyboard is open ✓
+- Layout returns to normal after dismissal ✓
+
+---
+
+### IOS-09: No Font Auto-Zoom on Input Fields
+
+1. Tap any text input on the practice or test-plan pages.
+
+**Pass criteria:**
+- Page does **not** zoom in when the field is tapped ✓
+- Font size stays at normal level ✓
+
+---
+
+### IOS-10: Touch Targets Large Enough
+
+1. Use the app normally — tap Record, Stop, Next Question, Submit, tab bar items.
+
+**Pass criteria:**
+- All key buttons are easily tappable with a thumb ✓
+- No accidental mis-taps on adjacent elements ✓
+
+---
+
+### IOS-11: Bottom Nav Above Home Indicator
+
+1. Use the app on an iPhone with a home indicator (Face ID models).
+
+**Pass criteria:**
+- Bottom tab bar is **not** obscured by the iOS home indicator ✓
+- All three tabs tappable ✓
+
+---
+
+### IOS-12: Portrait and Landscape Usable
+
+1. Use the app in portrait. Rotate to landscape. Rotate back.
+
+**Pass criteria:**
+- Content reflows in landscape — no clipping ✓
+- Record button reachable in landscape ✓
+- Portrait layout restores on rotate back ✓
+
+---
+
+### IOS-13: Full TC-01 End-to-End on iOS Safari
+
+Run the full TC-01 (Reading session) on an iPhone in Safari.
+
+**Pass criteria:** All TC-01 pass criteria met ✓ on iOS Safari.
+
+---
+
+### IOS-14: Full TC-02 End-to-End on iOS Safari
+
+Run the full TC-02 (SBC session) on an iPhone in Safari.
+
+**Pass criteria:** All TC-02 pass criteria met ✓ on iOS Safari.
+
+---
+
+## Section 9 — Android Chrome
+
+These tests must be run on a **real Android device** — not emulation.
+
+### AND-01: Add to Home Screen (PWA Install)
+
+1. Open the app URL in Chrome on Android.
+2. Tap the three-dot menu → **Add to Home screen** (or tap the install banner).
+3. Confirm icon is added to the Android home screen.
+4. Tap the icon.
+
+**Pass criteria:**
+- App opens full-screen without Chrome address bar ✓
+- Icon visible on home screen ✓
+
+---
+
+### AND-02: Microphone Permission
+
+1. Open any exercise in Chrome on Android (first time or cleared permissions).
+2. Tap **Start Recording**.
+3. Confirm the Android system dialog: *"Allow [app] to record audio?"* appears.
+4. Tap **Allow**. Confirm recording starts.
+
+**Pass criteria:**
+- Android system permission dialog appears ✓
+- Allowing grants access and recording starts ✓
+- Reloading does not re-prompt (AND-03) ✓
+
+---
+
+### AND-04: Audio Captured (MediaRecorder)
+
+1. Record 10 seconds. Tap **Stop**.
+2. Tap play on the audio player.
+
+**Pass criteria:**
+- Audio player appears ✓
+- Audio plays and sounds like what was recorded ✓
+
+---
+
+### AND-05: Speech Recognition Diagnostic Strip
+
+This is the **primary diagnostic** for Android transcript issues.
+
+1. Open a Reading exercise. Tap **Start Recording**. Speak clearly for 10 seconds. Tap **Stop**.
+2. Look at the small monospace diagnostic strip below the recording area.
+3. Record the values: `event=? error=? restarts=? results=?`
+
+**Pass criteria:**
+- Diagnostic strip is visible ✓
+- Values are recorded in the test result Notes — **do not mark FAIL based on missing transcript alone without engineering sign-off** ✓
+
+---
+
+### AND-06: No Ghost-Restart When Switching SBC Questions
+
+1. Open an SBC exercise. Record Q1. Tap **Stop**. Note the diagnostic strip values.
+2. Tap **Next Question**.
+3. Confirm recording does **not** auto-start on Q2.
+4. Confirm `restarts` count in speech diag did **not** increment after question switch.
+
+**Pass criteria:**
+- Recording stays idle after question switch ✓
+- `restarts` count unchanged after switching ✓
+
+---
+
+### AND-07: Android Back Button Behaviour
+
+1. Open any exercise. Do not record.
+2. Tap the Android back button/gesture.
+
+**Pass criteria:**
+- App navigates to Home screen ✓
+- App does **not** exit or crash ✓
+
+---
+
+### AND-08: App Backgrounded Mid-Recording
+
+1. Start recording. Press the **Home button**. Wait 5 seconds. Return.
+
+**Pass criteria:**
+- App returns to a defined state (not crashed) ✓
+- Submit completes with some captured audio ✓
+
+---
+
+### AND-09: Virtual Keyboard Doesn't Obscure Record Button
+
+1. Tap a text input field. Android keyboard opens.
+
+**Pass criteria:**
+- Record button reachable by scrolling ✓
+- Layout does not break with keyboard open ✓
+
+---
+
+### AND-10: Bottom Nav Above Android Navigation Bar
+
+1. Use app with Android gesture navigation or 3-button nav bar.
+
+**Pass criteria:**
+- Bottom tab bar fully visible — not hidden behind system nav ✓
+- All tabs tappable ✓
+
+---
+
+### AND-11: Touch Targets Large Enough
+
+1. Use app normally. Tap all key controls.
+
+**Pass criteria:**
+- No mis-taps on Record, Stop, Next Question, Submit, tab bar ✓
+
+---
+
+### AND-12: SBC Multi-Question Independent Audio
+
+1. Open SBC. Record Q1 (10s). Stop. Note Q1 audio player.
+2. Tap Next. Record Q2. Stop.
+3. Tap Next. Record Q3. Stop.
+4. Navigate back to Q1.
+
+**Pass criteria:**
+- Q1 audio player still present and plays Q1 audio ✓
+- No question overwrites another ✓
+
+---
+
+### AND-13: Full TC-01 End-to-End on Android Chrome
+
+Run the full TC-01 (Reading session) on an Android device in Chrome.
+
+**Pass criteria:** All TC-01 pass criteria met ✓ on Android Chrome.
+
+---
+
+### AND-14: Full TC-02 SBC End-to-End on Android Chrome
+
+Run the full TC-02 (SBC session) on an Android device in Chrome.
+
+**Pass criteria:** All TC-02 pass criteria met ✓ on Android Chrome.
+
+---
+
+## Section 10 — Mobile Shared (iOS + Android)
+
+Run these on both platforms unless stated otherwise.
+
+| ID | Test | Steps | Expected Result | Result |
+|---|---|---|---|---|
+| MOB-01 | Submit over mobile data | Turn off Wi-Fi. Record + submit a session. | Results page loads, AI scores within 90s. | |
+| MOB-02 | Network drop during recording | Record, enable Airplane Mode mid-recording, stop, attempt submit. | Clear error shown — not blank/frozen. Re-enable network, retry — completes. | |
+| MOB-03 | Page reload on practice screen | Open exercise, reload before recording. | Exercise reloads. Record and submit works normally. | |
+| MOB-04 | Screen lock during recording | Lock screen mid-recording. Unlock. | Defined state — no crash. Audio captured (even if short). | |
+| MOB-05 | Audio file size reasonable | Record ~2 minutes. Submit. Open parent detail, save grade. | Submit and grade save both complete — no payload/size error. | |
+| MOB-06 | Parent dashboard on mobile | Parent tab → open session → drag sliders → Save Parent Grade. | All interactions work. 'Saved!' confirmed. | |
+| MOB-07 | UAT tracker usable on mobile | Open /test-plan on the phone. | Readable, tappable status chips, no horizontal scroll overflow. | |
+| MOB-08 | Dark theme on mobile browsers | Open app on iOS Safari and Android Chrome. | No white flash. Dark theme renders correctly on both. | |
+
+---
+
+## Section 11 — Known Issues & Accepted Exceptions
 
 | ID | Issue | Status | Accepted? |
 |---|---|---|---|
@@ -512,7 +822,10 @@ Run TC-01 (Reading session end-to-end) on each device below and record result:
 | Parent Use Cases PC-01 to PC-06 | | | |
 | Data Management DM-01 to DM-06 | | | |
 | Cross-Device Matrix (Sec 7) | | | |
-| Known Issues accepted (Sec 8) | | | |
+| iOS Safari — Sec 8 (IOS-01 to IOS-14) | | | |
+| Android Chrome — Sec 9 (AND-01 to AND-14) | | | |
+| Mobile Shared — Sec 10 (MOB-01 to MOB-08) | | | |
+| Known Issues accepted (Sec 11) | | | |
 
 **Overall sign-off:** _________________________ Date: _____________
 

@@ -388,6 +388,351 @@ const SECTIONS: Section[] = [
       { id: "DV-08", name: "macOS — Safari", expected: "TC-01 completes. Audio plays back correctly." },
     ],
   },
+  {
+    id: "ios",
+    title: "8 — iOS Safari (iPhone/iPad)",
+    tests: [
+      {
+        id: "IOS-01",
+        name: "Add to Home Screen (PWA install)",
+        expected: "App installs via Share → Add to Home Screen. Opens full-screen with no Safari address bar. Icon appears on home screen.",
+        steps: [
+          "Open app URL in Safari on iPhone.",
+          "Tap Share button (box with arrow). Tap 'Add to Home Screen'.",
+          "Confirm icon name and tap Add.",
+          "Tap the new icon on the iOS home screen.",
+          "App opens full-screen — no Safari chrome/address bar visible.",
+        ],
+      },
+      {
+        id: "IOS-02",
+        name: "Microphone permission prompt",
+        expected: "First tap of Record shows iOS system dialog asking for microphone access. Tapping Allow proceeds to recording.",
+        steps: [
+          "Open any exercise on Safari (first time or after clearing permissions).",
+          "Tap Start Recording.",
+          "Confirm iOS system dialog appears: '[App] Would Like to Access the Microphone'.",
+          "Tap Allow. Confirm recording starts.",
+        ],
+      },
+      {
+        id: "IOS-03",
+        name: "Mic permission persists on reload",
+        expected: "After granting mic once, reload the page and tap Record — no second permission prompt appears.",
+      },
+      {
+        id: "IOS-04",
+        name: "Audio playback after recording",
+        expected: "After stopping recording, audio player appears and plays back audio when tapped. Audio is audible through device speaker/earpiece.",
+        steps: [
+          "Record for 10 seconds. Tap Stop.",
+          "Tap the play button on the audio player.",
+          "Confirm audio plays. Confirm duration shown is approximately 10 seconds.",
+        ],
+      },
+      {
+        id: "IOS-05",
+        name: "Live transcript on iOS Safari",
+        expected: "While recording and speaking clearly, words appear in the transcript area in real time. Transcript is not empty when speech is detected.",
+      },
+      {
+        id: "IOS-06",
+        name: "Recording survives screen dim",
+        expected: "While recording, let the screen auto-dim (do not lock). Tap to wake. Recording is still active — timer/state unchanged. Stop produces valid audio.",
+        steps: [
+          "Start recording. Set phone down and wait for screen to dim (do not press power).",
+          "Tap screen to wake — recording should still be active.",
+          "Tap Stop. Confirm audio player appears and plays back.",
+        ],
+      },
+      {
+        id: "IOS-07",
+        name: "App backgrounded during recording",
+        expected: "Press Home button mid-recording. Return to app. App shows an appropriate state — either recording was gracefully stopped with a message, or (if the OS allows) still recording.",
+        steps: [
+          "Start recording on an exercise.",
+          "Press the Home button to background the app.",
+          "Wait 5 seconds. Return to the app.",
+          "Note the recording state. Try to stop and submit.",
+          "Confirm no crash and audio (however long) is captured.",
+        ],
+      },
+      {
+        id: "IOS-08",
+        name: "Virtual keyboard doesn't obscure record button",
+        expected: "When a notes or text field is focused (keyboard appears), the Record button and key controls are still accessible — not hidden behind the keyboard.",
+        steps: [
+          "On the practice page, if there's any text input, tap it to open keyboard.",
+          "Confirm the Record button is still visible or reachable by scrolling.",
+          "Dismiss keyboard. Confirm layout returns to normal.",
+        ],
+      },
+      {
+        id: "IOS-09",
+        name: "No font auto-zoom on input fields",
+        expected: "Tapping any input field (notes, tester name) does NOT cause the page to zoom in. Text stays at normal size.",
+      },
+      {
+        id: "IOS-10",
+        name: "Touch targets are large enough",
+        expected: "Record, Stop, Next Question, Submit, tab bar items — all easily tappable with a thumb. No accidental mis-taps on adjacent elements.",
+      },
+      {
+        id: "IOS-11",
+        name: "Bottom nav above home indicator",
+        expected: "On iPhone with home indicator (no home button), the bottom nav tabs are not obscured by the iOS home indicator bar.",
+      },
+      {
+        id: "IOS-12",
+        name: "Portrait and landscape usable",
+        expected: "App is usable in both portrait and landscape. No content clipped in either orientation. Record button reachable in landscape.",
+        steps: [
+          "Use app in portrait — confirm normal layout.",
+          "Rotate to landscape — confirm content reflows. Key buttons still visible.",
+          "Rotate back to portrait — layout returns correctly.",
+        ],
+      },
+      {
+        id: "IOS-13",
+        name: "Full TC-01 end-to-end on iOS Safari",
+        expected: "Reading session: record → stop → submit → results with AI scores — all steps complete without error on iOS Safari.",
+        steps: [
+          "Open a Reading Aloud exercise in Safari on iPhone.",
+          "Tap Start Recording. Read aloud for 30 seconds. Tap Stop.",
+          "Confirm audio player and transcript.",
+          "Tap Submit for Grading.",
+          "Confirm results page loads with score and AI feedback within 60s.",
+          "Check History tab — session listed.",
+        ],
+      },
+      {
+        id: "IOS-14",
+        name: "Full TC-02 SBC end-to-end on iOS Safari",
+        expected: "SBC session: all 3 questions recorded independently, submitted, AI evaluates with 3 scores on iOS Safari.",
+        steps: [
+          "Open an SBC exercise in Safari on iPhone.",
+          "Record Q1, tap Next, record Q2, tap Next, record Q3.",
+          "Confirm 3 separate audio players.",
+          "Submit. Confirm results show 3 individual scores.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "android",
+    title: "9 — Android Chrome",
+    tests: [
+      {
+        id: "AND-01",
+        name: "Add to Home Screen (PWA install)",
+        expected: "Chrome shows 'Add to Home Screen' banner or it appears via Chrome menu. App opens full-screen after install with no browser chrome.",
+        steps: [
+          "Open app URL in Chrome on Android.",
+          "Tap the three-dot menu → 'Add to Home screen' (or tap the install banner if it appears).",
+          "Confirm icon added to Android home screen.",
+          "Tap the icon — app opens without Chrome address bar.",
+        ],
+      },
+      {
+        id: "AND-02",
+        name: "Microphone permission prompt",
+        expected: "First tap of Record shows Android system dialog asking for microphone access. Tapping Allow proceeds to recording.",
+        steps: [
+          "Open any exercise in Chrome on Android (first time or cleared permissions).",
+          "Tap Start Recording.",
+          "Confirm Android system dialog: 'Allow [app] to record audio?'.",
+          "Tap Allow. Confirm recording starts.",
+        ],
+      },
+      {
+        id: "AND-03",
+        name: "Mic permission persists on reload",
+        expected: "After granting mic once, reload and tap Record — no second Android permission dialog appears.",
+      },
+      {
+        id: "AND-04",
+        name: "Audio captured (MediaRecorder webm/opus)",
+        expected: "Record 10 seconds. Stop. Audio player appears. Tapping play produces audible audio.",
+        steps: [
+          "Record 10 seconds. Tap Stop.",
+          "Tap play on the audio player.",
+          "Confirm audio plays and sounds like what was recorded.",
+        ],
+      },
+      {
+        id: "AND-05",
+        name: "Speech recognition diagnostic strip",
+        expected: "During/after recording, the monospace diagnostic strip is visible. Record the exact values (event / error / restarts / results) in the Notes field. This is the primary diagnostic for Android transcript issues.",
+        steps: [
+          "Open a Reading exercise. Tap Start Recording. Speak for 10 seconds. Tap Stop.",
+          "Look at the small monospace strip below the recording area.",
+          "Copy the values: event=? error=? restarts=? results=?",
+          "Paste those values into the Notes field for this test case.",
+          "Do NOT mark FAIL based on missing transcript alone — log the values first.",
+        ],
+      },
+      {
+        id: "AND-06",
+        name: "No ghost-restart when switching SBC questions",
+        expected: "After stopping recording on Q1 and tapping Next Question, no second recording session starts automatically. The speech diag 'restarts' count should not increment after question switch.",
+        steps: [
+          "Open an SBC exercise. Record Q1. Tap Stop.",
+          "Note the speech diag strip values.",
+          "Tap Next Question.",
+          "Confirm recording does NOT auto-start. Record button is in idle state.",
+          "Confirm speech diag 'restarts' count did not increase after question switch.",
+        ],
+      },
+      {
+        id: "AND-07",
+        name: "Android back button behaviour",
+        expected: "Pressing the Android back button on the practice page goes back to Home (not exit the app or navigate incorrectly).",
+        steps: [
+          "Open any exercise. Do not record.",
+          "Tap the Android hardware/gesture back button.",
+          "Confirm app navigates to home screen (not exits or crashes).",
+        ],
+      },
+      {
+        id: "AND-08",
+        name: "App backgrounded mid-recording",
+        expected: "Press Home mid-recording. Return to app. App shows an appropriate state. No crash. Submit completes.",
+        steps: [
+          "Start recording an exercise.",
+          "Press the Android Home button. Wait 5 seconds. Return to app.",
+          "Note the recording state — try to stop and submit.",
+          "Confirm no crash and some audio is captured.",
+        ],
+      },
+      {
+        id: "AND-09",
+        name: "Virtual keyboard doesn't obscure record button",
+        expected: "When a text field is focused and the Android keyboard is open, the Record button is still reachable by scrolling. Layout does not break.",
+      },
+      {
+        id: "AND-10",
+        name: "Bottom nav above Android navigation bar",
+        expected: "On Android with gesture navigation or 3-button nav bar, the bottom tab bar is not hidden behind system navigation.",
+      },
+      {
+        id: "AND-11",
+        name: "Touch targets large enough",
+        expected: "Record, Stop, Next Question, Submit, bottom nav tabs — all tappable without mis-tapping adjacent items on a typical Android phone screen.",
+      },
+      {
+        id: "AND-12",
+        name: "SBC multi-question independent audio",
+        expected: "Record Q1, switch to Q2, record Q2, switch to Q3, record Q3. Each question retains its own audio player. Q1 audio is not replaced by Q2 or Q3.",
+        steps: [
+          "Open SBC exercise. Record Q1 (10 seconds). Stop. Note audio player present.",
+          "Tap Next Question. Record Q2. Stop.",
+          "Tap Next Question. Record Q3. Stop.",
+          "Go back through questions — confirm Q1 audio player still present and plays Q1 recording.",
+        ],
+      },
+      {
+        id: "AND-13",
+        name: "Full TC-01 end-to-end on Android Chrome",
+        expected: "Reading session: record → stop → submit → results with AI scores — all steps complete without error on Android Chrome.",
+        steps: [
+          "Open a Reading Aloud exercise in Chrome on Android.",
+          "Tap Start Recording. Read aloud for 30 seconds. Tap Stop.",
+          "Note speech diag values. Confirm audio player present.",
+          "Tap Submit for Grading.",
+          "Confirm results page loads with score and AI feedback within 60s.",
+          "Check History tab — session listed.",
+        ],
+      },
+      {
+        id: "AND-14",
+        name: "Full TC-02 SBC end-to-end on Android Chrome",
+        expected: "SBC session: all 3 questions recorded, submitted, AI evaluates with 3 scores on Android Chrome.",
+        steps: [
+          "Open SBC exercise in Chrome on Android.",
+          "Record Q1, Next, record Q2, Next, record Q3.",
+          "Submit. Confirm results show 3 individual scores.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "mobile-shared",
+    title: "10 — Mobile Shared (iOS + Android)",
+    tests: [
+      {
+        id: "MOB-01",
+        name: "Submit over mobile data (not Wi-Fi)",
+        expected: "Turn off Wi-Fi, use mobile data only. Record and submit a session. Results page loads and AI evaluation completes within 90s.",
+        steps: [
+          "Turn off Wi-Fi on the phone. Confirm mobile data is active.",
+          "Open app. Record a Reading session. Submit.",
+          "Confirm results page loads and scores appear.",
+        ],
+      },
+      {
+        id: "MOB-02",
+        name: "Network drop during recording (graceful handling)",
+        expected: "If network is lost during recording (audio capture is local), recording still completes. Submitting while offline shows a clear error — not a blank page or infinite spinner.",
+        steps: [
+          "Start recording. Enable Airplane Mode mid-recording.",
+          "Stop recording. Attempt to Submit.",
+          "Confirm a visible error message appears (not blank/frozen).",
+          "Re-enable network. Retry submit — confirm it completes.",
+        ],
+      },
+      {
+        id: "MOB-03",
+        name: "Page reload on practice screen",
+        expected: "Reloading the practice page mid-session (before submit) returns to the practice screen with the exercise loaded. No crash or blank page.",
+        steps: [
+          "Open any exercise. Do not record yet.",
+          "Reload the browser tab (pull-to-refresh or browser reload).",
+          "Confirm exercise reloads correctly. Record and submit normally.",
+        ],
+      },
+      {
+        id: "MOB-04",
+        name: "Screen lock during recording",
+        expected: "Lock the screen mid-recording. Unlock. App is in a defined state — either recording was stopped (with message) or is still active. No crash.",
+        steps: [
+          "Start recording. Press the power/lock button to lock the screen.",
+          "Unlock immediately.",
+          "Note the recording state. Complete and submit the session.",
+        ],
+      },
+      {
+        id: "MOB-05",
+        name: "Audio file size reasonable",
+        expected: "A 2-minute recording results in an audio file ≤ 10 MB. Submit completes without payload error.",
+        steps: [
+          "Open an exercise. Record for approximately 2 minutes. Stop.",
+          "Submit the session. Confirm submit completes (no 413 or payload error).",
+          "Open parent session detail. Parent grade save also completes with 'Saved!'.",
+        ],
+      },
+      {
+        id: "MOB-06",
+        name: "Parent dashboard usable on mobile",
+        expected: "Parent dashboard, session detail, grading sliders, and collapsible sections all work correctly on a phone screen in portrait mode.",
+        steps: [
+          "On the phone, tap the Parent tab.",
+          "Open any session. Confirm passage, recordings, AI feedback sections all visible and expandable.",
+          "Drag a grading slider. Confirm it responds to touch.",
+          "Tap Save Parent Grade. Confirm 'Saved!'.",
+        ],
+      },
+      {
+        id: "MOB-07",
+        name: "UAT tracker usable on mobile",
+        expected: "This /test-plan page is readable and usable on a phone. Status chips tappable. Notes field editable. No horizontal scroll overflow.",
+      },
+      {
+        id: "MOB-08",
+        name: "Consistent dark theme on mobile browsers",
+        expected: "Dark theme renders correctly on both iOS Safari and Android Chrome. No white flash on load. No forced light-mode override from the browser.",
+      },
+    ],
+  },
 ];
 
 // ── Status helpers ────────────────────────────────────────────────────────────
