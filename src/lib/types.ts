@@ -20,6 +20,7 @@ export interface OralExercise {
   sbcQ2Type: string;
   sbcQ3Type: string;
   generatedImageUrl: string | null;
+  repracticeRequested?: boolean;
 }
 
 export interface PracticeHistory {

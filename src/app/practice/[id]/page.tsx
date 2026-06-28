@@ -81,6 +81,11 @@ export default function PracticePage() {
   const recordingIntentRef = useRef<boolean>(false);
   const speechRestartCountRef = useRef<number>(0);
   const [speechWarnings, setSpeechWarnings] = useState<string[]>(["", "", ""]);
+  const [speechDiag, setSpeechDiag] = useState<{ event: string; error: string; restarts: number; results: number }[]>([
+    { event: "—", error: "—", restarts: 0, results: 0 },
+    { event: "—", error: "—", restarts: 0, results: 0 },
+    { event: "—", error: "—", restarts: 0, results: 0 },
+  ]);
 
   const imageGenerationTriggered = useRef(false);
 
@@ -127,6 +132,11 @@ export default function PracticePage() {
       // Clear any previous warning for this question
       setSpeechWarnings((prev) => {
         const n = [...prev]; n[questionIdx] = ""; return n;
+      });
+      setSpeechDiag((prev) => {
+        const n = [...prev];
+        n[questionIdx] = { event: "starting", error: "—", restarts: 0, results: 0 };
+        return n;
       });
 
       // ── Audio capture (MediaRecorder) ──────────────────────────────────
@@ -188,6 +198,11 @@ export default function PracticePage() {
         setSpeechWarnings((prev) => {
           const n = [...prev]; n[questionIdx] = ""; return n;
         });
+        setSpeechDiag((prev) => {
+          const n = [...prev];
+          n[questionIdx] = { ...n[questionIdx], event: "onresult", results: n[questionIdx].results + 1 };
+          return n;
+        });
         let interim = "";
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal)
@@ -203,6 +218,11 @@ export default function PracticePage() {
 
       const onerror = (event: SpeechRecognitionErrorEvent) => {
         console.warn("[SpeechRecognition] error:", event.error);
+        setSpeechDiag((prev) => {
+          const n = [...prev];
+          n[questionIdx] = { ...n[questionIdx], event: "onerror", error: event.error };
+          return n;
+        });
         if (event.error === "not-allowed" || event.error === "service-not-allowed") {
           // Microphone permission denied — stop completely
           recordingIntentRef.current = false;
@@ -235,6 +255,11 @@ export default function PracticePage() {
       };
 
       const onend = () => {
+        setSpeechDiag((prev) => {
+          const n = [...prev];
+          n[questionIdx] = { ...n[questionIdx], event: "onend" };
+          return n;
+        });
         if (!recordingIntentRef.current) {
           setRecordingStates((prev) => {
             const n = [...prev];
@@ -249,6 +274,11 @@ export default function PracticePage() {
         // Cap restarts to avoid an infinite error loop.
         if (speechRestartCountRef.current < 20) {
           speechRestartCountRef.current += 1;
+          setSpeechDiag((prev) => {
+            const n = [...prev];
+            n[questionIdx] = { ...n[questionIdx], event: "restarting", restarts: speechRestartCountRef.current };
+            return n;
+          });
           setTimeout(() => {
             // Re-check intent: user may have tapped stop during the delay
             if (!recordingIntentRef.current) {
@@ -755,6 +785,35 @@ export default function PracticePage() {
           {speechWarnings[isReading ? 0 : currentQuestion] && (
             <div className="error-banner" style={{ marginTop: 8, background: "rgba(251,191,36,0.12)", borderColor: "rgba(251,191,36,0.35)", color: "var(--gold)" }}>
               ⚠️ {speechWarnings[isReading ? 0 : currentQuestion]}
+            </div>
+          )}
+
+          {/* Speech diagnostics — visible when recording or after, helps diagnose Android issues */}
+          {speechDiag[isReading ? 0 : currentQuestion].event !== "—" && (
+            <div style={{
+              marginTop: 6,
+              padding: "6px 10px",
+              borderRadius: 8,
+              background: "rgba(139,92,246,0.08)",
+              border: "1px solid rgba(139,92,246,0.2)",
+              fontSize: 11,
+              color: "var(--text-muted)",
+              fontFamily: "monospace",
+              display: "flex",
+              gap: 12,
+              flexWrap: "wrap",
+            }}>
+              {(() => {
+                const d = speechDiag[isReading ? 0 : currentQuestion];
+                return (
+                  <>
+                    <span>event: <b style={{ color: "var(--text-primary)" }}>{d.event}</b></span>
+                    <span>error: <b style={{ color: d.error !== "—" ? "var(--coral)" : "var(--text-primary)" }}>{d.error}</b></span>
+                    <span>restarts: <b style={{ color: "var(--text-primary)" }}>{d.restarts}</b></span>
+                    <span>results: <b style={{ color: d.results > 0 ? "var(--teal)" : "var(--text-primary)" }}>{d.results}</b></span>
+                  </>
+                );
+              })()}
             </div>
           )}
 

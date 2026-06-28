@@ -295,29 +295,6 @@ export default function SettingsPage() {
             {saving ? "Saving..." : "Save Settings"}
           </button>
 
-          {/* Reset PIN */}
-          <div style={{ marginTop: 24, textAlign: "center" }}>
-            <button
-              onClick={() => {
-                if (confirm("Reset your parent PIN? You will need to set a new one.")) {
-                  localStorage.removeItem("parentPin");
-                  router.push("/parent");
-                }
-              }}
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--coral, #F87171)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                textDecoration: "underline",
-              }}
-            >
-              Reset Parent PIN
-            </button>
-          </div>
-
           {/* Reset App Data */}
           <div className="card" style={{ marginTop: 24, border: "1px solid rgba(248,113,113,0.3)" }}>
             <div className="card-title" style={{ color: "var(--coral)" }}>Danger Zone</div>

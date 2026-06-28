@@ -22,14 +22,10 @@ export default function ParentSessionDetailPage() {
   const [saveMsg, setSaveMsg] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [repracticing, setRepracticing] = useState(false);
+  const [repracticeRequested, setRepracticeRequested] = useState(false);
 
   useEffect(() => {
-    const pin = localStorage.getItem("parentPin");
-    if (!pin) {
-      router.push("/parent");
-      return;
-    }
-
     Promise.all([
       fetch(`/api/practice?id=${sessionId}`).then((r) => r.json()),
       fetch("/api/exercises").then((r) => r.json()),
@@ -41,7 +37,10 @@ export default function ParentSessionDetailPage() {
         if (historyData.parentScore3 != null) setParentScore3(historyData.parentScore3);
         if (historyData.parentFeedback) setParentFeedback(historyData.parentFeedback);
         const ex = exercisesData.find((e) => e.id === historyData.exerciseId);
-        if (ex) setExercise(ex);
+        if (ex) {
+          setExercise(ex);
+          setRepracticeRequested(!!ex.repracticeRequested);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -165,6 +164,22 @@ export default function ParentSessionDetailPage() {
     } catch {
       alert("Failed to reopen exercise.");
     }
+  };
+
+  const handleToggleRepractice = async (request: boolean) => {
+    if (!exercise) return;
+    setRepracticing(true);
+    try {
+      await fetch("/api/exercises", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: exercise.id, repracticeRequested: request }),
+      });
+      setRepracticeRequested(request);
+    } catch {
+      alert("Failed to update. Please try again.");
+    }
+    setRepracticing(false);
   };
 
   const handleDeleteRecordings = async () => {
@@ -680,6 +695,50 @@ export default function ParentSessionDetailPage() {
               >
                 {saveMsg}
               </div>
+            )}
+          </div>
+
+          {/* Send for Re-Practice */}
+          <div className="card" style={{ padding: "14px 16px", border: repracticeRequested ? "1px solid rgba(251,191,36,0.4)" : undefined }}>
+            <div className="card-title" style={{ marginBottom: 8 }}>Re-Practice</div>
+            {repracticeRequested ? (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, textTransform: "uppercase",
+                    background: "rgba(251,191,36,0.15)", color: "var(--gold)",
+                    padding: "2px 8px", borderRadius: 4,
+                    border: "1px solid rgba(251,191,36,0.3)",
+                  }}>
+                    Re-Practice Requested
+                  </span>
+                </div>
+                <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 10 }}>
+                  The student will see a prompt to redo this exercise. Tap below to cancel the request.
+                </div>
+                <button
+                  className="btn btn-outline btn-sm"
+                  style={{ width: "auto" }}
+                  disabled={repracticing}
+                  onClick={() => handleToggleRepractice(false)}
+                >
+                  {repracticing ? "Cancelling..." : "Cancel Re-Practice"}
+                </button>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 10 }}>
+                  Send this exercise back to the student for another attempt.
+                </div>
+                <button
+                  className="btn btn-primary btn-sm"
+                  style={{ width: "auto", background: "var(--gold)", borderColor: "var(--gold)" }}
+                  disabled={repracticing}
+                  onClick={() => handleToggleRepractice(true)}
+                >
+                  {repracticing ? "Sending..." : "Send for Re-Practice"}
+                </button>
+              </>
             )}
           </div>
 

@@ -66,6 +66,14 @@ export async function insertExercises(exercises: Omit<OralExercise, "id">[]): Pr
   await batch.commit();
 }
 
+export async function setExerciseRepractice(id: number, requested: boolean): Promise<void> {
+  const db = getDb();
+  const snap = await db.collection("exercises").where("id", "==", id).limit(1).get();
+  if (!snap.empty) {
+    await snap.docs[0].ref.update({ repracticeRequested: requested });
+  }
+}
+
 export async function updateExerciseImage(id: number, imageUrl: string): Promise<void> {
   const db = getDb();
   const snap = await db.collection("exercises").where("id", "==", id).limit(1).get();

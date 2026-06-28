@@ -619,20 +619,36 @@ function ExerciseCard({ exercise }: { exercise: OralExercise }) {
       <div className="card" style={{ cursor: "pointer", borderLeft: `3px solid ${accentColor}` }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div className="card-title">{exercise.title}</div>
-          {exercise.isDaily && (
-            <span style={{
-              fontSize: 10,
-              fontWeight: 700,
-              padding: "2px 8px",
-              borderRadius: 10,
-              background: "var(--gold-soft)",
-              color: "var(--gold)",
-              border: "1px solid rgba(251, 191, 36, 0.25)",
-              whiteSpace: "nowrap",
-            }}>
-              ⭐ DAILY
-            </span>
-          )}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+            {exercise.repracticeRequested && (
+              <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: "2px 8px",
+                borderRadius: 10,
+                background: "rgba(251,191,36,0.15)",
+                color: "var(--gold)",
+                border: "1px solid rgba(251, 191, 36, 0.35)",
+                whiteSpace: "nowrap",
+              }}>
+                ↩ RE-PRACTICE
+              </span>
+            )}
+            {exercise.isDaily && (
+              <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: "2px 8px",
+                borderRadius: 10,
+                background: "var(--gold-soft)",
+                color: "var(--gold)",
+                border: "1px solid rgba(251, 191, 36, 0.25)",
+                whiteSpace: "nowrap",
+              }}>
+                ⭐ DAILY
+              </span>
+            )}
+          </div>
         </div>
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 8 }}>
           {exercise.topic}

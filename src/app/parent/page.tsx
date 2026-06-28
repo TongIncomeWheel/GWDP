@@ -1,40 +1,17 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PracticeHistory } from "@/lib/types";
 import BottomNav from "../BottomNav";
 
-type PinMode = "set" | "verify";
-
 export default function ParentDashboard() {
   const router = useRouter();
-  const [authenticated, setAuthenticated] = useState(false);
-  const [showPin, setShowPin] = useState(true);
-  const [pinMode, setPinMode] = useState<PinMode>("set");
-  const [pinDigits, setPinDigits] = useState(["", "", "", ""]);
-  const [pinError, setPinError] = useState("");
-  const [confirmDigits, setConfirmDigits] = useState(["", "", "", ""]);
-  const [confirmStep, setConfirmStep] = useState(false);
-  const pinRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const confirmRefs = useRef<(HTMLInputElement | null)[]>([]);
-
   const [history, setHistory] = useState<PracticeHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("parentPin");
-    if (stored) {
-      setPinMode("verify");
-    } else {
-      setPinMode("set");
-    }
-  }, []);
-
-  const handleAuthenticated = useCallback(() => {
-    setAuthenticated(true);
-    setShowPin(false);
     fetch("/api/practice")
       .then((r) => r.json())
       .then((data: PracticeHistory[]) => {
@@ -42,93 +19,6 @@ export default function ParentDashboard() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
-
-  const handlePinInput = (
-    index: number,
-    value: string,
-    digits: string[],
-    setDigits: (d: string[]) => void,
-    refs: React.MutableRefObject<(HTMLInputElement | null)[]>
-  ) => {
-    if (!/^\d?$/.test(value)) return;
-    const next = [...digits];
-    next[index] = value;
-    setDigits(next);
-    setPinError("");
-
-    if (value && index < 3) {
-      refs.current[index + 1]?.focus();
-    }
-  };
-
-  const handlePinKeyDown = (
-    index: number,
-    e: React.KeyboardEvent,
-    digits: string[],
-    setDigits: (d: string[]) => void,
-    refs: React.MutableRefObject<(HTMLInputElement | null)[]>
-  ) => {
-    if (e.key === "Backspace" && !digits[index] && index > 0) {
-      const next = [...digits];
-      next[index - 1] = "";
-      setDigits(next);
-      refs.current[index - 1]?.focus();
-    }
-  };
-
-  const submitPin = () => {
-    const pin = pinDigits.join("");
-    if (pin.length < 4) return;
-
-    if (pinMode === "set") {
-      if (!confirmStep) {
-        setConfirmStep(true);
-        setConfirmDigits(["", "", "", ""]);
-        setTimeout(() => confirmRefs.current[0]?.focus(), 50);
-        return;
-      }
-      const confirmPin = confirmDigits.join("");
-      if (pin !== confirmPin) {
-        setPinError("PINs do not match. Try again.");
-        setConfirmStep(false);
-        setPinDigits(["", "", "", ""]);
-        setConfirmDigits(["", "", "", ""]);
-        setTimeout(() => pinRefs.current[0]?.focus(), 50);
-        return;
-      }
-      localStorage.setItem("parentPin", pin);
-      handleAuthenticated();
-    } else {
-      const stored = localStorage.getItem("parentPin");
-      if (pin === stored) {
-        handleAuthenticated();
-      } else {
-        setPinError("Incorrect PIN. Try again.");
-        setPinDigits(["", "", "", ""]);
-        setTimeout(() => pinRefs.current[0]?.focus(), 50);
-      }
-    }
-  };
-
-  // Auto-submit when all digits filled
-  useEffect(() => {
-    if (pinMode === "verify" && pinDigits.every((d) => d !== "")) {
-      submitPin();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pinDigits, pinMode]);
-
-  useEffect(() => {
-    if (confirmStep && confirmDigits.every((d) => d !== "")) {
-      submitPin();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [confirmDigits, confirmStep]);
-
-  // Focus first input on mount
-  useEffect(() => {
-    setTimeout(() => pinRefs.current[0]?.focus(), 100);
   }, []);
 
   // Calculate stats
@@ -154,7 +44,6 @@ export default function ParentDashboard() {
         )
       : 0;
 
-  // Calculate streak: consecutive days with at least one practice
   const streak = (() => {
     if (evaluated.length === 0) return 0;
     const daySet = new Set<string>();
@@ -178,127 +67,11 @@ export default function ParentDashboard() {
         break;
       }
     }
-    // Check if most recent day is today or yesterday
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     if (days[0] < today - oneDay) return 0;
     return count;
   })();
-
-  if (showPin) {
-    return (
-      <>
-        <div className="pin-overlay">
-          <div className="pin-modal">
-            <div style={{ fontSize: 40, marginBottom: 8 }}>&#x1F512;</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
-              {pinMode === "set"
-                ? confirmStep
-                  ? "Confirm Your PIN"
-                  : "Set Parent PIN"
-                : "Enter Parent PIN"}
-            </h2>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>
-              {pinMode === "set"
-                ? confirmStep
-                  ? "Enter the same PIN again to confirm."
-                  : "Create a 4-digit PIN to protect the parent portal."
-                : "Enter your 4-digit PIN to access the parent portal."}
-            </p>
-
-            {pinError && (
-              <div
-                style={{
-                  color: "var(--danger)",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  marginTop: 8,
-                }}
-              >
-                {pinError}
-              </div>
-            )}
-
-            {!confirmStep ? (
-              <div className="pin-input">
-                {pinDigits.map((d, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => { pinRefs.current[i] = el; }}
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={d}
-                    onChange={(e) =>
-                      handlePinInput(i, e.target.value, pinDigits, setPinDigits, pinRefs)
-                    }
-                    onKeyDown={(e) =>
-                      handlePinKeyDown(i, e, pinDigits, setPinDigits, pinRefs)
-                    }
-                    autoComplete="off"
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="pin-input">
-                {confirmDigits.map((d, i) => (
-                  <input
-                    key={`c-${i}`}
-                    ref={(el) => { confirmRefs.current[i] = el; }}
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={d}
-                    onChange={(e) =>
-                      handlePinInput(
-                        i,
-                        e.target.value,
-                        confirmDigits,
-                        setConfirmDigits,
-                        confirmRefs
-                      )
-                    }
-                    onKeyDown={(e) =>
-                      handlePinKeyDown(
-                        i,
-                        e,
-                        confirmDigits,
-                        setConfirmDigits,
-                        confirmRefs
-                      )
-                    }
-                    autoComplete="off"
-                  />
-                ))}
-              </div>
-            )}
-
-            {pinMode === "set" && !confirmStep && (
-              <button
-                className="btn btn-primary"
-                disabled={pinDigits.some((d) => d === "")}
-                onClick={submitPin}
-              >
-                Continue
-              </button>
-            )}
-
-            {pinMode === "set" && confirmStep && (
-              <button
-                className="btn btn-primary"
-                disabled={confirmDigits.some((d) => d === "")}
-                onClick={submitPin}
-              >
-                Set PIN
-              </button>
-            )}
-          </div>
-        </div>
-
-        <BottomNav active="parent" />
-      </>
-    );
-  }
 
   return (
     <>
