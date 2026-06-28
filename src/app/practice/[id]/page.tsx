@@ -79,6 +79,8 @@ export default function PracticePage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntentRef = useRef<boolean>(false);
+  const speechRestartCountRef = useRef<number>(0);
+  const [speechWarnings, setSpeechWarnings] = useState<string[]>(["", "", ""]);
 
   const imageGenerationTriggered = useRef(false);
 
@@ -115,18 +117,21 @@ export default function PracticePage() {
       const SpeechRecognitionClass =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognitionClass) {
-        alert(
-          "Speech recognition is not supported in your browser. Please use Chrome or Edge."
-        );
+        alert("Speech recognition is not supported in your browser. Please use Chrome on Android or desktop.");
         return;
       }
 
       recordingIntentRef.current = true;
+      speechRestartCountRef.current = 0;
 
+      // Clear any previous warning for this question
+      setSpeechWarnings((prev) => {
+        const n = [...prev]; n[questionIdx] = ""; return n;
+      });
+
+      // ── Audio capture (MediaRecorder) ──────────────────────────────────
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
         const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
           ? "audio/webm;codecs=opus"
@@ -162,19 +167,27 @@ export default function PracticePage() {
         mediaRecorder.start(1000);
         mediaRecorderRef.current = mediaRecorder;
       } catch {
-        console.warn(
-          "Microphone access denied, recording without audio capture"
-        );
+        console.warn("Microphone access denied; recording audio only via speech recognition");
       }
 
-      const recognition = new SpeechRecognitionClass();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "en-SG";
+      // ── Speech recognition (transcript) ───────────────────────────────
+      // Use en-US: Android Chrome's Web Speech API does not reliably support en-SG
+      // and will silently fail or return network errors with that locale.
+      const makeSpeechInstance = () => {
+        const r = new SpeechRecognitionClass();
+        r.continuous = true;
+        r.interimResults = true;
+        r.lang = "en-US";
+        return r;
+      };
 
       let finalTranscript = "";
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const onresult = (event: SpeechRecognitionEvent) => {
+        // Clear the warning the moment we get any result
+        setSpeechWarnings((prev) => {
+          const n = [...prev]; n[questionIdx] = ""; return n;
+        });
         let interim = "";
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal)
@@ -188,52 +201,88 @@ export default function PracticePage() {
         });
       };
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      const onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.warn("[SpeechRecognition] error:", event.error);
         if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          // Microphone permission denied — stop completely
           recordingIntentRef.current = false;
-          setRecordingStates((prev) => {
+          setSpeechWarnings((prev) => {
             const n = [...prev];
-            n[questionIdx] = "done";
+            n[questionIdx] = "Microphone permission denied. Your audio was not captured.";
+            return n;
+          });
+          setRecordingStates((prev) => {
+            const n = [...prev]; n[questionIdx] = "done"; return n;
+          });
+        } else if (event.error === "network") {
+          // Network error — Speech API requires internet on Android. Show warning but keep
+          // trying a few times in case it's a momentary blip.
+          setSpeechWarnings((prev) => {
+            const n = [...prev];
+            n[questionIdx] = "Transcript capture failed (network). Audio is still recording — you can still submit.";
+            return n;
+          });
+        } else if (event.error === "aborted") {
+          // Aborted intentionally — no warning needed
+        } else {
+          // Any other error (audio-capture, no-speech, etc.)
+          setSpeechWarnings((prev) => {
+            const n = [...prev];
+            n[questionIdx] = "Transcript not captured. Your audio is still being recorded.";
             return n;
           });
         }
       };
 
-      recognition.onend = () => {
-        if (recordingIntentRef.current) {
+      const onend = () => {
+        if (!recordingIntentRef.current) {
+          setRecordingStates((prev) => {
+            const n = [...prev];
+            if (n[questionIdx] === "recording") n[questionIdx] = "done";
+            return n;
+          });
+          return;
+        }
+        // Restart speech recognition while the user is still recording.
+        // Cap restarts to avoid an infinite error loop on Android.
+        if (speechRestartCountRef.current < 20) {
+          speechRestartCountRef.current += 1;
           try {
-            const newRecognition = new SpeechRecognitionClass();
-            newRecognition.continuous = true;
-            newRecognition.interimResults = true;
-            newRecognition.lang = "en-SG";
-            newRecognition.onresult = recognition.onresult;
-            newRecognition.onerror = recognition.onerror;
-            newRecognition.onend = recognition.onend;
-            recognitionRef.current = newRecognition;
-            newRecognition.start();
+            const newR = makeSpeechInstance();
+            newR.onresult = onresult;
+            newR.onerror = onerror;
+            newR.onend = onend;
+            recognitionRef.current = newR;
+            newR.start();
           } catch {
             recordingIntentRef.current = false;
             setRecordingStates((prev) => {
-              const n = [...prev];
-              n[questionIdx] = "done";
-              return n;
+              const n = [...prev]; n[questionIdx] = "done"; return n;
             });
           }
-          return;
+        } else {
+          // Too many restarts — give up on transcript, audio capture continues
+          setSpeechWarnings((prev) => {
+            const n = [...prev];
+            n[questionIdx] = "Transcript unavailable. Your audio is recorded — you can still submit.";
+            return n;
+          });
         }
-        setRecordingStates((prev) => {
-          const n = [...prev];
-          if (n[questionIdx] === "recording") n[questionIdx] = "done";
-          return n;
-        });
       };
 
+      const recognition = makeSpeechInstance();
+      recognition.onresult = onresult;
+      recognition.onerror = onerror;
+      recognition.onend = onend;
+
       recognitionRef.current = recognition;
-      recognition.start();
+      try {
+        recognition.start();
+      } catch {
+        // start() can throw if called too quickly after a previous stop
+      }
       setRecordingStates((prev) => {
-        const n = [...prev];
-        n[questionIdx] = "recording";
-        return n;
+        const n = [...prev]; n[questionIdx] = "recording"; return n;
       });
     },
     []
@@ -257,16 +306,9 @@ export default function PracticePage() {
       if (recordingStates[questionIdx] === "recording") {
         stopRecording(questionIdx);
       } else {
-        setTranscripts((prev) => {
-          const n = [...prev];
-          n[questionIdx] = "";
-          return n;
-        });
-        setAudioBlobs((prev) => {
-          const n = [...prev];
-          n[questionIdx] = null;
-          return n;
-        });
+        setTranscripts((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
+        setAudioBlobs((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
+        setSpeechWarnings((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
         startRecording(questionIdx);
       }
     },
@@ -314,22 +356,25 @@ export default function PracticePage() {
     }
   };
 
+  // "Recorded" means the user pressed stop — transcript may be empty if speech
+  // recognition failed on Android, but audio capture still happened.
   const allRecorded =
     exercise?.type === "READING"
-      ? transcripts[0].trim().length > 0
-      : transcripts.slice(0, 3).every((t) => t.trim().length > 0);
+      ? recordingStates[0] === "done"
+      : recordingStates.slice(0, 3).every((s) => s === "done");
 
   const missingQuestions =
     exercise?.type === "STIMULUS"
-      ? [0, 1, 2].filter((i) => !transcripts[i].trim())
-      : transcripts[0].trim()
+      ? [0, 1, 2].filter((i) => recordingStates[i] !== "done")
+      : recordingStates[0] === "done"
         ? []
         : [0];
 
   const handleBack = () => {
     recognitionRef.current?.stop();
     mediaRecorderRef.current?.stop();
-    if (transcripts.some((t) => t.trim())) {
+    const hasAnything = transcripts.some((t) => t.trim()) || recordingStates.some((s) => s === "done");
+    if (hasAnything) {
       if (confirm("You have recordings. Leave without submitting?")) {
         router.push("/");
       }
@@ -685,13 +730,20 @@ export default function PracticePage() {
           )}
 
           {missingQuestions.length > 0 &&
-            transcripts.some((t) => t.trim()) && (
+            recordingStates.some((s) => s === "done") && (
               <div className="error-banner" style={{ marginTop: 12 }}>
                 {isReading
                   ? "Please record your reading before submitting."
-                  : `Missing recording for Question${missingQuestions.length > 1 ? "s" : ""} ${missingQuestions.map((i) => i + 1).join(", ")}. All questions must be recorded.`}
+                  : `Still need to record Question${missingQuestions.length > 1 ? "s" : ""} ${missingQuestions.map((i) => i + 1).join(", ")}.`}
               </div>
             )}
+
+          {/* Speech recognition warning (transcript failed but audio captured) */}
+          {speechWarnings[isReading ? 0 : currentQuestion] && (
+            <div className="error-banner" style={{ marginTop: 8, background: "rgba(251,191,36,0.12)", borderColor: "rgba(251,191,36,0.35)", color: "var(--gold)" }}>
+              ⚠️ {speechWarnings[isReading ? 0 : currentQuestion]}
+            </div>
+          )}
 
           {/* Previous attempts */}
           {attempts.length > 0 && (
