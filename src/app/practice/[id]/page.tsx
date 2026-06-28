@@ -91,12 +91,17 @@ export default function PracticePage() {
         const ex = data.find((e) => e.id === exerciseId);
         setExercise(ex || null);
         if (ex && ex.type === "STIMULUS") {
-          const cached = localStorage.getItem(CACHE_KEY);
-          if (cached) {
-            setPosterImage(cached);
-          } else if (!imageGenerationTriggered.current) {
-            imageGenerationTriggered.current = true;
-            autoGenerateImage(ex);
+          if (ex.generatedImageUrl) {
+            // Already persisted in Firestore — use it directly, no API call needed
+            setPosterImage(ex.generatedImageUrl);
+          } else {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+              setPosterImage(cached);
+            } else if (!imageGenerationTriggered.current) {
+              imageGenerationTriggered.current = true;
+              autoGenerateImage(ex);
+            }
           }
         }
         setLoading(false);
@@ -268,7 +273,7 @@ export default function PracticePage() {
     [recordingStates, startRecording, stopRecording]
   );
 
-  const fetchPosterImage = async (ex: OralExercise) => {
+  const fetchPosterImage = async (ex: OralExercise, force = false) => {
     setGeneratingImage(true);
     setImageError("");
     try {
@@ -278,6 +283,7 @@ export default function PracticePage() {
         body: JSON.stringify({
           description: ex.photographDescription || ex.posterDescription,
           exerciseId: ex.id,
+          force,
         }),
       });
       const data = await res.json();
@@ -298,13 +304,13 @@ export default function PracticePage() {
   };
 
   const autoGenerateImage = (ex: OralExercise) => {
-    fetchPosterImage(ex);
+    fetchPosterImage(ex, false);
   };
 
   const generateImage = () => {
     if (exercise) {
       localStorage.removeItem(CACHE_KEY);
-      fetchPosterImage(exercise);
+      fetchPosterImage(exercise, true);
     }
   };
 

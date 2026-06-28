@@ -307,7 +307,7 @@ export default function SettingsPage() {
               style={{
                 background: "none",
                 border: "none",
-                color: "var(--danger, #dc2626)",
+                color: "var(--coral, #F87171)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -315,6 +315,45 @@ export default function SettingsPage() {
               }}
             >
               Reset Parent PIN
+            </button>
+          </div>
+
+          {/* Reset App Data */}
+          <div className="card" style={{ marginTop: 24, border: "1px solid rgba(248,113,113,0.3)" }}>
+            <div className="card-title" style={{ color: "var(--coral)" }}>Danger Zone</div>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.5 }}>
+              Use this before going live to clear all UAT / test practice data.
+              This permanently deletes all practice history and resets the streak counter.
+              Exercise content and settings are not affected.
+            </p>
+            <button
+              className="btn btn-danger"
+              style={{ fontSize: 14 }}
+              onClick={async () => {
+                if (!confirm("⚠️ This will permanently delete ALL practice history and reset the streak counter to zero.\n\nThis cannot be undone. Proceed?")) return;
+                if (!confirm("Are you absolutely sure? All session data will be lost.")) return;
+                try {
+                  const res = await fetch("/api/admin/reset", { method: "DELETE" });
+                  const data = await res.json();
+                  if (res.ok) {
+                    // Also clear local cached images so exercises regenerate fresh
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                      const key = localStorage.key(i);
+                      if (key?.startsWith("poster_img_")) keysToRemove.push(key);
+                    }
+                    keysToRemove.forEach((k) => localStorage.removeItem(k));
+                    alert("App data reset successfully. The app is ready for live use.");
+                    router.push("/parent");
+                  } else {
+                    alert(`Reset failed: ${data.error}`);
+                  }
+                } catch {
+                  alert("Network error during reset. Please try again.");
+                }
+              }}
+            >
+              Reset All Practice Data
             </button>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEffectiveApiKey } from "@/lib/db";
+import { getEffectiveApiKey, getExerciseById, updateExerciseImage } from "@/lib/db";
 
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 const GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -207,9 +207,17 @@ async function tryGenerateContent(
 
 export async function POST(request: NextRequest) {
   try {
-    const { exerciseId, description } = await request.json();
+    const { exerciseId, description, force } = await request.json();
     if (!exerciseId || !description) {
       return NextResponse.json({ error: "exerciseId and description required" }, { status: 400 });
+    }
+
+    // Return persisted image immediately unless the caller explicitly forces regeneration
+    if (!force) {
+      const exercise = await getExerciseById(Number(exerciseId));
+      if (exercise?.generatedImageUrl) {
+        return NextResponse.json({ imageUrl: exercise.generatedImageUrl, description, cached: true });
+      }
     }
 
     const apiKey = await getEffectiveApiKey();
@@ -229,7 +237,11 @@ export async function POST(request: NextRequest) {
       (await tryInteractionsAPI(apiKey, prompt, errors)) ||
       (await tryGenerateContent(apiKey, prompt, errors));
 
-    if (imageUrl) return NextResponse.json({ imageUrl, description });
+    if (imageUrl) {
+      // Persist to exercise so subsequent opens reuse it without calling the API
+      await updateExerciseImage(Number(exerciseId), imageUrl).catch(() => {});
+      return NextResponse.json({ imageUrl, description });
+    }
 
     return NextResponse.json({
       imageUrl: null,

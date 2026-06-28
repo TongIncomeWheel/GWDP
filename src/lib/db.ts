@@ -159,6 +159,20 @@ export async function deletePracticeHistoryById(id: number): Promise<void> {
   await db.collection("practice_history").doc(String(id)).delete();
 }
 
+export async function resetAllPracticeHistory(): Promise<void> {
+  const db = getDb();
+  const snap = await db.collection("practice_history").get();
+  // Firestore batch limit is 500 writes
+  const batchSize = 490;
+  for (let i = 0; i < snap.docs.length; i += batchSize) {
+    const batch = db.batch();
+    snap.docs.slice(i, i + batchSize).forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+  // Reset the auto-increment counter so IDs start fresh from 1
+  await db.collection("counters").doc("practice_history").set({ next: 1 });
+}
+
 // ── Settings ──
 
 export async function getSetting(key: string): Promise<string> {
