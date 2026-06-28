@@ -151,9 +151,10 @@ export default function PracticePage() {
               ? "audio/mp4"
               : "";
 
+        // 24kbps is sufficient for speech and keeps 3 SBC blobs well under Firestore's 1MB doc limit
         const mediaRecorder = mimeType
-          ? new MediaRecorder(stream, { mimeType })
-          : new MediaRecorder(stream);
+          ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
+          : new MediaRecorder(stream, { audioBitsPerSecond: 24000 });
 
         audioChunksRef.current = [];
         mediaRecorder.ondataavailable = (e) => {
@@ -358,9 +359,11 @@ export default function PracticePage() {
     [recordingStates, startRecording, stopRecording]
   );
 
-  const fetchPosterImage = async (ex: OralExercise, force = false) => {
-    setGeneratingImage(true);
-    setImageError("");
+  const fetchPosterImage = async (ex: OralExercise, force = false, pollCount = 0) => {
+    if (pollCount === 0) {
+      setGeneratingImage(true);
+      setImageError("");
+    }
     try {
       const res = await fetch("/api/poster", {
         method: "POST",
@@ -372,6 +375,16 @@ export default function PracticePage() {
         }),
       });
       const data = await res.json();
+      if (data.generating) {
+        // Another device is generating — poll every 3s until it's ready (max 30s)
+        if (pollCount < 10) {
+          setTimeout(() => fetchPosterImage(ex, false, pollCount + 1), 3000);
+        } else {
+          setImageError("Image is being generated on another device. Reload to see it.");
+          setGeneratingImage(false);
+        }
+        return;
+      }
       if (data.imageUrl) {
         setPosterImage(data.imageUrl);
         try {

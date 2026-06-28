@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEffectiveApiKey, getExerciseById, updateExerciseImage } from "@/lib/db";
+import { getEffectiveApiKey, claimImageGeneration, finishImageGeneration, clearImageGenerating } from "@/lib/db";
 
 const INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 const GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -212,16 +212,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "exerciseId and description required" }, { status: 400 });
     }
 
-    // Return persisted image immediately unless the caller explicitly forces regeneration
     if (!force) {
-      const exercise = await getExerciseById(Number(exerciseId));
-      if (exercise?.generatedImageUrl) {
-        return NextResponse.json({ imageUrl: exercise.generatedImageUrl, description, cached: true });
+      // Atomically claim the generation slot — prevents multiple devices generating simultaneously
+      const claim = await claimImageGeneration(Number(exerciseId));
+      if (claim !== "claimed" && claim !== "generating") {
+        // claim is an existing URL
+        return NextResponse.json({ imageUrl: claim, description, cached: true });
       }
+      if (claim === "generating") {
+        // Another device is already generating — tell the client to poll
+        return NextResponse.json({ generating: true });
+      }
+      // claim === "claimed" — we hold the slot, proceed to generate
     }
 
     const apiKey = await getEffectiveApiKey();
     if (!apiKey) {
+      await clearImageGenerating(Number(exerciseId)).catch(() => {});
       return NextResponse.json({
         imageUrl: null,
         description,
@@ -238,11 +245,13 @@ export async function POST(request: NextRequest) {
       (await tryGenerateContent(apiKey, prompt, errors));
 
     if (imageUrl) {
-      // Persist to exercise so subsequent opens reuse it without calling the API
-      await updateExerciseImage(Number(exerciseId), imageUrl).catch(() => {});
+      // Persist URL and clear the "generating" lock atomically
+      await finishImageGeneration(Number(exerciseId), imageUrl).catch(() => {});
       return NextResponse.json({ imageUrl, description });
     }
 
+    // Generation failed — clear the lock so future requests can retry
+    await clearImageGenerating(Number(exerciseId)).catch(() => {});
     return NextResponse.json({
       imageUrl: null,
       description,

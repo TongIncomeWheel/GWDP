@@ -82,6 +82,35 @@ export async function updateExerciseImage(id: number, imageUrl: string): Promise
   }
 }
 
+// Returns the existing URL, "generating" (another device is in progress), or "claimed" (this caller may generate).
+// Uses a Firestore transaction to prevent concurrent image generation across devices.
+export async function claimImageGeneration(id: number): Promise<string | "generating" | "claimed"> {
+  const db = getDb();
+  const docRef = db.collection("exercises").doc(String(id));
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(docRef);
+    if (!snap.exists) return "claimed";
+    const data = snap.data()!;
+    if (data.generatedImageUrl) return data.generatedImageUrl as string;
+    if (data.imageGenerating) return "generating";
+    tx.update(docRef, { imageGenerating: true });
+    return "claimed";
+  });
+}
+
+export async function finishImageGeneration(id: number, imageUrl: string): Promise<void> {
+  const db = getDb();
+  await db.collection("exercises").doc(String(id)).update({
+    generatedImageUrl: imageUrl,
+    imageGenerating: false,
+  });
+}
+
+export async function clearImageGenerating(id: number): Promise<void> {
+  const db = getDb();
+  await db.collection("exercises").doc(String(id)).update({ imageGenerating: false });
+}
+
 export async function prepopulateExercisesIfNeeded(): Promise<void> {
   const count = await getExerciseCount();
   if (count > 0) return;
