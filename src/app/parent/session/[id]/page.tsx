@@ -25,6 +25,12 @@ export default function ParentSessionDetailPage() {
   const [repracticing, setRepracticing] = useState(false);
   const [repracticeRequested, setRepracticeRequested] = useState(false);
 
+  // Collapsible section state
+  const [showPassage, setShowPassage] = useState(true);
+  const [showRecordings, setShowRecordings] = useState(true);
+  const [showAIFeedback, setShowAIFeedback] = useState(false);
+  const [showModelAnswers, setShowModelAnswers] = useState(false);
+
   useEffect(() => {
     Promise.all([
       fetch(`/api/practice?id=${sessionId}`).then((r) => r.json()),
@@ -36,15 +42,30 @@ export default function ParentSessionDetailPage() {
         if (historyData.parentScore2 != null) setParentScore2(historyData.parentScore2);
         if (historyData.parentScore3 != null) setParentScore3(historyData.parentScore3);
         if (historyData.parentFeedback) setParentFeedback(historyData.parentFeedback);
-        const ex = exercisesData.find((e) => e.id === historyData.exerciseId);
-        if (ex) {
-          setExercise(ex);
-          setRepracticeRequested(!!ex.repracticeRequested);
+        if (Array.isArray(exercisesData)) {
+          const ex = exercisesData.find((e) => e.id === historyData.exerciseId);
+          if (ex) {
+            setExercise(ex);
+            setRepracticeRequested(!!ex.repracticeRequested);
+          }
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, [sessionId, router]);
+      .catch(() => {
+        // Try to at least load the history even if exercises failed
+        fetch(`/api/practice?id=${sessionId}`)
+          .then((r) => r.json())
+          .then((historyData: PracticeHistory) => {
+            setHistory(historyData);
+            if (historyData.parentScore1 != null) setParentScore1(historyData.parentScore1);
+            if (historyData.parentScore2 != null) setParentScore2(historyData.parentScore2);
+            if (historyData.parentScore3 != null) setParentScore3(historyData.parentScore3);
+            if (historyData.parentFeedback) setParentFeedback(historyData.parentFeedback);
+          })
+          .catch(() => {})
+          .finally(() => setLoading(false));
+      });
+  }, [sessionId]);
 
   if (loading) {
     return (
@@ -108,8 +129,9 @@ export default function ParentSessionDetailPage() {
     setSaving(true);
     setSaveMsg("");
 
-    const updated = {
-      ...history,
+    // Send only grading fields — no audio blobs to avoid payload size issues
+    const payload = {
+      id: history.id,
       parentScore1,
       parentScore2,
       parentScore3: isReading ? 0 : parentScore3,
@@ -121,11 +143,18 @@ export default function ParentSessionDetailPage() {
       const res = await fetch("/api/practice", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         setSaveMsg("Saved!");
-        setHistory(updated);
+        setHistory({
+          ...history,
+          parentScore1: payload.parentScore1,
+          parentScore2: payload.parentScore2,
+          parentScore3: payload.parentScore3,
+          parentFeedback: payload.parentFeedback,
+          parentTotalScore: payload.parentTotalScore,
+        });
       } else {
         setSaveMsg("Error saving. Try again.");
       }
@@ -290,6 +319,32 @@ export default function ParentSessionDetailPage() {
     );
   };
 
+  const SectionHeader = ({
+    title,
+    open,
+    onToggle,
+  }: {
+    title: string;
+    open: boolean;
+    onToggle: () => void;
+  }) => (
+    <div
+      onClick={onToggle}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        cursor: "pointer",
+        userSelect: "none",
+      }}
+    >
+      <div className="card-title" style={{ margin: 0 }}>{title}</div>
+      <span style={{ fontSize: 18, color: "var(--text-muted)", lineHeight: 1 }}>
+        {open ? "▾" : "▸"}
+      </span>
+    </div>
+  );
+
   return (
     <>
       <header className="page-header">
@@ -316,6 +371,7 @@ export default function ParentSessionDetailPage() {
 
       <main>
         <div className="container" style={{ paddingTop: 16 }}>
+
           {/* Score Overview */}
           <div className="card" style={{ textAlign: "center" }}>
             <div
@@ -340,59 +396,116 @@ export default function ParentSessionDetailPage() {
                 Parent Score: {history.parentTotalScore}
               </div>
             )}
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 12, flexWrap: "wrap" }}>
+              <span className={`badge ${isReading ? "badge-reading" : "badge-stimulus"}`}>
+                {isReading ? "📖 Reading Aloud" : "🖼️ SBC"}
+              </span>
+              {exercise && <span className="badge badge-difficulty">{exercise.difficulty}</span>}
+            </div>
           </div>
 
-          {/* Exercise Context */}
-          {exercise && (
+          {/* Passage / Questions — collapsible */}
+          {(exercise || history.exerciseType) && (
             <div className="card">
-              <div className="card-title">
-                {isReading ? "Reading Passage" : "Stimulus-Based Conversation"}
-              </div>
-              <div className="flex-badges" style={{ marginBottom: 10 }}>
-                <span className={`badge ${isReading ? "badge-reading" : "badge-stimulus"}`}>
-                  {isReading ? "📖 Reading Aloud" : "🖼️ SBC"}
-                </span>
-                <span className="badge badge-difficulty">{exercise.difficulty}</span>
-              </div>
-
-              {isReading && exercise.passageText && (
-                <div className="passage-text" style={{ fontSize: 13, lineHeight: 1.7 }}>
-                  {exercise.passageText}
+              <SectionHeader
+                title={isReading ? "Reading Passage" : "Stimulus Questions"}
+                open={showPassage}
+                onToggle={() => setShowPassage((v) => !v)}
+              />
+              {showPassage && (
+                <div style={{ marginTop: 12 }}>
+                  {exercise ? (
+                    <>
+                      {isReading && exercise.passageText && (
+                        <div className="passage-text" style={{ fontSize: 13, lineHeight: 1.7 }}>
+                          {exercise.passageText}
+                        </div>
+                      )}
+                      {!isReading && (
+                        <>
+                          {exercise.generatedImageUrl && (
+                            <div className="poster-image-area" style={{ marginBottom: 12 }}>
+                              <img src={exercise.generatedImageUrl} alt="Visual stimulus" />
+                            </div>
+                          )}
+                          {!exercise.generatedImageUrl && exercise.photographDescription && (
+                            <div className="poster-desc" style={{ marginBottom: 12 }}>
+                              <strong>Visual Stimulus</strong>
+                              {exercise.photographDescription}
+                            </div>
+                          )}
+                          {exercise.question1 && (
+                            <div className="question-block">
+                              <div className="q-label">Question 1</div>
+                              <div style={{ fontSize: 14 }}>{exercise.question1}</div>
+                            </div>
+                          )}
+                          {exercise.question2 && (
+                            <div className="question-block">
+                              <div className="q-label">Question 2</div>
+                              <div style={{ fontSize: 14 }}>{exercise.question2}</div>
+                            </div>
+                          )}
+                          {exercise.question3 && (
+                            <div className="question-block">
+                              <div className="q-label">Question 3</div>
+                              <div style={{ fontSize: 14 }}>{exercise.question3}</div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 13, color: "var(--text-muted)", fontStyle: "italic" }}>
+                      Exercise content not available.
+                    </div>
+                  )}
                 </div>
               )}
+            </div>
+          )}
 
-              {!isReading && (
-                <>
-                  {exercise.generatedImageUrl && (
-                    <div className="poster-image-area" style={{ marginBottom: 12 }}>
-                      <img src={exercise.generatedImageUrl} alt="Visual stimulus" />
-                    </div>
-                  )}
-                  {!exercise.generatedImageUrl && exercise.photographDescription && (
-                    <div className="poster-desc" style={{ marginBottom: 12 }}>
-                      <strong>Visual Stimulus</strong>
-                      {exercise.photographDescription}
-                    </div>
-                  )}
-                  {exercise.question1 && (
-                    <div className="question-block">
-                      <div className="q-label">Question 1</div>
-                      <div style={{ fontSize: 14 }}>{exercise.question1}</div>
-                    </div>
-                  )}
-                  {exercise.question2 && (
-                    <div className="question-block">
-                      <div className="q-label">Question 2</div>
-                      <div style={{ fontSize: 14 }}>{exercise.question2}</div>
-                    </div>
-                  )}
-                  {exercise.question3 && (
-                    <div className="question-block">
-                      <div className="q-label">Question 3</div>
-                      <div style={{ fontSize: 14 }}>{exercise.question3}</div>
-                    </div>
-                  )}
-                </>
+          {/* Recordings — collapsible */}
+          {(history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
+            <div className="card">
+              <SectionHeader
+                title="Recordings"
+                open={showRecordings}
+                onToggle={() => setShowRecordings((v) => !v)}
+              />
+              {showRecordings && (
+                <div style={{ marginTop: 12 }}>
+                  {renderAudio(history.audioBlob1, isReading ? "Reading" : "Response 1")}
+                  {!isReading && renderAudio(history.audioBlob2, "Response 2")}
+                  {!isReading && renderAudio(history.audioBlob3, "Response 3")}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Transcripts (always visible, compact) */}
+          {(history.transcript1 || history.transcript2 || history.transcript3) && (
+            <div className="card feedback-section">
+              <h3 style={{ marginBottom: 10 }}>Transcripts</h3>
+              {history.transcript1 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>
+                    {isReading ? "Reading:" : "Response 1:"}
+                  </div>
+                  <div className="transcript-box has-text">{history.transcript1}</div>
+                </div>
+              )}
+              {!isReading && history.transcript2 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Response 2:</div>
+                  <div className="transcript-box has-text">{history.transcript2}</div>
+                </div>
+              )}
+              {!isReading && history.transcript3 && (
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Response 3:</div>
+                  <div className="transcript-box has-text">{history.transcript3}</div>
+                </div>
               )}
             </div>
           )}
@@ -406,11 +519,7 @@ export default function ParentSessionDetailPage() {
                 score={history.score1}
               />
               <ScoreRow
-                label={
-                  isReading
-                    ? "Rhythm, Fluency & Expressiveness"
-                    : "Clarity of Expression"
-                }
+                label={isReading ? "Rhythm, Fluency & Expressiveness" : "Clarity of Expression"}
                 score={history.score2}
               />
               {!isReading && (
@@ -419,180 +528,90 @@ export default function ParentSessionDetailPage() {
             </div>
           </div>
 
-          {/* Audio Playback */}
-          {(history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
-            <div className="card">
-              <div className="card-title">Recordings</div>
-              {renderAudio(
-                history.audioBlob1,
-                isReading ? "Reading" : "Response 1"
-              )}
-              {!isReading && renderAudio(history.audioBlob2, "Response 2")}
-              {!isReading && renderAudio(history.audioBlob3, "Response 3")}
-            </div>
-          )}
-
-          {/* Transcripts */}
-          {(history.transcript1 || history.transcript2 || history.transcript3) && (
+          {/* AI Detailed Feedback — collapsible */}
+          {(history.generalFeedback || history.strengths || history.areasOfImprovement) && (
             <div className="card feedback-section">
-              <h3>Transcripts</h3>
-              {history.transcript1 && (
-                <div style={{ marginBottom: 10 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    {isReading ? "Reading:" : "Response 1:"}
-                  </div>
-                  <div className="transcript-box has-text">
-                    {history.transcript1}
-                  </div>
-                </div>
-              )}
-              {!isReading && history.transcript2 && (
-                <div style={{ marginBottom: 10 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    Response 2:
-                  </div>
-                  <div className="transcript-box has-text">
-                    {history.transcript2}
-                  </div>
-                </div>
-              )}
-              {!isReading && history.transcript3 && (
-                <div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    Response 3:
-                  </div>
-                  <div className="transcript-box has-text">
-                    {history.transcript3}
-                  </div>
+              <SectionHeader
+                title="AI Detailed Feedback"
+                open={showAIFeedback}
+                onToggle={() => setShowAIFeedback((v) => !v)}
+              />
+              {showAIFeedback && (
+                <div style={{ marginTop: 12 }}>
+                  {history.generalFeedback && (
+                    <div style={{ marginBottom: 12 }}>
+                      <h3 style={{ marginBottom: 6, fontSize: 13 }}>General Feedback</h3>
+                      <p style={{ fontSize: 13, lineHeight: 1.6 }}>{history.generalFeedback}</p>
+                    </div>
+                  )}
+                  {history.strengths && (
+                    <div style={{ marginBottom: 12 }}>
+                      <h3 style={{ color: "var(--success)", marginBottom: 6, fontSize: 13 }}>Strengths</h3>
+                      <ul style={{ paddingLeft: 20, fontSize: 13 }}>
+                        {history.strengths.split("\n").filter(Boolean).map((s, i) => (
+                          <li key={i}>{s.replace(/^-\s*/, "")}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {history.areasOfImprovement && (
+                    <div>
+                      <h3 style={{ color: "var(--warning)", marginBottom: 6, fontSize: 13 }}>Areas for Improvement</h3>
+                      <ul style={{ paddingLeft: 20, fontSize: 13 }}>
+                        {history.areasOfImprovement.split("\n").filter(Boolean).map((s, i) => (
+                          <li key={i}>{s.replace(/^-\s*/, "")}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {/* Structured Transcripts */}
+                  {(history.structuredTranscript1 || history.structuredTranscript2 || history.structuredTranscript3) && (
+                    <div style={{ marginTop: 12, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+                      <h3 style={{ marginBottom: 8, fontSize: 13 }}>Structured Analysis</h3>
+                      {renderStructuredTranscript(history.structuredTranscript1, isReading ? "Reading" : "Response 1")}
+                      {!isReading && renderStructuredTranscript(history.structuredTranscript2, "Response 2")}
+                      {!isReading && renderStructuredTranscript(history.structuredTranscript3, "Response 3")}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* Structured Transcripts */}
-          {(history.structuredTranscript1 ||
-            history.structuredTranscript2 ||
-            history.structuredTranscript3) && (
-            <div className="card feedback-section">
-              <h3>Structured Analysis</h3>
-              {renderStructuredTranscript(
-                history.structuredTranscript1,
-                isReading ? "Reading" : "Response 1"
-              )}
-              {!isReading &&
-                renderStructuredTranscript(
-                  history.structuredTranscript2,
-                  "Response 2"
-                )}
-              {!isReading &&
-                renderStructuredTranscript(
-                  history.structuredTranscript3,
-                  "Response 3"
-                )}
-            </div>
-          )}
-
-          {/* AI Feedback */}
-          {history.generalFeedback && (
-            <div className="card feedback-section">
-              <h3>General Feedback</h3>
-              <p>{history.generalFeedback}</p>
-            </div>
-          )}
-
-          {history.strengths && (
-            <div className="card feedback-section">
-              <h3 style={{ color: "var(--success)" }}>Strengths</h3>
-              <ul>
-                {history.strengths
-                  .split("\n")
-                  .filter(Boolean)
-                  .map((s, i) => (
-                    <li key={i}>{s.replace(/^-\s*/, "")}</li>
-                  ))}
-              </ul>
-            </div>
-          )}
-
-          {history.areasOfImprovement && (
-            <div className="card feedback-section">
-              <h3 style={{ color: "var(--warning)" }}>Areas for Improvement</h3>
-              <ul>
-                {history.areasOfImprovement
-                  .split("\n")
-                  .filter(Boolean)
-                  .map((s, i) => (
-                    <li key={i}>{s.replace(/^-\s*/, "")}</li>
-                  ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Model Answers */}
+          {/* Model Answers — collapsible */}
           {(history.modelAnswer1 || history.modelAnswer2 || history.modelAnswer3) && (
             <div className="card feedback-section">
-              <h3 style={{ color: "var(--success)" }}>Model Answers</h3>
-              {history.modelAnswer1 && (
-                <div style={{ marginBottom: 12 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--text-muted)",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {isReading ? "Model Reading" : "Q1 Model Answer"}
-                  </div>
-                  <div className="model-answer">{history.modelAnswer1}</div>
-                </div>
-              )}
-              {!isReading && history.modelAnswer2 && (
-                <div style={{ marginBottom: 12 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--text-muted)",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Q2 Model Answer
-                  </div>
-                  <div className="model-answer">{history.modelAnswer2}</div>
-                </div>
-              )}
-              {!isReading && history.modelAnswer3 && (
-                <div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--text-muted)",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Q3 Model Answer
-                  </div>
-                  <div className="model-answer">{history.modelAnswer3}</div>
+              <SectionHeader
+                title="Model Answers"
+                open={showModelAnswers}
+                onToggle={() => setShowModelAnswers((v) => !v)}
+              />
+              {showModelAnswers && (
+                <div style={{ marginTop: 12 }}>
+                  {history.modelAnswer1 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4 }}>
+                        {isReading ? "Model Reading" : "Q1 Model Answer"}
+                      </div>
+                      <div className="model-answer">{history.modelAnswer1}</div>
+                    </div>
+                  )}
+                  {!isReading && history.modelAnswer2 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4 }}>
+                        Q2 Model Answer
+                      </div>
+                      <div className="model-answer">{history.modelAnswer2}</div>
+                    </div>
+                  )}
+                  {!isReading && history.modelAnswer3 && (
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4 }}>
+                        Q3 Model Answer
+                      </div>
+                      <div className="model-answer">{history.modelAnswer3}</div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -611,18 +630,8 @@ export default function ParentSessionDetailPage() {
             </div>
             <div style={{ marginTop: 12 }}>
               {sliderLabels.map((label, idx) => {
-                const value =
-                  idx === 0
-                    ? parentScore1
-                    : idx === 1
-                    ? parentScore2
-                    : parentScore3;
-                const setter =
-                  idx === 0
-                    ? setParentScore1
-                    : idx === 1
-                    ? setParentScore2
-                    : setParentScore3;
+                const value = idx === 0 ? parentScore1 : idx === 1 ? parentScore2 : parentScore3;
+                const setter = idx === 0 ? setParentScore1 : idx === 1 ? setParentScore2 : setParentScore3;
 
                 return (
                   <div key={idx} style={{ marginBottom: 16 }}>
@@ -639,14 +648,7 @@ export default function ParentSessionDetailPage() {
                       onChange={(e) => setter(Number(e.target.value))}
                       className="grading-slider"
                     />
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 10,
-                        color: "var(--text-muted)",
-                      }}
-                    >
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text-muted)" }}>
                       <span>0</span>
                       <span>10</span>
                     </div>
@@ -733,7 +735,7 @@ export default function ParentSessionDetailPage() {
                 <button
                   className="btn btn-primary btn-sm"
                   style={{ width: "auto", background: "var(--gold)", borderColor: "var(--gold)" }}
-                  disabled={repracticing}
+                  disabled={repracticing || !exercise}
                   onClick={() => handleToggleRepractice(true)}
                 >
                   {repracticing ? "Sending..." : "Send for Re-Practice"}
@@ -790,13 +792,7 @@ export default function ParentSessionDetailPage() {
                 <div className="card-title" style={{ color: "var(--danger)" }}>
                   Storage Management
                 </div>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: "var(--text-muted)",
-                    marginBottom: 12,
-                  }}
-                >
+                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
                   This exercise is closed. You can delete the audio recordings to
                   free up storage. Transcripts and scores will be preserved.
                 </p>
@@ -824,25 +820,11 @@ function ScoreRow({ label, score }: { label: string; score: number }) {
 
   return (
     <div style={{ marginBottom: 12 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: 13,
-          marginBottom: 4,
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
         <span>{label}</span>
         <span style={{ fontWeight: 600 }}>{score}/10</span>
       </div>
-      <div
-        style={{
-          height: 8,
-          background: "var(--border)",
-          borderRadius: 4,
-          overflow: "hidden",
-        }}
-      >
+      <div style={{ height: 8, background: "var(--border)", borderRadius: 4, overflow: "hidden" }}>
         <div
           style={{
             height: "100%",
