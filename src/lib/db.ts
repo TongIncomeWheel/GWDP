@@ -115,8 +115,13 @@ export async function claimImageGeneration(id: number): Promise<string | "genera
     if (!snap.exists) return "claimed";
     const data = snap.data()!;
     if (data.generatedImageUrl) return data.generatedImageUrl as string;
-    if (data.imageGenerating) return "generating";
-    tx.update(docRef, { imageGenerating: true });
+    if (data.imageGenerating) {
+      // Treat locks older than 2 minutes as stale — generation must have crashed
+      const lockedAt = data.imageGeneratingAt as number | undefined;
+      const stale = !lockedAt || Date.now() - lockedAt > 2 * 60 * 1000;
+      if (!stale) return "generating";
+    }
+    tx.update(docRef, { imageGenerating: true, imageGeneratingAt: Date.now() });
     return "claimed";
   });
 }
