@@ -134,11 +134,12 @@ export default function ResultsPage() {
                 textAlign: "center",
                 margin: "8px 0",
                 padding: "6px 12px",
-                background: "#E8F5E9",
+                background: "var(--teal-soft)",
                 borderRadius: 8,
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#2E7D32",
+                color: "var(--teal)",
+                border: "1px solid rgba(45,212,191,0.25)",
               }}
             >
               Exercise completed
@@ -172,7 +173,7 @@ export default function ResultsPage() {
               <div
                 style={{
                   fontSize: 13,
-                  color: "var(--primary)",
+                  color: "var(--purple-soft)",
                   fontWeight: 600,
                   marginTop: 4,
                 }}
@@ -216,14 +217,11 @@ export default function ResultsPage() {
             <div
               className="card"
               style={{
-                border: "2px solid var(--primary)",
-                background: "#F5F3FF",
+                border: "2px solid var(--purple-glow)",
+                background: "rgba(139,92,246,0.08)",
               }}
             >
-              <div
-                className="card-title"
-                style={{ color: "var(--primary)" }}
-              >
+              <div className="card-title">
                 Parent&apos;s Assessment
               </div>
               <div style={{ marginTop: 8 }}>
@@ -258,11 +256,10 @@ export default function ResultsPage() {
                       marginTop: 8,
                       fontSize: 14,
                       fontWeight: 600,
-                      color: "var(--primary)",
+                      color: "var(--purple-soft)",
                     }}
                   >
-                    Parent Total: {history.parentTotalScore} /{" "}
-                    {history.maxScore}
+                    Parent Total: {history.parentTotalScore} / {history.maxScore}
                   </div>
                 )}
               </div>
@@ -274,11 +271,11 @@ export default function ResultsPage() {
             <div
               className="card feedback-section"
               style={{
-                border: "2px solid var(--primary)",
-                background: "#F5F3FF",
+                border: "2px solid var(--purple-glow)",
+                background: "rgba(139,92,246,0.08)",
               }}
             >
-              <h3 style={{ color: "var(--primary)" }}>
+              <h3 style={{ color: "var(--purple-soft)" }}>
                 Parent&apos;s Feedback
               </h3>
               <p style={{ fontSize: 13 }}>{history.parentFeedback}</p>
@@ -631,7 +628,7 @@ function StructuredTranscriptView({
         marginTop: 12,
         padding: 12,
         borderRadius: 8,
-        background: "var(--surface-elevated, #FAFAFA)",
+        background: "var(--bg-elevated)",
         border: "1px solid var(--border)",
       }}
     >

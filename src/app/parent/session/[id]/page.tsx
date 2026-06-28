@@ -246,16 +246,16 @@ export default function ParentSessionDetailPage() {
               borderRadius: 10,
               background:
                 st.overallCoherence === "strong"
-                  ? "#D1FAE5"
+                  ? "rgba(45,212,191,0.15)"
                   : st.overallCoherence === "moderate"
-                  ? "#FEF3C7"
-                  : "#FEE2E2",
+                  ? "rgba(251,191,36,0.15)"
+                  : "rgba(248,113,113,0.15)",
               color:
                 st.overallCoherence === "strong"
-                  ? "#065F46"
+                  ? "var(--teal)"
                   : st.overallCoherence === "moderate"
-                  ? "#92400E"
-                  : "#991B1B",
+                  ? "var(--gold)"
+                  : "var(--coral)",
             }}
           >
             Coherence: {st.overallCoherence}
@@ -317,7 +317,7 @@ export default function ParentSessionDetailPage() {
               <div
                 style={{
                   fontSize: 13,
-                  color: "var(--primary)",
+                  color: "var(--purple-soft)",
                   fontWeight: 600,
                   marginTop: 4,
                 }}
@@ -645,7 +645,7 @@ export default function ParentSessionDetailPage() {
                 textAlign: "center",
                 fontSize: 18,
                 fontWeight: 700,
-                color: "var(--primary)",
+                color: "var(--purple-soft)",
                 margin: "8px 0 16px",
               }}
             >

@@ -29,6 +29,13 @@
   --radius: 14px;
   --radius-sm: 10px;
 
+  /* Semantic aliases — keep in sync with named colours above */
+  --primary: #8B5CF6;
+  --success: #2DD4BF;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --surface-elevated: #2A254A;
+
   --gradient-brand: linear-gradient(135deg, #8B5CF6, #6366F1, #2DD4BF);
   --gradient-card: linear-gradient(145deg, #1E1A35, #161229);
 }
