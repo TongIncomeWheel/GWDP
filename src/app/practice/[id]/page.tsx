@@ -349,6 +349,10 @@ export default function PracticePage() {
           audioPath1: audioPaths[0] || null,
           audioPath2: audioPaths[1] || null,
           audioPath3: audioPaths[2] || null,
+          // Store blobs directly in the session so parent playback never expires
+          audioBlob1: audioBlobs[0] || null,
+          audioBlob2: audioBlobs[1] || null,
+          audioBlob3: audioBlobs[2] || null,
           structuredTranscript1: structuredTranscripts[0],
           structuredTranscript2: structuredTranscripts[1],
           structuredTranscript3: structuredTranscripts[2],

@@ -3,6 +3,7 @@ import {
   getAllPracticeHistoryMeta,
   getPracticeHistoryById,
   insertPracticeHistory,
+  attachAudioBlobs,
   updateParentGrading,
   deletePracticeHistoryById,
 } from "@/lib/db";
@@ -50,6 +51,16 @@ export async function POST(request: NextRequest) {
       structuredTranscript3: body.structuredTranscript3 || null,
       isClosed: false,
     });
+    // Attach blobs in a separate update so an oversized doc doesn't break the submit
+    if (body.audioBlob1 || body.audioBlob2 || body.audioBlob3) {
+      await attachAudioBlobs(
+        id,
+        body.audioBlob1 || null,
+        body.audioBlob2 || null,
+        body.audioBlob3 || null,
+      );
+    }
+
     return NextResponse.json({ id });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });

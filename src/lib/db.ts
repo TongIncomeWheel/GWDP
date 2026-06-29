@@ -204,6 +204,28 @@ export async function insertPracticeHistory(history: Omit<PracticeHistory, "id">
   return id;
 }
 
+// Save audio blobs into an existing practice_history doc so parent can play them
+// without relying on the separate audio_files collection (which can have TTL policies).
+// Falls back silently if the doc would exceed Firestore's 1MB limit.
+export async function attachAudioBlobs(
+  id: number,
+  audioBlob1: string | null,
+  audioBlob2: string | null,
+  audioBlob3: string | null,
+): Promise<void> {
+  const db = getDb();
+  try {
+    await db.collection("practice_history").doc(String(id)).update({
+      ...(audioBlob1 ? { audioBlob1 } : {}),
+      ...(audioBlob2 ? { audioBlob2 } : {}),
+      ...(audioBlob3 ? { audioBlob3 } : {}),
+    });
+  } catch (e) {
+    // Doc too large or write failed — blobs won't be in history but audioPath still works
+    console.warn("[AUDIO BLOB ATTACH] Failed, skipping blob storage:", e);
+  }
+}
+
 export async function updatePracticeHistory(history: PracticeHistory): Promise<void> {
   const db = getDb();
   await db.collection("practice_history").doc(String(history.id)).set(history);
