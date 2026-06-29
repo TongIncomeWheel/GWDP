@@ -118,12 +118,12 @@ TONE & MOOD MATCHING:
 - Narrative vs dialogue transitions should be clearly audible.
 
 CRITICAL SCORING RULES:
-1. COMPLETENESS: If the student did not read the ENTIRE passage, deduct heavily. Reading only part of the passage = maximum 4/10 on each criterion. Reading less than a third = maximum 2/10.
-2. ACCURACY: Compare the transcript word-for-word against the passage. Every skipped, added, or mispronounced word counts against the score.
-3. NO CHARITY SCORING: This is a serious examination tool. Parents rely on these scores to assess their child's readiness. Inflated scores are harmful and misleading.
-4. DEFAULT TO LOWER BAND: When in doubt between two bands, choose the LOWER band. It is better to be strict than to give undeserved marks.
-5. EMPTY/MINIMAL TRANSCRIPTS: If the transcript is empty, says "No speech recognized", or contains fewer than 10 words, ALL scores must be 0-1.
-6. PACE: Natural conversational pace with variation. Too fast (rushing) or too slow (plodding) = fluency deduction. Target ~130-160 words per minute for P6 level.
+1. AUDIO IS PRIMARY FOR DELIVERY: You have the actual audio recording. Listen to it. Score pronunciation, fluency, and expressiveness from what you HEAR — not just what the transcript says. A student may mispronounce a word that appears correct in the transcript, or may read with excellent expression that the transcript cannot capture.
+2. COMPLETENESS: If the student did not read the ENTIRE passage, deduct heavily. Reading only part of the passage = maximum 4/10 on each criterion. Reading less than a third = maximum 2/10.
+3. ACCURACY: Compare transcript against passage for word coverage, but verify with the audio — the transcript may have minor errors from speech-to-text.
+4. FAIR SCORING: Score what the student actually demonstrated. Do not inflate, but do not penalise unfairly either. A P6 student reading clearly and fluently should score 6-8/10. Reserve 9-10 for genuinely exceptional delivery.
+5. EMPTY/MINIMAL TRANSCRIPTS: If transcript is empty but audio is provided, evaluate entirely from audio. Only score 0 if the student genuinely did not speak.
+6. PACE: Natural pace for P6 is ~130-160 words per minute. Too fast or too slow = fluency deduction.
 
 [Syllabus Reading Passage]:
 "${exercise.passageText}"
@@ -139,7 +139,7 @@ Evaluate strictly according to the rubric above. For EACH criterion, you must:
 2. Rhythm, Fluency & Expressiveness (score2): Assess punctuation awareness (did they pause at commas/full stops? rise at questions?), tone matching (did delivery match the mood?), dialogue vs narration distinction, and pace appropriateness.
 (set score3 to 0 — Reading Aloud has only 2 criteria)
 
-Include specific strengths (with word-level examples from the transcript), specific areas for improvement (citing exact words that were mispronounced or skipped, AND specific punctuation/tone issues), and a model reading answer with stress marks (UPPERCASE), pauses (/), rising intonation (↑), and mood annotations [calm], [excited], [tense].
+Include specific strengths (with examples from the transcript and audio), specific areas for improvement (citing exact words or delivery issues), and a model reading answer with stress marks (UPPERCASE), pauses (/), rising intonation (↑), and mood annotations [calm], [excited], [tense].
 
 Respond in valid JSON with this exact structure:
 {
@@ -217,13 +217,13 @@ CRITERION 3: Engagement & Conversational Quality (0-10)
 - Band 0 (No attempt): No response.
 
 CRITICAL SCORING RULES:
-1. SCORE EACH QUESTION INDEPENDENTLY: score1 = Q1 only, score2 = Q2 only, score3 = Q3 only. Each question is evaluated holistically across all 3 criteria (content, language, engagement) to produce ONE score for that question.
-2. NO CROSS-QUESTION AVERAGING: A strong Q1 does NOT raise the score for a weak Q2. Each question stands alone.
-3. NO CHARITY SCORING: Parents rely on accurate scores. Inflated scores are harmful and misleading.
-4. DEFAULT TO LOWER BAND: When in doubt between two bands, choose the LOWER band.
-5. EMPTY/MINIMAL RESPONSES: If a response is empty, says "No speech recognized", or has fewer than 5 words, that question's score MUST be 0.
-6. VOCABULARY CHECK: If the student uses only basic words like "good", "bad", "nice", "fun", "happy", "sad" — that question CANNOT score above 5/10.
-7. FRAMEWORK CHECK: If the student does NOT use any structured framework (no clear point, no evidence/example, no explanation) — that question CANNOT score above 5/10.
+1. AUDIO IS PRIMARY FOR DELIVERY: You have the actual audio recordings. Listen to them. Score engagement, fluency, and clarity of expression from what you HEAR — the audio captures confidence, pacing, and tone that the transcript cannot show.
+2. SCORE EACH QUESTION INDEPENDENTLY: score1 = Q1 only, score2 = Q2 only, score3 = Q3 only. Each question is evaluated holistically across all 3 criteria to produce ONE score.
+3. NO CROSS-QUESTION AVERAGING: A strong Q1 does NOT raise the score for a weak Q2.
+4. FAIR SCORING: Score what the student actually demonstrated. A P6 student who gives a clear, structured answer with supporting examples should score 6-8/10. Reserve 9-10 for genuinely excellent responses.
+5. EMPTY/MINIMAL RESPONSES: If a response is empty and the audio is also silent, that question's score MUST be 0. If audio is present but transcript is empty, evaluate from the audio.
+6. VOCABULARY CHECK: Repeated use of only basic words (good, bad, nice) without any richer vocabulary = cannot score above 5/10 on language criterion.
+7. FRAMEWORK CHECK: No clear structure (no point, no reason/example, no explanation) = cannot score above 5/10 on content criterion.
 
 [Visual Poster Theme]: ${exercise.topic}
 [Detailed Poster Layout & Content]:
@@ -285,25 +285,17 @@ export async function evaluateWithGemini(
 ): Promise<PSLEEvaluationResult> {
   const prompt = buildEvaluationPrompt(history, exercise);
 
-  // When transcripts are empty (e.g. Android SpeechRecognition failure), include
-  // the actual audio files so Gemini can evaluate from audio directly.
-  const needsAudio =
-    !history.transcript1?.trim() ||
-    (exercise.type === "STIMULUS" && (!history.transcript2?.trim() || !history.transcript3?.trim()));
+  // Always include audio when available — Gemini evaluates delivery (tone, pace,
+  // pronunciation, expression) from the audio, and content/words from the transcript.
+  const audioPaths = [history.audioPath1, history.audioPath2, history.audioPath3].filter(Boolean) as string[];
+  const audioParts = (await Promise.all(audioPaths.map(fetchAudioPart))).filter(Boolean);
 
-  const parts: object[] = [{ text: prompt }];
-
-  if (needsAudio) {
-    const audioPaths = [history.audioPath1, history.audioPath2, history.audioPath3].filter(Boolean) as string[];
-    for (const audioPath of audioPaths) {
-      const audioPart = await fetchAudioPart(audioPath);
-      if (audioPart) parts.push(audioPart);
-    }
-    if (parts.length > 1) {
-      // Prepend an instruction so Gemini knows to listen to the audio
-      parts.unshift({ text: "Audio recordings are attached below. The transcript may be empty or incomplete — evaluate based on what you hear in the audio." });
-    }
+  const parts: object[] = [];
+  if (audioParts.length > 0) {
+    parts.push({ text: "Audio recordings of the student are attached. Use the audio to evaluate delivery: pronunciation, fluency, pace, tone, and expressiveness. Use the transcript for content and word accuracy." });
+    parts.push(...audioParts);
   }
+  parts.push({ text: prompt });
 
   const body = {
     contents: [{ parts }],
