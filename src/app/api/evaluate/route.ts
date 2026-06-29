@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPracticeHistoryById, getExerciseById, updateEvaluationResult, setEvaluating, getEffectiveApiKey, getAllSettings } from "@/lib/db";
+import { getPracticeHistoryById, getExerciseById, updateEvaluationResult, setEvaluating, getEffectiveApiKey } from "@/lib/db";
 import { evaluateWithGemini } from "@/lib/gemini";
 
 async function triggerCompletionNotification(historyId: number) {
-  const settings = await getAllSettings();
-  if (settings.notificationEmail && settings.emailOnCompletion) {
-    const history = await getPracticeHistoryById(historyId);
-    const exercise = history?.exerciseTitle || "an exercise";
-    const score = history ? `${history.totalScore}/${history.maxScore}` : "N/A";
-    console.log(`[NOTIFY] To: ${settings.notificationEmail}`);
-    console.log(`[NOTIFY] ${settings.childName || "Your child"} completed "${exercise}" - Score: ${score}`);
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    await fetch(`${baseUrl}/api/notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "completion", historyId }),
+    });
+  } catch (e) {
+    console.warn("[NOTIFY] Failed to trigger completion notification:", e);
   }
 }
 

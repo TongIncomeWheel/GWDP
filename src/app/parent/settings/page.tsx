@@ -189,15 +189,15 @@ export default function SettingsPage() {
           <div className="card">
             <div className="card-title">Notifications</div>
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Notification Email</label>
+              <label style={labelStyle}>Notification Emails</label>
               <input
-                type="email"
+                type="text"
                 value={settings.notificationEmail}
                 onChange={(e) => setSettings({ ...settings, notificationEmail: e.target.value })}
-                placeholder="parent@email.com"
+                placeholder="mum@email.com, dad@email.com"
                 style={inputStyle}
               />
-              <p style={helpStyle}>Email address to receive practice notifications.</p>
+              <p style={helpStyle}>Separate multiple addresses with a comma. Requires RESEND_API_KEY set in Cloud Run.</p>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
