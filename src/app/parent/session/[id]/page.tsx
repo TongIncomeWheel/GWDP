@@ -27,7 +27,6 @@ export default function ParentSessionDetailPage() {
 
   // Collapsible section state
   const [showPassage, setShowPassage] = useState(true);
-  const [showRecordings, setShowRecordings] = useState(true);
   const [showAIFeedback, setShowAIFeedback] = useState(false);
   const [showModelAnswers, setShowModelAnswers] = useState(false);
 
@@ -452,29 +451,7 @@ export default function ParentSessionDetailPage() {
             </div>
           )}
 
-          {/* Recordings — always shown so parent knows where to look */}
-          <div className="card">
-            <SectionHeader
-              title="Recordings"
-              open={showRecordings}
-              onToggle={() => setShowRecordings((v) => !v)}
-            />
-            {showRecordings && (
-              <div style={{ marginTop: 12 }}>
-                {(history.audioPath1 || history.audioBlob1 || history.audioPath2 || history.audioBlob2 || history.audioPath3 || history.audioBlob3) ? (
-                  <>
-                    {renderAudio(history.audioPath1 || history.audioBlob1, isReading ? "Reading" : "Response 1")}
-                    {!isReading && renderAudio(history.audioPath2 || history.audioBlob2, "Response 2")}
-                    {!isReading && renderAudio(history.audioPath3 || history.audioBlob3, "Response 3")}
-                  </>
-                ) : (
-                  <div style={{ fontSize: 13, color: "var(--text-muted)", fontStyle: "italic", padding: "8px 0" }}>
-                    No audio recording available for this session.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Recordings are shown inside the Parent Grading box below */}
 
           {/* Transcripts (always visible, compact) */}
           {(history.transcript1 || history.transcript2 || history.transcript3) && (
@@ -621,13 +598,38 @@ export default function ParentSessionDetailPage() {
             <div className="card-title" style={{ color: "var(--purple-soft)" }}>
               Parent Grading
             </div>
+
+            {/* For Reading: single player at top before both sliders */}
+            {isReading && (history.audioPath1 || history.audioBlob1) && (
+              <div style={{ marginTop: 12 }}>
+                {renderAudio(history.audioPath1 || history.audioBlob1, "Listen to recording")}
+              </div>
+            )}
+            {isReading && !(history.audioPath1 || history.audioBlob1) && (
+              <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>
+                No audio available for this session.
+              </div>
+            )}
+
             <div style={{ marginTop: 12 }}>
               {sliderLabels.map((label, idx) => {
+                const audioPaths = [
+                  history.audioPath1 || history.audioBlob1,
+                  history.audioPath2 || history.audioBlob2,
+                  history.audioPath3 || history.audioBlob3,
+                ];
                 const value = idx === 0 ? parentScore1 : idx === 1 ? parentScore2 : parentScore3;
                 const setter = idx === 0 ? setParentScore1 : idx === 1 ? setParentScore2 : setParentScore3;
 
                 return (
-                  <div key={idx} style={{ marginBottom: 16 }}>
+                  <div key={idx} style={{ marginBottom: 20 }}>
+                    {/* For SBC: show each question's player above its slider */}
+                    {!isReading && audioPaths[idx] && renderAudio(audioPaths[idx], `Listen — Question ${idx + 1}`)}
+                    {!isReading && !audioPaths[idx] && (
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginBottom: 6 }}>
+                        No audio for Q{idx + 1}
+                      </div>
+                    )}
                     <div className="grading-row">
                       <label>{label}</label>
                       <div className="grade-value">{value}</div>
