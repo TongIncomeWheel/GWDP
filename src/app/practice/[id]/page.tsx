@@ -83,6 +83,8 @@ export default function PracticePage() {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntentRef = useRef<boolean>(false);
   const speechRestartCountRef = useRef<number>(0);
+  // Incremented each time a question re-records — invalidates in-flight upload/transcribe chains
+  const recordingVersionRef = useRef<number[]>([0, 0, 0]);
   const [speechWarnings, setSpeechWarnings] = useState<string[]>(["", "", ""]);
   const [speechDiag, setSpeechDiag] = useState<{ event: string; error: string; restarts: number; results: number }[]>([
     { event: "—", error: "—", restarts: 0, results: 0 },
@@ -148,6 +150,7 @@ export default function PracticePage() {
 
       if (isAndroid) {
         // ── Android: MediaRecorder only, transcribe via Gemini after stop ──
+        const myVersion = recordingVersionRef.current[questionIdx];
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -167,10 +170,14 @@ export default function PracticePage() {
             if (e.data.size > 0) audioChunksRef.current.push(e.data);
           };
           mediaRecorder.onstop = () => {
+            // If the student re-recorded, this version is stale — discard
+            if (recordingVersionRef.current[questionIdx] !== myVersion) return;
+
             const capturedMime = mediaRecorder.mimeType || "audio/webm";
             const blob = new Blob(audioChunksRef.current, { type: capturedMime });
             const reader = new FileReader();
             reader.onloadend = () => {
+              if (recordingVersionRef.current[questionIdx] !== myVersion) return;
               const base64 = reader.result as string;
               setAudioBlobs((prev) => { const next = [...prev]; next[questionIdx] = base64; return next; });
               setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
@@ -182,9 +189,9 @@ export default function PracticePage() {
               })
                 .then((r) => r.json())
                 .then(async (data) => {
+                  if (recordingVersionRef.current[questionIdx] !== myVersion) return;
                   if (data.url) {
                     setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = data.url; return n; });
-                    // Transcribe the audio via Gemini now that it's uploaded
                     setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
                     try {
                       const txRes = await fetch("/api/transcribe", {
@@ -193,6 +200,7 @@ export default function PracticePage() {
                         body: JSON.stringify({ audioUrl: data.url, mimeType: capturedMime }),
                       });
                       const txData = await txRes.json();
+                      if (recordingVersionRef.current[questionIdx] !== myVersion) return;
                       if (txData.transcript) {
                         setTranscripts((prev) => {
                           const next = [...prev];
@@ -203,13 +211,17 @@ export default function PracticePage() {
                     } catch {
                       // transcription failed — Gemini will still evaluate from audio
                     } finally {
-                      setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+                      if (recordingVersionRef.current[questionIdx] === myVersion) {
+                        setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+                      }
                     }
                   }
                 })
                 .catch(() => {})
                 .finally(() => {
-                  setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+                  if (recordingVersionRef.current[questionIdx] === myVersion) {
+                    setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+                  }
                 });
             };
             reader.readAsDataURL(blob);
@@ -389,6 +401,7 @@ export default function PracticePage() {
       if (recordingStates[questionIdx] === "recording") {
         stopRecording(questionIdx);
       } else {
+        recordingVersionRef.current[questionIdx]++;
         setTranscripts((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
         setAudioBlobs((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
         setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
@@ -547,7 +560,12 @@ export default function PracticePage() {
       setSelectedAttempt(attempts.length);
       setTranscripts(["", "", ""]);
       setAudioBlobs([null, null, null]);
+      setAudioPaths([null, null, null]);
+      setUploadingAudio([false, false, false]);
+      setTranscribingAudio([false, false, false]);
+      setSpeechWarnings(["", "", ""]);
       setRecordingStates(["idle", "idle", "idle"]);
+      recordingVersionRef.current = [0, 0, 0];
       setMascotMood("smiling");
 
       if (attempts.length >= 2) {
