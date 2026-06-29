@@ -15,6 +15,8 @@ export default function SettingsPage() {
     dailyPracticeGoal: 1,
     resendApiKey: "",
     resendFromEmail: "",
+    gmailUser: "",
+    gmailAppPassword: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,9 +26,11 @@ export default function SettingsPage() {
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showResendKey, setShowResendKey] = useState(false);
+  const [showGmailPass, setShowGmailPass] = useState(false);
   const [hasEnvApiKey, setHasEnvApiKey] = useState(false);
   const [hasEffectiveApiKey, setHasEffectiveApiKey] = useState(false);
   const [hasResendKey, setHasResendKey] = useState(false);
+  const [hasGmail, setHasGmail] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -36,6 +40,7 @@ export default function SettingsPage() {
         setHasEnvApiKey(!!data.hasEnvApiKey);
         setHasEffectiveApiKey(!!data.hasEffectiveApiKey);
         setHasResendKey(!!data.hasResendKey);
+        setHasGmail(!!data.hasGmail);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -196,7 +201,51 @@ export default function SettingsPage() {
           <div className="card">
             <div className="card-title">Notifications</div>
 
+            {/* Gmail (recommended — no domain needed) */}
+            <div style={{ marginBottom: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
+                Option 1 — Gmail (recommended, no domain needed)
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={labelStyle}>Gmail Address</label>
+                <input
+                  type="email"
+                  value={settings.gmailUser}
+                  onChange={(e) => setSettings({ ...settings, gmailUser: e.target.value })}
+                  placeholder="yourname@gmail.com"
+                  style={inputStyle}
+                />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={labelStyle}>Gmail App Password</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showGmailPass ? "text" : "password"}
+                    value={settings.gmailAppPassword}
+                    onChange={(e) => setSettings({ ...settings, gmailAppPassword: e.target.value })}
+                    placeholder="xxxx xxxx xxxx xxxx"
+                    style={{ ...inputStyle, paddingRight: 48 }}
+                  />
+                  <button type="button" onClick={() => setShowGmailPass(!showGmailPass)}
+                    style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 13, padding: "4px 8px" }}>
+                    {showGmailPass ? "Hide" : "Show"}
+                  </button>
+                </div>
+                <p style={helpStyle}>
+                  Not your Gmail password. Go to{" "}
+                  <span style={{ color: "var(--primary)", fontWeight: 600 }}>myaccount.google.com → Security → 2-Step Verification → App Passwords</span>
+                  {" "}and generate one for &quot;Mail&quot;.
+                </p>
+                {hasGmail && <p style={{ ...helpStyle, color: "var(--teal, #2DD4BF)", marginTop: 4 }}>✓ Gmail configured — sends to anyone, no domain required.</p>}
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px solid var(--border)", margin: "16px 0" }} />
+
             {/* Resend API Key */}
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
+              Option 2 — Resend (requires verified domain)
+            </div>
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>Resend API Key</label>
               <div style={{ position: "relative" }}>

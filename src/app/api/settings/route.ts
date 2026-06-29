@@ -11,9 +11,11 @@ export async function GET() {
       ...settings,
       geminiApiKey: settings.geminiApiKey ? "••••" + settings.geminiApiKey.slice(-4) : "",
       resendApiKey: settings.resendApiKey ? "••••" + settings.resendApiKey.slice(-4) : "",
+      gmailAppPassword: settings.gmailAppPassword ? "••••" + settings.gmailAppPassword.slice(-4) : "",
       hasEnvApiKey: !!envGeminiKey,
       hasEffectiveApiKey: !!effectiveGeminiKey,
       hasResendKey: !!settings.resendApiKey || !!process.env.RESEND_API_KEY,
+      hasGmail: !!(settings.gmailUser && settings.gmailAppPassword),
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
@@ -32,6 +34,10 @@ export async function PUT(request: NextRequest) {
         ? current.resendApiKey
         : (body.resendApiKey ?? ""),
       resendFromEmail: body.resendFromEmail ?? "",
+      gmailUser: body.gmailUser ?? "",
+      gmailAppPassword: body.gmailAppPassword === "••••" + current.gmailAppPassword.slice(-4)
+        ? current.gmailAppPassword
+        : (body.gmailAppPassword ?? ""),
       notificationEmail: body.notificationEmail ?? "",
       emailOnCompletion: Boolean(body.emailOnCompletion),
       emailOnMissed: Boolean(body.emailOnMissed),

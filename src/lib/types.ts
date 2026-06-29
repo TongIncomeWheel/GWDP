@@ -105,4 +105,6 @@ export interface AppSettings {
   dailyPracticeGoal: number;
   resendApiKey: string;
   resendFromEmail: string;
+  gmailUser: string;
+  gmailAppPassword: string;
 }

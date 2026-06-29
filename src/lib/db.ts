@@ -331,6 +331,8 @@ export async function getAllSettings(): Promise<AppSettings> {
     dailyPracticeGoal: parseInt(map.dailyPracticeGoal || "1", 10),
     resendApiKey: map.resendApiKey ?? "",
     resendFromEmail: map.resendFromEmail ?? "",
+    gmailUser: map.gmailUser ?? "",
+    gmailAppPassword: map.gmailAppPassword ?? "",
   };
 }
 
@@ -346,6 +348,8 @@ export async function saveAllSettings(settings: AppSettings): Promise<void> {
   batch.set(col.doc("dailyPracticeGoal"), { value: String(settings.dailyPracticeGoal) });
   batch.set(col.doc("resendApiKey"), { value: settings.resendApiKey });
   batch.set(col.doc("resendFromEmail"), { value: settings.resendFromEmail });
+  batch.set(col.doc("gmailUser"), { value: settings.gmailUser });
+  batch.set(col.doc("gmailAppPassword"), { value: settings.gmailAppPassword });
   await batch.commit();
 }
 
