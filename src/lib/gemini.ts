@@ -265,6 +265,19 @@ function buildEvaluationPrompt(history: PracticeHistory, exercise: OralExercise)
   return buildSBCPrompt(history, exercise);
 }
 
+async function fetchAudioPart(url: string): Promise<{ inline_data: { mime_type: string; data: string } } | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const mimeType = res.headers.get("content-type") || "audio/webm";
+    const buffer = await res.arrayBuffer();
+    const data = Buffer.from(buffer).toString("base64");
+    return { inline_data: { mime_type: mimeType, data } };
+  } catch {
+    return null;
+  }
+}
+
 export async function evaluateWithGemini(
   history: PracticeHistory,
   exercise: OralExercise,
@@ -272,8 +285,28 @@ export async function evaluateWithGemini(
 ): Promise<PSLEEvaluationResult> {
   const prompt = buildEvaluationPrompt(history, exercise);
 
+  // When transcripts are empty (e.g. Android SpeechRecognition failure), include
+  // the actual audio files so Gemini can evaluate from audio directly.
+  const needsAudio =
+    !history.transcript1?.trim() ||
+    (exercise.type === "STIMULUS" && (!history.transcript2?.trim() || !history.transcript3?.trim()));
+
+  const parts: object[] = [{ text: prompt }];
+
+  if (needsAudio) {
+    const audioPaths = [history.audioPath1, history.audioPath2, history.audioPath3].filter(Boolean) as string[];
+    for (const audioPath of audioPaths) {
+      const audioPart = await fetchAudioPart(audioPath);
+      if (audioPart) parts.push(audioPart);
+    }
+    if (parts.length > 1) {
+      // Prepend an instruction so Gemini knows to listen to the audio
+      parts.unshift({ text: "Audio recordings are attached below. The transcript may be empty or incomplete — evaluate based on what you hear in the audio." });
+    }
+  }
+
   const body = {
-    contents: [{ parts: [{ text: prompt }] }],
+    contents: [{ parts }],
     generationConfig: {
       responseMimeType: "application/json",
       temperature: 0.2,
