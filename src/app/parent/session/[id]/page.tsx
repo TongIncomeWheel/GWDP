@@ -452,23 +452,29 @@ export default function ParentSessionDetailPage() {
             </div>
           )}
 
-          {/* Recordings — collapsible */}
-          {(history.audioPath1 || history.audioPath2 || history.audioPath3 || history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
-            <div className="card">
-              <SectionHeader
-                title="Recordings"
-                open={showRecordings}
-                onToggle={() => setShowRecordings((v) => !v)}
-              />
-              {showRecordings && (
-                <div style={{ marginTop: 12 }}>
-                  {renderAudio(history.audioPath1 || history.audioBlob1, isReading ? "Reading" : "Response 1")}
-                  {!isReading && renderAudio(history.audioPath2 || history.audioBlob2, "Response 2")}
-                  {!isReading && renderAudio(history.audioPath3 || history.audioBlob3, "Response 3")}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Recordings — always shown so parent knows where to look */}
+          <div className="card">
+            <SectionHeader
+              title="Recordings"
+              open={showRecordings}
+              onToggle={() => setShowRecordings((v) => !v)}
+            />
+            {showRecordings && (
+              <div style={{ marginTop: 12 }}>
+                {(history.audioPath1 || history.audioBlob1 || history.audioPath2 || history.audioBlob2 || history.audioPath3 || history.audioBlob3) ? (
+                  <>
+                    {renderAudio(history.audioPath1 || history.audioBlob1, isReading ? "Reading" : "Response 1")}
+                    {!isReading && renderAudio(history.audioPath2 || history.audioBlob2, "Response 2")}
+                    {!isReading && renderAudio(history.audioPath3 || history.audioBlob3, "Response 3")}
+                  </>
+                ) : (
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", fontStyle: "italic", padding: "8px 0" }}>
+                    No audio recording available for this session.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Transcripts (always visible, compact) */}
           {(history.transcript1 || history.transcript2 || history.transcript3) && (
