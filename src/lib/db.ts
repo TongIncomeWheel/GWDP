@@ -329,6 +329,8 @@ export async function getAllSettings(): Promise<AppSettings> {
     emailOnMissed: map.emailOnMissed === "true",
     childName: map.childName ?? "",
     dailyPracticeGoal: parseInt(map.dailyPracticeGoal || "1", 10),
+    resendApiKey: map.resendApiKey ?? "",
+    resendFromEmail: map.resendFromEmail ?? "",
   };
 }
 
@@ -342,6 +344,8 @@ export async function saveAllSettings(settings: AppSettings): Promise<void> {
   batch.set(col.doc("emailOnMissed"), { value: settings.emailOnMissed ? "true" : "false" });
   batch.set(col.doc("childName"), { value: settings.childName });
   batch.set(col.doc("dailyPracticeGoal"), { value: String(settings.dailyPracticeGoal) });
+  batch.set(col.doc("resendApiKey"), { value: settings.resendApiKey });
+  batch.set(col.doc("resendFromEmail"), { value: settings.resendFromEmail });
   await batch.commit();
 }
 

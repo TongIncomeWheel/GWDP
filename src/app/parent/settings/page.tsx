@@ -13,14 +13,18 @@ export default function SettingsPage() {
     emailOnMissed: true,
     childName: "",
     dailyPracticeGoal: 1,
+    resendApiKey: "",
+    resendFromEmail: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showResendKey, setShowResendKey] = useState(false);
   const [hasEnvApiKey, setHasEnvApiKey] = useState(false);
   const [hasEffectiveApiKey, setHasEffectiveApiKey] = useState(false);
+  const [hasResendKey, setHasResendKey] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -29,6 +33,7 @@ export default function SettingsPage() {
         setSettings(data as AppSettings);
         setHasEnvApiKey(!!data.hasEnvApiKey);
         setHasEffectiveApiKey(!!data.hasEffectiveApiKey);
+        setHasResendKey(!!data.hasResendKey);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -188,6 +193,57 @@ export default function SettingsPage() {
           {/* Notifications */}
           <div className="card">
             <div className="card-title">Notifications</div>
+
+            {/* Resend API Key */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Resend API Key</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showResendKey ? "text" : "password"}
+                  value={settings.resendApiKey}
+                  onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
+                  placeholder="re_xxxxxxxxxxxxxxxxxxxx"
+                  style={{ ...inputStyle, paddingRight: 48 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowResendKey(!showResendKey)}
+                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 13, padding: "4px 8px" }}
+                >
+                  {showResendKey ? "Hide" : "Show"}
+                </button>
+              </div>
+              <p style={helpStyle}>
+                Get your free API key at{" "}
+                <span style={{ color: "var(--primary)", fontWeight: 600 }}>resend.com</span>
+                {" "}— free tier is 3,000 emails/month.
+              </p>
+              {hasResendKey && (
+                <p style={{ ...helpStyle, color: "var(--teal, #2DD4BF)", marginTop: 4 }}>
+                  ✓ Resend key is configured — emails will be sent.
+                </p>
+              )}
+              {!hasResendKey && (
+                <p style={{ ...helpStyle, color: "var(--coral, #F87171)", marginTop: 4 }}>
+                  No Resend key — notifications will be skipped until configured.
+                </p>
+              )}
+            </div>
+
+            {/* From email */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>From Email Address</label>
+              <input
+                type="text"
+                value={settings.resendFromEmail}
+                onChange={(e) => setSettings({ ...settings, resendFromEmail: e.target.value })}
+                placeholder="GWDP <notifications@yourdomain.com>"
+                style={inputStyle}
+              />
+              <p style={helpStyle}>Must be a domain you have verified in Resend. Leave blank to use Resend&apos;s default.</p>
+            </div>
+
+            {/* Recipient emails */}
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>Notification Emails</label>
               <input
@@ -197,7 +253,7 @@ export default function SettingsPage() {
                 placeholder="mum@email.com, dad@email.com"
                 style={inputStyle}
               />
-              <p style={helpStyle}>Separate multiple addresses with a comma. Requires RESEND_API_KEY set in Cloud Run.</p>
+              <p style={helpStyle}>Separate multiple addresses with a comma. All recipients receive every notification.</p>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

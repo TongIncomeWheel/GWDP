@@ -16,14 +16,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ skipped: true, reason: "Missed practice notifications disabled" });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = settings.resendApiKey || process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn("[NOTIFY] RESEND_API_KEY not set — email not sent");
-    return NextResponse.json({ skipped: true, reason: "RESEND_API_KEY not configured" });
+    console.warn("[NOTIFY] No Resend API key — configure it in Parent > Settings");
+    return NextResponse.json({ skipped: true, reason: "Resend API key not configured" });
   }
 
   const childName = settings.childName || "Your child";
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "GWDP <notifications@gwdp.app>";
+  const fromEmail = settings.resendFromEmail || process.env.RESEND_FROM_EMAIL || "GWDP <notifications@gwdp.app>";
   // Support multiple comma-separated recipients
   const toEmails = settings.notificationEmail.split(",").map((e) => e.trim()).filter(Boolean);
 

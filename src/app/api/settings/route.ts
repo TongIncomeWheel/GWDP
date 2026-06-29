@@ -5,15 +5,16 @@ import type { AppSettings } from "@/lib/types";
 export async function GET() {
   try {
     const settings = await getAllSettings();
-    const envKey = process.env.GEMINI_API_KEY || "";
-    const effectiveKey = settings.geminiApiKey || envKey;
-    const masked = {
+    const envGeminiKey = process.env.GEMINI_API_KEY || "";
+    const effectiveGeminiKey = settings.geminiApiKey || envGeminiKey;
+    return NextResponse.json({
       ...settings,
       geminiApiKey: settings.geminiApiKey ? "••••" + settings.geminiApiKey.slice(-4) : "",
-      hasEnvApiKey: !!envKey,
-      hasEffectiveApiKey: !!effectiveKey,
-    };
-    return NextResponse.json(masked);
+      resendApiKey: settings.resendApiKey ? "••••" + settings.resendApiKey.slice(-4) : "",
+      hasEnvApiKey: !!envGeminiKey,
+      hasEffectiveApiKey: !!effectiveGeminiKey,
+      hasResendKey: !!settings.resendApiKey || !!process.env.RESEND_API_KEY,
+    });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
@@ -21,12 +22,16 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const body: AppSettings = await request.json();
+    const body: AppSettings & { hasEnvApiKey?: boolean; hasEffectiveApiKey?: boolean; hasResendKey?: boolean } = await request.json();
     const current = await getAllSettings();
     const toSave: AppSettings = {
       geminiApiKey: body.geminiApiKey === "••••" + current.geminiApiKey.slice(-4)
         ? current.geminiApiKey
-        : body.geminiApiKey,
+        : (body.geminiApiKey ?? ""),
+      resendApiKey: body.resendApiKey === "••••" + current.resendApiKey.slice(-4)
+        ? current.resendApiKey
+        : (body.resendApiKey ?? ""),
+      resendFromEmail: body.resendFromEmail ?? "",
       notificationEmail: body.notificationEmail ?? "",
       emailOnCompletion: Boolean(body.emailOnCompletion),
       emailOnMissed: Boolean(body.emailOnMissed),

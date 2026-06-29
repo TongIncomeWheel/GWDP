@@ -103,4 +103,6 @@ export interface AppSettings {
   emailOnMissed: boolean;
   childName: string;
   dailyPracticeGoal: number;
+  resendApiKey: string;
+  resendFromEmail: string;
 }
