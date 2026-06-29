@@ -37,19 +37,29 @@ export function getBucket() {
   return getStorage().bucket(bucketName);
 }
 
+// Store audio as base64 in Firestore (avoids GCS bucket config issues).
+// Each recording at 24kbps is ~100-400KB — well within Firestore's 1MB doc limit.
 export async function uploadAudioToStorage(base64Data: string, mimeType: string): Promise<string> {
-  const bucket = getBucket();
-  const raw = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
-  const buffer = Buffer.from(raw, "base64");
-  const ext = mimeType.includes("mp4") ? "mp4" : "webm";
-  const filename = `audio/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const file = bucket.file(filename);
-  await file.save(buffer, {
-    contentType: mimeType,
-    metadata: { cacheControl: "private, max-age=86400" },
+  const db = getDb();
+  const ref = db.collection("audio_files").doc();
+  await ref.set({
+    data: base64Data,
+    mimeType,
+    createdAt: Date.now(),
   });
-  // Serve via our own proxy so playback works regardless of bucket ACL settings
-  return `/api/audio/stream?path=${encodeURIComponent(filename)}`;
+  return `/api/audio/stream?id=${ref.id}`;
+}
+
+export async function getAudioFile(id: string): Promise<{ data: string; mimeType: string } | undefined> {
+  const db = getDb();
+  const doc = await db.collection("audio_files").doc(id).get();
+  if (!doc.exists) return undefined;
+  return doc.data() as { data: string; mimeType: string };
+}
+
+export async function deleteAudioFile(id: string): Promise<void> {
+  const db = getDb();
+  await db.collection("audio_files").doc(id).delete();
 }
 
 // ── Exercises ──
@@ -243,7 +253,20 @@ export async function closeExercise(id: number): Promise<void> {
 
 export async function deleteRecordings(id: number): Promise<void> {
   const db = getDb();
+  // Also delete Firestore audio docs (ids embedded in the path URLs)
+  const history = await getPracticeHistoryById(id);
+  if (history) {
+    for (const path of [history.audioPath1, history.audioPath2, history.audioPath3]) {
+      if (path) {
+        const match = path.match(/[?&]id=([^&]+)/);
+        if (match) await deleteAudioFile(match[1]).catch(() => {});
+      }
+    }
+  }
   await db.collection("practice_history").doc(String(id)).update({
+    audioPath1: null,
+    audioPath2: null,
+    audioPath3: null,
     audioBlob1: null,
     audioBlob2: null,
     audioBlob3: null,
