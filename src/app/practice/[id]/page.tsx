@@ -79,7 +79,7 @@ export default function PracticePage() {
   const [imageError, setImageError] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const audioChunksRef = useRef<{ [idx: number]: Blob[] }>({ 0: [], 1: [], 2: [] });
   const recordingVersionRef = useRef<number[]>([0, 0, 0]);
   const [recordingErrors, setRecordingErrors] = useState<string[]>(["", "", ""]);
 
@@ -142,9 +142,9 @@ export default function PracticePage() {
       ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
       : new MediaRecorder(stream, { audioBitsPerSecond: 24000 });
 
-    audioChunksRef.current = [];
+    audioChunksRef.current[questionIdx] = [];
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      if (e.data.size > 0) audioChunksRef.current[questionIdx].push(e.data);
     };
 
     mediaRecorder.onstop = () => {
@@ -152,7 +152,7 @@ export default function PracticePage() {
       if (recordingVersionRef.current[questionIdx] !== myVersion) return;
 
       const capturedMime = mediaRecorder.mimeType || "audio/webm";
-      const blob = new Blob(audioChunksRef.current, { type: capturedMime });
+      const blob = new Blob(audioChunksRef.current[questionIdx], { type: capturedMime });
       const reader = new FileReader();
 
       reader.onloadend = async () => {
@@ -221,6 +221,7 @@ export default function PracticePage() {
         stopRecording(questionIdx);
       } else {
         recordingVersionRef.current[questionIdx]++;
+        audioChunksRef.current[questionIdx] = [];
         setTranscripts((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
         setAudioBlobs((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
         setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
@@ -390,6 +391,7 @@ export default function PracticePage() {
       setRecordingErrors(["", "", ""]);
       setRecordingStates(["idle", "idle", "idle"]);
       recordingVersionRef.current = [0, 0, 0];
+      audioChunksRef.current = { 0: [], 1: [], 2: [] };
       setMascotMood("smiling");
 
       if (attempts.length >= 2) {
@@ -596,7 +598,11 @@ export default function PracticePage() {
                   <div
                     key={i}
                     onClick={() => {
-                      stopAllMedia();
+                      if (recordingStates[currentQuestion] === "recording") {
+                        stopRecording(currentQuestion);
+                      } else {
+                        stopAllMedia();
+                      }
                       setCurrentQuestion(i);
                     }}
                     style={{
@@ -642,7 +648,11 @@ export default function PracticePage() {
                     className="btn btn-outline btn-sm"
                     style={{ flex: 1 }}
                     onClick={() => {
-                      stopAllMedia();
+                      if (recordingStates[currentQuestion] === "recording") {
+                        stopRecording(currentQuestion);
+                      } else {
+                        stopAllMedia();
+                      }
                       setCurrentQuestion((q) => q - 1);
                     }}
                   >
@@ -654,7 +664,11 @@ export default function PracticePage() {
                     className="btn btn-primary btn-sm"
                     style={{ flex: 1 }}
                     onClick={() => {
-                      stopAllMedia();
+                      if (recordingStates[currentQuestion] === "recording") {
+                        stopRecording(currentQuestion);
+                      } else {
+                        stopAllMedia();
+                      }
                       setCurrentQuestion((q) => q + 1);
                     }}
                   >
