@@ -103,19 +103,13 @@ CRITERION 2: Rhythm, Fluency & Expressiveness (0-10)
 - Band 1-2 (Poor): Extremely halting, constant stumbling, no expression or rhythm, sounds like word-by-word decoding
 - Band 0 (No attempt): No speech or completely unreadable delivery
 
-PUNCTUATION & DELIVERY EXPECTATIONS:
-- COMMAS (,): Student should pause briefly (0.3-0.5s). No pause at a comma = fluency deduction.
-- FULL STOPS (.): Student should pause longer (0.5-1s) and drop intonation. Running through full stops = major fluency deduction.
-- QUESTION MARKS (?): Voice should rise at the end. Flat delivery of questions = expressiveness deduction.
-- EXCLAMATION MARKS (!): Voice should show emphasis/excitement. Monotone delivery of exclamations = expressiveness deduction.
-- DIALOGUE (quoted speech): Should sound distinctly different from narration — slightly different pitch or character voice. Reading dialogue flatly like narration = expressiveness deduction.
-- ELLIPSIS (...): Should have a thoughtful, drawn-out pause.
-- DASHES (— or -): Should have a brief, abrupt pause.
-
-TONE & MOOD MATCHING:
-- Identify the emotional tone of each paragraph/section (e.g., happy, sad, tense, reflective, urgent).
-- The student's delivery should match the mood. Reading a tense scene cheerfully, or a happy scene flatly, is an expressiveness error.
-- Narrative vs dialogue transitions should be clearly audible.
+DELIVERY ASSESSMENT — FROM AUDIO ONLY:
+The transcript is machine-generated and has NO punctuation. Do NOT penalise for missing punctuation in the transcript. Judge all delivery from what you HEAR in the audio recording:
+- PAUSING: Does the student pause at commas? Longer pauses at full stops?
+- INTONATION: Does voice rise at questions? Emphasis at exclamations?
+- DIALOGUE vs NARRATION: Different pitch or character voice for quoted speech?
+- MOOD: Does delivery match the emotional tone of the passage (tense, warm, urgent)?
+- PACE: Natural and varied, approximately 130-160 wpm for P6.
 
 CRITICAL SCORING RULES:
 1. AUDIO IS PRIMARY FOR DELIVERY: You have the actual audio recording. Listen to it. Score pronunciation, fluency, and expressiveness from what you HEAR — not just what the transcript says. A student may mispronounce a word that appears correct in the transcript, or may read with excellent expression that the transcript cannot capture.
@@ -265,13 +259,13 @@ function buildEvaluationPrompt(history: PracticeHistory, exercise: OralExercise)
   return buildSBCPrompt(history, exercise);
 }
 
-async function fetchAudioPart(url: string): Promise<{ inline_data: { mime_type: string; data: string } } | null> {
+function blobToAudioPart(dataUrl: string): { inline_data: { mime_type: string; data: string } } | null {
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const mimeType = res.headers.get("content-type") || "audio/webm";
-    const buffer = await res.arrayBuffer();
-    const data = Buffer.from(buffer).toString("base64");
+    const comma = dataUrl.indexOf(",");
+    if (comma === -1) return null;
+    const meta = dataUrl.slice(5, comma); // strip "data:"
+    const mimeType = meta.split(";")[0] || "audio/webm";
+    const data = dataUrl.slice(comma + 1);
     return { inline_data: { mime_type: mimeType, data } };
   } catch {
     return null;
@@ -281,18 +275,22 @@ async function fetchAudioPart(url: string): Promise<{ inline_data: { mime_type: 
 export async function evaluateWithGemini(
   history: PracticeHistory,
   exercise: OralExercise,
-  apiKey: string
+  apiKey: string,
+  audioBlobs: (string | null)[] = []
 ): Promise<PSLEEvaluationResult> {
   const prompt = buildEvaluationPrompt(history, exercise);
 
-  // Always include audio when available — Gemini evaluates delivery (tone, pace,
-  // pronunciation, expression) from the audio, and content/words from the transcript.
-  const audioPaths = [history.audioPath1, history.audioPath2, history.audioPath3].filter(Boolean) as string[];
-  const audioParts = (await Promise.all(audioPaths.map(fetchAudioPart))).filter(Boolean);
+  // Convert base64 audio blobs to Gemini inline_data parts.
+  // Audio is the primary source for delivery assessment (rhythm, pronunciation,
+  // fluency, expression). Transcript is used for content/word accuracy only.
+  const audioParts = audioBlobs
+    .filter((b): b is string => !!b)
+    .map((b) => blobToAudioPart(b))
+    .filter((p): p is { inline_data: { mime_type: string; data: string } } => p !== null);
 
   const parts: object[] = [];
   if (audioParts.length > 0) {
-    parts.push({ text: "Audio recordings of the student are attached. Use the audio to evaluate delivery: pronunciation, fluency, pace, tone, and expressiveness. Use the transcript for content and word accuracy." });
+    parts.push({ text: "The student's audio recordings are attached below. LISTEN to the audio to assess all delivery criteria: pronunciation, rhythm, fluency, pace, pausing, and expression. Do NOT infer delivery from the transcript — the transcript is for content and word accuracy only." });
     parts.push(...audioParts);
   }
   parts.push({ text: prompt });

@@ -300,7 +300,6 @@ export default function PracticePage() {
         : [0];
 
   const handleBack = () => {
-    recognitionRef.current?.stop();
     mediaRecorderRef.current?.stop();
     const hasAnything = transcripts.some((t) => t.trim()) || recordingStates.some((s) => s === "done");
     if (hasAnything) {
@@ -358,10 +357,16 @@ export default function PracticePage() {
       const { id } = await res.json();
       if (!id) throw new Error("No session ID returned from server");
 
+      // Pass audio blobs directly so Gemini can assess delivery from audio
       const evalRes = await fetch("/api/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ historyId: id }),
+        body: JSON.stringify({
+          historyId: id,
+          audioBlob1: audioBlobs[0] || null,
+          audioBlob2: audioBlobs[1] || null,
+          audioBlob3: audioBlobs[2] || null,
+        }),
       });
       const evalData = await evalRes.json();
 

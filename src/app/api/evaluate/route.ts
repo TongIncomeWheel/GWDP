@@ -16,7 +16,8 @@ async function triggerCompletionNotification(historyId: number) {
 }
 
 export async function POST(request: NextRequest) {
-  const { historyId } = await request.json();
+  const { historyId, audioBlob1, audioBlob2, audioBlob3 } = await request.json();
+  const audioBlobs: (string | null)[] = [audioBlob1 || null, audioBlob2 || null, audioBlob3 || null];
 
   const history = await getPracticeHistoryById(historyId);
   if (!history) {
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await evaluateWithGemini(history, exercise, apiKey);
+    const result = await evaluateWithGemini(history, exercise, apiKey, audioBlobs);
 
     const score1 = Math.max(0, Math.min(10, result.score1));
     const score2 = Math.max(0, Math.min(10, result.score2));
