@@ -2,18 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { getEffectiveApiKey } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
-  const { audioUrl, mimeType: hintMime } = await request.json();
-  if (!audioUrl) return NextResponse.json({ error: "audioUrl required" }, { status: 400 });
+  const { audioUrl, audioBase64, mimeType: hintMime } = await request.json();
 
   const apiKey = await getEffectiveApiKey();
   if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 503 });
 
-  const audioRes = await fetch(audioUrl);
-  if (!audioRes.ok) return NextResponse.json({ error: "Could not fetch audio" }, { status: 502 });
+  let base64: string;
+  let mimeType: string;
 
-  const mimeType = audioRes.headers.get("content-type") || hintMime || "audio/webm";
-  const buffer = await audioRes.arrayBuffer();
-  const base64 = Buffer.from(buffer).toString("base64");
+  if (audioBase64) {
+    // Direct base64 path — no GCS round-trip needed
+    const raw = audioBase64.includes(",") ? audioBase64.split(",")[1] : audioBase64;
+    base64 = raw;
+    mimeType = hintMime || "audio/webm";
+  } else if (audioUrl) {
+    const audioRes = await fetch(audioUrl);
+    if (!audioRes.ok) return NextResponse.json({ error: "Could not fetch audio" }, { status: 502 });
+    mimeType = audioRes.headers.get("content-type") || hintMime || "audio/webm";
+    const buffer = await audioRes.arrayBuffer();
+    base64 = Buffer.from(buffer).toString("base64");
+  } else {
+    return NextResponse.json({ error: "audioUrl or audioBase64 required" }, { status: 400 });
+  }
 
   const body = {
     contents: [{

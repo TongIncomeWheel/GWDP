@@ -170,62 +170,61 @@ export default function PracticePage() {
             if (e.data.size > 0) audioChunksRef.current.push(e.data);
           };
           mediaRecorder.onstop = () => {
-            // If the student re-recorded, this version is stale — discard
             if (recordingVersionRef.current[questionIdx] !== myVersion) return;
 
             const capturedMime = mediaRecorder.mimeType || "audio/webm";
             const blob = new Blob(audioChunksRef.current, { type: capturedMime });
+            stream.getTracks().forEach((t) => t.stop());
+
             const reader = new FileReader();
-            reader.onloadend = () => {
+            reader.onloadend = async () => {
               if (recordingVersionRef.current[questionIdx] !== myVersion) return;
               const base64 = reader.result as string;
               setAudioBlobs((prev) => { const next = [...prev]; next[questionIdx] = base64; return next; });
-              setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
 
+              // Transcribe immediately from base64 — no GCS round-trip needed
+              setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
+
+              // GCS upload runs in parallel (for parent playback / Gemini audio eval)
+              setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
               fetch("/api/practice/audio", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ data: base64, mimeType: capturedMime }),
               })
                 .then((r) => r.json())
-                .then(async (data) => {
+                .then((data) => {
                   if (recordingVersionRef.current[questionIdx] !== myVersion) return;
-                  if (data.url) {
-                    setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = data.url; return n; });
-                    setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
-                    try {
-                      const txRes = await fetch("/api/transcribe", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ audioUrl: data.url, mimeType: capturedMime }),
-                      });
-                      const txData = await txRes.json();
-                      if (recordingVersionRef.current[questionIdx] !== myVersion) return;
-                      if (txData.transcript) {
-                        setTranscripts((prev) => {
-                          const next = [...prev];
-                          next[questionIdx] = txData.transcript;
-                          return next;
-                        });
-                      }
-                    } catch {
-                      // transcription failed — Gemini will still evaluate from audio
-                    } finally {
-                      if (recordingVersionRef.current[questionIdx] === myVersion) {
-                        setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
-                      }
-                    }
-                  }
+                  if (data.url) setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = data.url; return n; });
                 })
                 .catch(() => {})
                 .finally(() => {
-                  if (recordingVersionRef.current[questionIdx] === myVersion) {
+                  if (recordingVersionRef.current[questionIdx] === myVersion)
                     setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
-                  }
                 });
+
+              try {
+                const txRes = await fetch("/api/transcribe", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ audioBase64: base64, mimeType: capturedMime }),
+                });
+                const txData = await txRes.json();
+                if (recordingVersionRef.current[questionIdx] !== myVersion) return;
+                if (txData.transcript) {
+                  setTranscripts((prev) => { const next = [...prev]; next[questionIdx] = txData.transcript; return next; });
+                } else {
+                  setSpeechWarnings((prev) => { const n = [...prev]; n[questionIdx] = txData.error || "Transcription failed — your audio is saved and will still be graded."; return n; });
+                }
+              } catch {
+                if (recordingVersionRef.current[questionIdx] === myVersion)
+                  setSpeechWarnings((prev) => { const n = [...prev]; n[questionIdx] = "Transcription failed — your audio is saved and will still be graded."; return n; });
+              } finally {
+                if (recordingVersionRef.current[questionIdx] === myVersion)
+                  setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+              }
             };
             reader.readAsDataURL(blob);
-            stream.getTracks().forEach((t) => t.stop());
           };
           mediaRecorder.start(1000);
           mediaRecorderRef.current = mediaRecorder;
