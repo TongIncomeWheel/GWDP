@@ -232,13 +232,16 @@ export default function ParentSessionDetailPage() {
   const renderAudio = (src: string | null, label: string) => {
     if (!src) return null;
     return (
-      <div className="audio-player-mini">
-        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4 }}>
           {label}
-        </span>
-        <audio controls preload="none" style={{ flex: 1, height: 32 }}>
-          <source src={src} />
-        </audio>
+        </div>
+        <audio
+          controls
+          src={src}
+          style={{ width: "100%", minHeight: 48 }}
+          onError={() => console.error("[AUDIO] Failed to load:", src)}
+        />
       </div>
     );
   };

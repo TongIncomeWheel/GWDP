@@ -824,7 +824,7 @@ function RecordingSection({
       </div>
       {audio && (
         <div className="audio-player-mini">
-          <audio controls src={audio} style={{ width: "100%", height: 32 }} />
+          <audio controls src={audio} style={{ width: "100%", minHeight: 48 }} />
         </div>
       )}
       {peel && transcript && (
