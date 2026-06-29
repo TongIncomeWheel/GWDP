@@ -17,12 +17,35 @@ export async function GET(request: NextRequest) {
     const raw = audio.data.includes(",") ? audio.data.split(",")[1] : audio.data;
     const buffer = Buffer.from(raw, "base64");
     const mimeType = audio.mimeType || "audio/webm";
+    const total = buffer.length;
 
-    return new Response(new Blob([buffer], { type: mimeType }), {
+    const rangeHeader = request.headers.get("range");
+    if (rangeHeader) {
+      // Parse "bytes=start-end"
+      const [, rangeVal] = rangeHeader.split("=");
+      const [startStr, endStr] = (rangeVal ?? "").split("-");
+      const start = parseInt(startStr || "0", 10);
+      const end = endStr ? parseInt(endStr, 10) : total - 1;
+      const chunkLength = end - start + 1;
+
+      return new Response(buffer.slice(start, end + 1), {
+        status: 206,
+        headers: {
+          "Content-Type": mimeType,
+          "Content-Length": String(chunkLength),
+          "Content-Range": `bytes ${start}-${end}/${total}`,
+          "Accept-Ranges": "bytes",
+          "Cache-Control": "private, max-age=86400",
+        },
+      });
+    }
+
+    return new Response(buffer, {
       status: 200,
       headers: {
         "Content-Type": mimeType,
-        "Content-Length": String(buffer.length),
+        "Content-Length": String(total),
+        "Accept-Ranges": "bytes",
         "Cache-Control": "private, max-age=86400",
       },
     });
