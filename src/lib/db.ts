@@ -30,7 +30,7 @@ function getDb(): Firestore {
   return _db;
 }
 
-function getBucket() {
+export function getBucket() {
   getDb(); // ensures app is initialized
   const projectId = process.env.GCLOUD_PROJECT || "gen-lang-client-0684149502";
   const bucketName = process.env.GCLOUD_STORAGE_BUCKET || `${projectId}.appspot.com`;
@@ -46,10 +46,10 @@ export async function uploadAudioToStorage(base64Data: string, mimeType: string)
   const file = bucket.file(filename);
   await file.save(buffer, {
     contentType: mimeType,
-    metadata: { cacheControl: "public, max-age=31536000" },
+    metadata: { cacheControl: "private, max-age=86400" },
   });
-  await file.makePublic();
-  return `https://storage.googleapis.com/${bucket.name}/${filename}`;
+  // Serve via our own proxy so playback works regardless of bucket ACL settings
+  return `/api/audio/stream?path=${encodeURIComponent(filename)}`;
 }
 
 // ── Exercises ──
