@@ -68,6 +68,19 @@ export async function POST(request: NextRequest) {
         <p style="color:#888;font-size:12px;margin-top:20px">Open the GWDP app to start practising!</p>
       </div>
     `;
+  } else if (type === "test") {
+    subject = "GWDP Notification Test";
+    html = `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#f9f9f9;border-radius:12px">
+        <h2 style="color:#1a1a2e;margin-bottom:8px">Email Notifications Working ✅</h2>
+        <p style="color:#555;margin-bottom:20px">Your GWDP notification settings are configured correctly.</p>
+        <div style="background:#fff;border-radius:8px;padding:16px;margin-bottom:16px">
+          <div style="font-size:13px;color:#888;margin-bottom:4px">Sending to</div>
+          <div style="font-weight:600;color:#1a1a2e">${toEmails.join(", ")}</div>
+        </div>
+        <p style="color:#888;font-size:12px;margin-top:20px">You will receive alerts like this whenever ${childName} completes a practice session.</p>
+      </div>
+    `;
   } else {
     return NextResponse.json({ error: "Unknown notification type" }, { status: 400 });
   }

@@ -20,6 +20,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showResendKey, setShowResendKey] = useState(false);
   const [hasEnvApiKey, setHasEnvApiKey] = useState(false);
@@ -255,6 +257,45 @@ export default function SettingsPage() {
               />
               <p style={helpStyle}>Separate multiple addresses with a comma. All recipients receive every notification.</p>
             </div>
+
+            {/* Test email button */}
+            {settings.notificationEmail && (
+              <div style={{ marginBottom: 16 }}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setTestingEmail(true);
+                    setTestResult(null);
+                    try {
+                      const res = await fetch("/api/notify", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ type: "test" }),
+                      });
+                      const data = await res.json();
+                      if (data.sent) {
+                        setTestResult({ ok: true, msg: `Test email sent to ${settings.notificationEmail}` });
+                      } else {
+                        setTestResult({ ok: false, msg: data.reason || data.error || "Failed to send" });
+                      }
+                    } catch {
+                      setTestResult({ ok: false, msg: "Network error" });
+                    } finally {
+                      setTestingEmail(false);
+                    }
+                  }}
+                  disabled={testingEmail}
+                  style={{ background: "var(--bg-elevated)", border: "1.5px solid var(--border)", color: "var(--text-primary)", padding: "9px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}
+                >
+                  {testingEmail ? "Sending..." : "Send Test Email"}
+                </button>
+                {testResult && (
+                  <p style={{ ...helpStyle, marginTop: 6, color: testResult.ok ? "var(--teal, #2DD4BF)" : "var(--coral, #F87171)", fontWeight: 600 }}>
+                    {testResult.ok ? "✓ " : "✗ "}{testResult.msg}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <label style={toggleRow}>
