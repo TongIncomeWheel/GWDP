@@ -60,6 +60,7 @@ export default function PracticePage() {
   ]);
   const [audioPaths, setAudioPaths] = useState<(string | null)[]>([null, null, null]);
   const [uploadingAudio, setUploadingAudio] = useState<boolean[]>([false, false, false]);
+  const [transcribingAudio, setTranscribingAudio] = useState<boolean[]>([false, false, false]);
   const [recordingStates, setRecordingStates] = useState<RecordingState[]>([
     "idle",
     "idle",
@@ -139,131 +140,16 @@ export default function PracticePage() {
       });
 
       // Android Chrome cannot run SpeechRecognition and MediaRecorder simultaneously —
-      // MediaRecorder takes exclusive hardware mic access and SR gets silence.
-      // On Android: use SpeechRecognition only (no MediaRecorder). This gives live
-      // transcript and Gemini evaluates from the transcript text.
-      // On desktop/iOS: run both — MediaRecorder captures audio, SR produces transcript.
+      // the mic hardware goes exclusively to MediaRecorder and SR gets silence.
+      // Android strategy: MediaRecorder captures audio for delivery grading, then after
+      // stop the audio is sent to Gemini to transcribe. Transcript appears post-recording.
+      // Desktop/iOS strategy: run both simultaneously — live transcript + audio capture.
       const isAndroid = /Android/i.test(navigator.userAgent);
 
-      const makeSpeechInstance = () => {
-        const r = new SpeechRecognitionClass();
-        r.continuous = !isAndroid; // single-shot on Android, continuous on desktop/iOS
-        r.interimResults = true;
-        r.lang = "en-US";
-        return r;
-      };
-
-      let finalTranscript = "";
-
-      const onresult = (event: SpeechRecognitionEvent) => {
-        setSpeechWarnings((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
-        setSpeechDiag((prev) => {
-          const n = [...prev];
-          n[questionIdx] = { ...n[questionIdx], event: "onresult", results: n[questionIdx].results + 1 };
-          return n;
-        });
-        let interim = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal)
-            finalTranscript += event.results[i][0].transcript + " ";
-          else interim += event.results[i][0].transcript;
-        }
-        setTranscripts((prev) => {
-          const next = [...prev];
-          next[questionIdx] = (finalTranscript + interim).trim();
-          return next;
-        });
-      };
-
-      const onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.warn("[SpeechRecognition] error:", event.error);
-        setSpeechDiag((prev) => {
-          const n = [...prev];
-          n[questionIdx] = { ...n[questionIdx], event: "onerror", error: event.error };
-          return n;
-        });
-        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-          recordingIntentRef.current = false;
-          setSpeechWarnings((prev) => {
-            const n = [...prev];
-            n[questionIdx] = "Microphone permission denied.";
-            return n;
-          });
-          setRecordingStates((prev) => { const n = [...prev]; n[questionIdx] = "done"; return n; });
-        } else if (event.error !== "aborted") {
-          setSpeechWarnings((prev) => {
-            const n = [...prev];
-            n[questionIdx] = "Speech recognition interrupted — tap Stop and try again.";
-            return n;
-          });
-        }
-      };
-
-      const onend = () => {
-        setSpeechDiag((prev) => {
-          const n = [...prev];
-          n[questionIdx] = { ...n[questionIdx], event: "onend" };
-          return n;
-        });
-        if (!recordingIntentRef.current) {
-          setRecordingStates((prev) => {
-            const n = [...prev];
-            if (n[questionIdx] === "recording") n[questionIdx] = "done";
-            return n;
-          });
-          return;
-        }
-        if (speechRestartCountRef.current < 100) {
-          speechRestartCountRef.current += 1;
-          setSpeechDiag((prev) => {
-            const n = [...prev];
-            n[questionIdx] = { ...n[questionIdx], event: "restarting", restarts: speechRestartCountRef.current };
-            return n;
-          });
-          // Android single-shot ends after each pause — restart quickly.
-          // Desktop continuous mode needs a brief gap before the new instance.
-          const restartDelay = isAndroid ? 50 : 300;
-          setTimeout(() => {
-            if (!recordingIntentRef.current) {
-              setRecordingStates((prev) => {
-                const n = [...prev];
-                if (n[questionIdx] === "recording") n[questionIdx] = "done";
-                return n;
-              });
-              return;
-            }
-            try {
-              const newR = makeSpeechInstance();
-              newR.onresult = onresult;
-              newR.onerror = onerror;
-              newR.onend = onend;
-              recognitionRef.current = newR;
-              newR.start();
-            } catch {
-              recordingIntentRef.current = false;
-              setRecordingStates((prev) => { const n = [...prev]; n[questionIdx] = "done"; return n; });
-            }
-          }, restartDelay);
-        }
-      };
-
-      const recognition = makeSpeechInstance();
-      recognition.onresult = onresult;
-      recognition.onerror = onerror;
-      recognition.onend = onend;
-      recognitionRef.current = recognition;
-      try {
-        recognition.start();
-      } catch {
-        // start() can throw if called too quickly after a previous stop
-      }
-
-      // ── Audio capture via MediaRecorder (desktop/iOS only) ──
-      // Skipped on Android because running both simultaneously silences SpeechRecognition.
-      if (!isAndroid) {
+      if (isAndroid) {
+        // ── Android: MediaRecorder only, transcribe via Gemini after stop ──
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
           const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
             ? "audio/webm;codecs=opus"
             : MediaRecorder.isTypeSupported("audio/webm")
@@ -281,7 +167,171 @@ export default function PracticePage() {
             if (e.data.size > 0) audioChunksRef.current.push(e.data);
           };
           mediaRecorder.onstop = () => {
-            const blob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || "audio/webm" });
+            const capturedMime = mediaRecorder.mimeType || "audio/webm";
+            const blob = new Blob(audioChunksRef.current, { type: capturedMime });
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64 = reader.result as string;
+              setAudioBlobs((prev) => { const next = [...prev]; next[questionIdx] = base64; return next; });
+              setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
+
+              fetch("/api/practice/audio", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: base64, mimeType: capturedMime }),
+              })
+                .then((r) => r.json())
+                .then(async (data) => {
+                  if (data.url) {
+                    setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = data.url; return n; });
+                    // Transcribe the audio via Gemini now that it's uploaded
+                    setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
+                    try {
+                      const txRes = await fetch("/api/transcribe", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ audioUrl: data.url, mimeType: capturedMime }),
+                      });
+                      const txData = await txRes.json();
+                      if (txData.transcript) {
+                        setTranscripts((prev) => {
+                          const next = [...prev];
+                          next[questionIdx] = txData.transcript;
+                          return next;
+                        });
+                      }
+                    } catch {
+                      // transcription failed — Gemini will still evaluate from audio
+                    } finally {
+                      setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+                    }
+                  }
+                })
+                .catch(() => {})
+                .finally(() => {
+                  setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+                });
+            };
+            reader.readAsDataURL(blob);
+            stream.getTracks().forEach((t) => t.stop());
+          };
+          mediaRecorder.start(1000);
+          mediaRecorderRef.current = mediaRecorder;
+        } catch {
+          setSpeechWarnings((prev) => {
+            const n = [...prev];
+            n[questionIdx] = "Microphone access denied.";
+            return n;
+          });
+          setRecordingStates((prev) => { const n = [...prev]; n[questionIdx] = "done"; return n; });
+          return;
+        }
+      } else {
+        // ── Desktop / iOS: SpeechRecognition (live transcript) + MediaRecorder ──
+        const makeSpeechInstance = () => {
+          const r = new SpeechRecognitionClass();
+          r.continuous = true;
+          r.interimResults = true;
+          r.lang = "en-US";
+          return r;
+        };
+
+        let finalTranscript = "";
+
+        const onresult = (event: SpeechRecognitionEvent) => {
+          setSpeechWarnings((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
+          setSpeechDiag((prev) => {
+            const n = [...prev];
+            n[questionIdx] = { ...n[questionIdx], event: "onresult", results: n[questionIdx].results + 1 };
+            return n;
+          });
+          let interim = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal)
+              finalTranscript += event.results[i][0].transcript + " ";
+            else interim += event.results[i][0].transcript;
+          }
+          setTranscripts((prev) => {
+            const next = [...prev];
+            next[questionIdx] = (finalTranscript + interim).trim();
+            return next;
+          });
+        };
+
+        const onerror = (event: SpeechRecognitionErrorEvent) => {
+          console.warn("[SpeechRecognition] error:", event.error);
+          setSpeechDiag((prev) => {
+            const n = [...prev];
+            n[questionIdx] = { ...n[questionIdx], event: "onerror", error: event.error };
+            return n;
+          });
+          if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            recordingIntentRef.current = false;
+            setSpeechWarnings((prev) => {
+              const n = [...prev];
+              n[questionIdx] = "Microphone permission denied.";
+              return n;
+            });
+          } else if (event.error !== "aborted") {
+            setSpeechWarnings((prev) => {
+              const n = [...prev];
+              n[questionIdx] = "Transcript interrupted — audio still recording.";
+              return n;
+            });
+          }
+        };
+
+        const onend = () => {
+          setSpeechDiag((prev) => {
+            const n = [...prev];
+            n[questionIdx] = { ...n[questionIdx], event: "onend" };
+            return n;
+          });
+          if (!recordingIntentRef.current) return;
+          if (speechRestartCountRef.current < 100) {
+            speechRestartCountRef.current += 1;
+            setTimeout(() => {
+              if (!recordingIntentRef.current) return;
+              try {
+                const newR = makeSpeechInstance();
+                newR.onresult = onresult;
+                newR.onerror = onerror;
+                newR.onend = onend;
+                recognitionRef.current = newR;
+                newR.start();
+              } catch { /* ignore */ }
+            }, 300);
+          }
+        };
+
+        const recognition = makeSpeechInstance();
+        recognition.onresult = onresult;
+        recognition.onerror = onerror;
+        recognition.onend = onend;
+        recognitionRef.current = recognition;
+        try { recognition.start(); } catch { /* ignore */ }
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+            ? "audio/webm;codecs=opus"
+            : MediaRecorder.isTypeSupported("audio/webm")
+              ? "audio/webm"
+              : MediaRecorder.isTypeSupported("audio/mp4")
+                ? "audio/mp4"
+                : "";
+
+          const mediaRecorder = mimeType
+            ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
+            : new MediaRecorder(stream, { audioBitsPerSecond: 24000 });
+
+          audioChunksRef.current = [];
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunksRef.current.push(e.data);
+          };
+          mediaRecorder.onstop = () => {
+            const capturedMime = mediaRecorder.mimeType || "audio/webm";
+            const blob = new Blob(audioChunksRef.current, { type: capturedMime });
             const reader = new FileReader();
             reader.onloadend = () => {
               const base64 = reader.result as string;
@@ -291,7 +341,7 @@ export default function PracticePage() {
               fetch("/api/practice/audio", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: base64, mimeType: mediaRecorder.mimeType || "audio/webm" }),
+                body: JSON.stringify({ data: base64, mimeType: capturedMime }),
               })
                 .then((r) => r.json())
                 .then((data) => {
@@ -310,7 +360,7 @@ export default function PracticePage() {
           mediaRecorder.start(1000);
           mediaRecorderRef.current = mediaRecorder;
         } catch {
-          console.warn("Microphone access denied for MediaRecorder");
+          console.warn("MediaRecorder failed — transcript only");
         }
       }
 
@@ -343,6 +393,7 @@ export default function PracticePage() {
         setAudioBlobs((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
         setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
         setSpeechWarnings((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
+        setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
         startRecording(questionIdx);
       }
     },
@@ -402,13 +453,12 @@ export default function PracticePage() {
     }
   };
 
-  // "Recorded" means the user pressed stop — transcript may be empty if speech
-  // recognition failed on Android, but audio capture still happened.
   const uploadsComplete = uploadingAudio.every((u) => !u);
+  const transcriptReady = transcribingAudio.every((t) => !t);
   const allRecorded =
     (exercise?.type === "READING"
       ? recordingStates[0] === "done"
-      : recordingStates.slice(0, 3).every((s) => s === "done")) && uploadsComplete;
+      : recordingStates.slice(0, 3).every((s) => s === "done")) && uploadsComplete && transcriptReady;
 
   const missingQuestions =
     exercise?.type === "STIMULUS"
@@ -785,7 +835,14 @@ export default function PracticePage() {
               </div>
             )}
 
-          {/* Speech recognition warning (transcript failed but audio captured) */}
+          {/* Transcribing status (Android post-recording) */}
+          {transcribingAudio[isReading ? 0 : currentQuestion] && (
+            <div className="error-banner" style={{ marginTop: 8, background: "rgba(99,102,241,0.12)", borderColor: "rgba(99,102,241,0.35)", color: "var(--primary)" }}>
+              ⏳ Transcribing your recording…
+            </div>
+          )}
+
+          {/* Speech recognition warning */}
           {speechWarnings[isReading ? 0 : currentQuestion] && (
             <div className="error-banner" style={{ marginTop: 8, background: "rgba(251,191,36,0.12)", borderColor: "rgba(251,191,36,0.35)", color: "var(--gold)" }}>
               ⚠️ {speechWarnings[isReading ? 0 : currentQuestion]}
@@ -888,6 +945,8 @@ export default function PracticePage() {
                   </>
                 ) : uploadingAudio.some((u) => u) ? (
                   "Uploading audio..."
+                ) : transcribingAudio.some((t) => t) ? (
+                  "Transcribing..."
                 ) : attempts.length === 0 ? (
                   "Submit Attempt 1"
                 ) : (
