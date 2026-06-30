@@ -1,6 +1,9 @@
 /**
- * Resolve the best audio source for a practice session recording.
- * New records: audioPath is a GCS object name → streamed through /api/audio/stream.
+ * Client-side helpers for resolving audio playback URLs.
+ * Server-side audio operations live in src/lib/audio-service.ts.
+ *
+ * audioPath = raw GCS object name e.g. "audio/uuid.webm"
+ * audioBlob = legacy base64 data URL (old records only)
  * Old records: audioBlob is a base64 data URL → used directly (AudioPlayer converts it).
  */
 export function resolveAudioSrc(

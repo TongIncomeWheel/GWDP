@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPracticeHistoryById, getExerciseById, updateEvaluationResult, setEvaluating, getEffectiveApiKey, downloadAudioFromGCS } from "@/lib/db";
+import { getPracticeHistoryById, getExerciseById, updateEvaluationResult, setEvaluating, getEffectiveApiKey } from "@/lib/db";
+import { audioToBase64 } from "@/lib/audio-service";
 import { evaluateWithGemini } from "@/lib/gemini";
 
 async function triggerCompletionNotification(historyId: number) {
@@ -12,17 +13,6 @@ async function triggerCompletionNotification(historyId: number) {
     });
   } catch (e) {
     console.warn("[NOTIFY] Failed to trigger completion notification:", e);
-  }
-}
-
-async function pathToBase64(path: string | null): Promise<string | null> {
-  if (!path) return null;
-  try {
-    const result = await downloadAudioFromGCS(path);
-    if (!result) return null;
-    return `data:${result.mimeType};base64,${result.buffer.toString("base64")}`;
-  } catch {
-    return null;
   }
 }
 
@@ -50,11 +40,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Download audio from GCS for AI scoring
     const audioBlobs = await Promise.all([
-      pathToBase64(history.audioPath1),
-      pathToBase64(history.audioPath2),
-      pathToBase64(history.audioPath3),
+      audioToBase64(history.audioPath1),
+      audioToBase64(history.audioPath2),
+      audioToBase64(history.audioPath3),
     ]);
 
     const result = await evaluateWithGemini(history, exercise, apiKey, audioBlobs);

@@ -8,8 +8,8 @@ export type RecordingState = "idle" | "recording" | "done";
 export interface RecordingPipeline {
   recordingStates: RecordingState[];
   transcripts: string[];
-  audioBlobs: (string | null)[];   // base64 data URLs — for AI scoring only
-  audioPaths: (string | null)[];   // /api/audio/stream?path=... — for playback everywhere
+  audioPaths: (string | null)[];    // raw GCS object names e.g. "audio/uuid.webm"
+  uploadingAudio: boolean[];        // true while uploading to GCS
   transcribingAudio: boolean[];
   recordingErrors: string[];
   toggleRecording: (questionIdx: number) => void;
@@ -19,8 +19,8 @@ export interface RecordingPipeline {
 export function useRecordingPipeline(): RecordingPipeline {
   const [recordingStates, setRecordingStates] = useState<RecordingState[]>(["idle", "idle", "idle"]);
   const [transcripts, setTranscripts] = useState<string[]>(["", "", ""]);
-  const [audioBlobs, setAudioBlobs] = useState<(string | null)[]>([null, null, null]);
   const [audioPaths, setAudioPaths] = useState<(string | null)[]>([null, null, null]);
+  const [uploadingAudio, setUploadingAudio] = useState<boolean[]>([false, false, false]);
   const [transcribingAudio, setTranscribingAudio] = useState<boolean[]>([false, false, false]);
   const [recordingErrors, setRecordingErrors] = useState<string[]>(["", "", ""]);
 
@@ -67,67 +67,64 @@ export function useRecordingPipeline(): RecordingPipeline {
       const rawBlob = new Blob(audioChunksRef.current[questionIdx], { type: capturedMime });
       const durationMs = Date.now() - (recordingStartTimeRef.current[questionIdx] || Date.now());
 
+      // Fix WebM duration metadata so browsers can seek (not needed for mp4)
       let blob = rawBlob;
       if (capturedMime.includes("webm")) {
         try { blob = await fixWebmDuration(rawBlob, durationMs); } catch { blob = rawBlob; }
       }
 
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        if (recordingVersionRef.current[questionIdx] !== myVersion) return;
-        const base64 = reader.result as string;
-        setAudioBlobs((prev) => { const n = [...prev]; n[questionIdx] = base64; return n; });
+      // Convert to base64 for upload and transcription
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
 
-        // Upload to GCS immediately — playback uses the stream URL, works on all platforms
-        try {
-          const res = await fetch("/api/practice/audio", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: base64 }),
-          });
-          const json = await res.json();
-          if (recordingVersionRef.current[questionIdx] !== myVersion) return;
-          if (json.path) {
-            setAudioPaths((prev) => {
-              const n = [...prev];
-              n[questionIdx] = `/api/audio/stream?path=${encodeURIComponent(json.path)}`;
-              return n;
-            });
-          }
-        } catch {
-          // Non-fatal: playback falls back to base64 blob
-        }
+      if (recordingVersionRef.current[questionIdx] !== myVersion) return;
 
-        // Transcribe in parallel
-        setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
-        try {
-          const txRes = await fetch("/api/transcribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ audioBase64: base64, mimeType: capturedMime }),
-          });
-          const txData = await txRes.json();
-          if (recordingVersionRef.current[questionIdx] !== myVersion) return;
-          if (txData.transcript) {
-            setTranscripts((prev) => { const n = [...prev]; n[questionIdx] = txData.transcript; return n; });
-          } else {
-            setRecordingErrors((prev) => {
-              const n = [...prev]; n[questionIdx] = "Transcription failed — audio saved and will still be graded."; return n;
-            });
-          }
-        } catch {
-          if (recordingVersionRef.current[questionIdx] === myVersion) {
-            setRecordingErrors((prev) => {
-              const n = [...prev]; n[questionIdx] = "Transcription failed — audio saved and will still be graded."; return n;
-            });
-          }
-        } finally {
-          if (recordingVersionRef.current[questionIdx] === myVersion) {
-            setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
-          }
-        }
-      };
-      reader.readAsDataURL(blob);
+      // Upload to GCS and transcribe in parallel
+      setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
+      setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
+
+      const [uploadResult, transcribeResult] = await Promise.allSettled([
+        fetch("/api/practice/audio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: base64 }),
+        }).then((r) => r.json()),
+        fetch("/api/transcribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ audioBase64: base64, mimeType: capturedMime }),
+        }).then((r) => r.json()),
+      ]);
+
+      if (recordingVersionRef.current[questionIdx] !== myVersion) return;
+
+      // Handle upload result
+      if (uploadResult.status === "fulfilled" && uploadResult.value?.path) {
+        setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = uploadResult.value.path; return n; });
+      } else {
+        setRecordingErrors((prev) => {
+          const n = [...prev];
+          n[questionIdx] = "Audio upload failed — recording may not be available for playback.";
+          return n;
+        });
+      }
+      setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+
+      // Handle transcription result
+      if (transcribeResult.status === "fulfilled" && transcribeResult.value?.transcript) {
+        setTranscripts((prev) => { const n = [...prev]; n[questionIdx] = transcribeResult.value.transcript; return n; });
+      } else {
+        setRecordingErrors((prev) => {
+          const n = [...prev];
+          // Only overwrite if no upload error already set
+          if (!n[questionIdx]) n[questionIdx] = "Transcription failed — audio saved and will still be graded.";
+          return n;
+        });
+      }
+      setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
     };
 
     recordingStartTimeRef.current[questionIdx] = Date.now();
@@ -151,8 +148,8 @@ export function useRecordingPipeline(): RecordingPipeline {
           recordingVersionRef.current[questionIdx]++;
           audioChunksRef.current[questionIdx] = [];
           setTranscripts((t) => { const n = [...t]; n[questionIdx] = ""; return n; });
-          setAudioBlobs((b) => { const n = [...b]; n[questionIdx] = null; return n; });
           setAudioPaths((p) => { const n = [...p]; n[questionIdx] = null; return n; });
+          setUploadingAudio((u) => { const n = [...u]; n[questionIdx] = false; return n; });
           setRecordingErrors((e) => { const n = [...e]; n[questionIdx] = ""; return n; });
           setTranscribingAudio((t) => { const n = [...t]; n[questionIdx] = false; return n; });
           startRecording(questionIdx);
@@ -171,8 +168,8 @@ export function useRecordingPipeline(): RecordingPipeline {
     recordingStartTimeRef.current = { 0: 0, 1: 0, 2: 0 };
     setRecordingStates(["idle", "idle", "idle"]);
     setTranscripts(["", "", ""]);
-    setAudioBlobs([null, null, null]);
     setAudioPaths([null, null, null]);
+    setUploadingAudio([false, false, false]);
     setTranscribingAudio([false, false, false]);
     setRecordingErrors(["", "", ""]);
   }, []);
@@ -180,8 +177,8 @@ export function useRecordingPipeline(): RecordingPipeline {
   return {
     recordingStates,
     transcripts,
-    audioBlobs,
     audioPaths,
+    uploadingAudio,
     transcribingAudio,
     recordingErrors,
     toggleRecording,

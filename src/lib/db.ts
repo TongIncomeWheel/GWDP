@@ -303,8 +303,9 @@ export async function deleteRecordings(id: number): Promise<void> {
   const db = getDb();
   const history = await getPracticeHistoryById(id);
   if (history) {
+    const { deleteAudio } = await import("./audio-service");
     for (const path of [history.audioPath1, history.audioPath2, history.audioPath3]) {
-      if (path) await deleteAudioFromGCS(path);
+      if (path) await deleteAudio(path);
     }
   }
   await db.collection("practice_history").doc(String(id)).update({

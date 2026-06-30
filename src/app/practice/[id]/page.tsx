@@ -6,26 +6,14 @@ import type { OralExercise } from "@/lib/types";
 import ReRe from "../../ReRe";
 import AudioPlayer from "../../AudioPlayer";
 import { useRecordingPipeline, type RecordingState } from "@/hooks/useRecordingPipeline";
+import { resolveAudioSrc } from "@/lib/audio";
 
 function splitIntoPEEL(text: string) {
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
   const len = sentences.length;
-  if (len <= 1)
-    return { point: text, evidence: "", explanation: "", link: "" };
-  if (len === 2)
-    return {
-      point: sentences[0].trim(),
-      evidence: "",
-      explanation: sentences[1].trim(),
-      link: "",
-    };
-  if (len === 3)
-    return {
-      point: sentences[0].trim(),
-      evidence: sentences[1].trim(),
-      explanation: sentences[2].trim(),
-      link: "",
-    };
+  if (len <= 1) return { point: text, evidence: "", explanation: "", link: "" };
+  if (len === 2) return { point: sentences[0].trim(), evidence: "", explanation: sentences[1].trim(), link: "" };
+  if (len === 3) return { point: sentences[0].trim(), evidence: sentences[1].trim(), explanation: sentences[2].trim(), link: "" };
   const q = Math.floor(len / 4);
   return {
     point: sentences.slice(0, q).join(" ").trim(),
@@ -46,7 +34,7 @@ export default function PracticePage() {
 
   interface Attempt {
     transcripts: string[];
-    audioBlobs: (string | null)[];
+    audioPaths: (string | null)[];
     id?: number;
     evaluated?: boolean;
     scores?: { s1: number; s2: number; s3: number; total: number; max: number };
@@ -55,8 +43,8 @@ export default function PracticePage() {
   const {
     recordingStates,
     transcripts,
-    audioBlobs,
     audioPaths,
+    uploadingAudio,
     transcribingAudio,
     recordingErrors,
     toggleRecording,
@@ -64,10 +52,7 @@ export default function PracticePage() {
   } = useRecordingPipeline();
 
   const [submitting, setSubmitting] = useState(false);
-  const [mascotMood, setMascotMood] = useState<"smiling" | "thinking">(
-    "smiling"
-  );
-
+  const [mascotMood, setMascotMood] = useState<"smiling" | "thinking">("smiling");
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [confirming, setConfirming] = useState(false);
   const [selectedAttempt, setSelectedAttempt] = useState<number | null>(null);
@@ -76,7 +61,6 @@ export default function PracticePage() {
   const [imageError, setImageError] = useState("");
 
   const imageGenerationTriggered = useRef(false);
-
   const CACHE_KEY = `poster_img_${exerciseId}`;
 
   useEffect(() => {
@@ -87,7 +71,6 @@ export default function PracticePage() {
         else setExercise(null);
         if (ex && !ex.error && ex.type === "STIMULUS") {
           if (ex.generatedImageUrl) {
-            // Already persisted in Firestore — use it directly, no API call needed
             setPosterImage(ex.generatedImageUrl);
           } else {
             const cached = localStorage.getItem(CACHE_KEY);
@@ -106,38 +89,22 @@ export default function PracticePage() {
   const totalQuestions = exercise?.type === "READING" ? 1 : 3;
 
   const fetchPosterImage = async (ex: OralExercise, force = false, pollCount = 0) => {
-    if (pollCount === 0) {
-      setGeneratingImage(true);
-      setImageError("");
-    }
+    if (pollCount === 0) { setGeneratingImage(true); setImageError(""); }
     try {
       const res = await fetch("/api/poster", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          description: ex.photographDescription || ex.posterDescription,
-          exerciseId: ex.id,
-          force,
-        }),
+        body: JSON.stringify({ description: ex.photographDescription || ex.posterDescription, exerciseId: ex.id, force }),
       });
       const data = await res.json();
       if (data.generating) {
-        // Another device is generating — poll every 3s until it's ready (max 30s)
-        if (pollCount < 10) {
-          setTimeout(() => fetchPosterImage(ex, false, pollCount + 1), 3000);
-        } else {
-          setImageError("Image is being generated on another device. Reload to see it.");
-          setGeneratingImage(false);
-        }
+        if (pollCount < 10) setTimeout(() => fetchPosterImage(ex, false, pollCount + 1), 3000);
+        else { setImageError("Image is being generated on another device. Reload to see it."); setGeneratingImage(false); }
         return;
       }
       if (data.imageUrl) {
         setPosterImage(data.imageUrl);
-        try {
-          localStorage.setItem(CACHE_KEY, data.imageUrl);
-        } catch {
-          // localStorage quota exceeded — still show image, just won't cache
-        }
+        try { localStorage.setItem(CACHE_KEY, data.imageUrl); } catch { /* quota */ }
       } else if (data.error) {
         setImageError(data.error);
       }
@@ -147,37 +114,30 @@ export default function PracticePage() {
     setGeneratingImage(false);
   };
 
-  const autoGenerateImage = (ex: OralExercise) => {
-    fetchPosterImage(ex, false);
-  };
+  const autoGenerateImage = (ex: OralExercise) => fetchPosterImage(ex, false);
+  const generateImage = () => { if (exercise) { localStorage.removeItem(CACHE_KEY); fetchPosterImage(exercise, true); } };
 
-  const generateImage = () => {
-    if (exercise) {
-      localStorage.removeItem(CACHE_KEY);
-      fetchPosterImage(exercise, true);
-    }
-  };
+  const isReading = exercise?.type === "READING";
+  const questions = isReading
+    ? [exercise?.passageText ?? ""]
+    : [exercise?.question1 ?? "", exercise?.question2 ?? "", exercise?.question3 ?? ""];
 
-  const transcriptReady = transcribingAudio.every((t) => !t);
+  // All recordings done AND no pending uploads/transcriptions
+  const busyAfterRecording = uploadingAudio.some(Boolean) || transcribingAudio.some(Boolean);
   const allRecorded =
-    (exercise?.type === "READING"
+    (isReading
       ? recordingStates[0] === "done"
-      : recordingStates.slice(0, 3).every((s) => s === "done")) && transcriptReady;
+      : recordingStates.slice(0, 3).every((s) => s === "done")) && !busyAfterRecording;
 
-  const missingQuestions =
-    exercise?.type === "STIMULUS"
-      ? [0, 1, 2].filter((i) => recordingStates[i] !== "done")
-      : recordingStates[0] === "done"
-        ? []
-        : [0];
+  const missingQuestions = isReading
+    ? recordingStates[0] === "done" ? [] : [0]
+    : [0, 1, 2].filter((i) => recordingStates[i] !== "done");
 
   const handleBack = () => {
     resetRecording();
     const hasAnything = transcripts.some((t) => t.trim()) || recordingStates.some((s) => s === "done");
     if (hasAnything) {
-      if (confirm("You have recordings. Leave without submitting?")) {
-        router.push("/");
-      }
+      if (confirm("You have recordings. Leave without submitting?")) router.push("/");
     } else {
       router.push("/");
     }
@@ -185,25 +145,13 @@ export default function PracticePage() {
 
   const handleSaveAttempt = async () => {
     if (!exercise || !allRecorded) return;
-    if (attempts.length >= 3) {
-      alert("Maximum 3 attempts reached. Please confirm one to submit.");
-      return;
-    }
+    if (attempts.length >= 3) { alert("Maximum 3 attempts reached. Please confirm one to submit."); return; }
     setSubmitting(true);
     setMascotMood("thinking");
 
-    const structuredTranscripts =
-      exercise.type === "STIMULUS"
-        ? transcripts.map((t) =>
-            t
-              ? JSON.stringify({
-                  ...splitIntoPEEL(t),
-                  rawText: t,
-                  framework: "PEEL",
-                })
-              : null
-          )
-        : [null, null, null];
+    const structuredTranscripts = exercise.type === "STIMULUS"
+      ? transcripts.map((t) => t ? JSON.stringify({ ...splitIntoPEEL(t), rawText: t, framework: "PEEL" }) : null)
+      : [null, null, null];
 
     try {
       const res = await fetch("/api/practice", {
@@ -217,12 +165,9 @@ export default function PracticePage() {
           transcript1: transcripts[0] || null,
           transcript2: transcripts[1] || null,
           transcript3: transcripts[2] || null,
-          audioBlob1: null,
-          audioBlob2: null,
-          audioBlob3: null,
-          audioPath1: audioPaths[0] ? decodeURIComponent(audioPaths[0].replace("/api/audio/stream?path=", "")) : null,
-          audioPath2: audioPaths[1] ? decodeURIComponent(audioPaths[1].replace("/api/audio/stream?path=", "")) : null,
-          audioPath3: audioPaths[2] ? decodeURIComponent(audioPaths[2].replace("/api/audio/stream?path=", "")) : null,
+          audioPath1: audioPaths[0] || null,
+          audioPath2: audioPaths[1] || null,
+          audioPath3: audioPaths[2] || null,
           structuredTranscript1: structuredTranscripts[0],
           structuredTranscript2: structuredTranscripts[1],
           structuredTranscript3: structuredTranscripts[2],
@@ -230,7 +175,7 @@ export default function PracticePage() {
       });
       if (!res.ok) throw new Error(`Failed to save practice session (${res.status})`);
       const { id } = await res.json();
-      if (!id) throw new Error("No session ID returned from server");
+      if (!id) throw new Error("No session ID returned");
 
       const evalRes = await fetch("/api/evaluate", {
         method: "POST",
@@ -239,24 +184,19 @@ export default function PracticePage() {
       });
       const evalData = await evalRes.json();
 
-      const newAttempt: Attempt = {
+      setAttempts((prev) => [...prev, {
         transcripts: [...transcripts],
-        audioBlobs: [...audioBlobs],
+        audioPaths: [...audioPaths],
         id,
         evaluated: evalData.isEvaluated,
-        scores: evalData.isEvaluated ? {
-          s1: evalData.score1, s2: evalData.score2, s3: evalData.score3,
-          total: evalData.totalScore, max: evalData.maxScore,
-        } : undefined,
-      };
-      setAttempts((prev) => [...prev, newAttempt]);
+        scores: evalData.isEvaluated
+          ? { s1: evalData.score1, s2: evalData.score2, s3: evalData.score3, total: evalData.totalScore, max: evalData.maxScore }
+          : undefined,
+      }]);
       setSelectedAttempt(attempts.length);
       resetRecording();
       setMascotMood("smiling");
-
-      if (attempts.length >= 2) {
-        setConfirming(true);
-      }
+      if (attempts.length >= 2) setConfirming(true);
     } catch {
       alert("Failed to submit. Please try again.");
       setMascotMood("smiling");
@@ -268,32 +208,18 @@ export default function PracticePage() {
     const chosen = attempts[attemptIdx];
     if (!chosen?.id) return;
     setConfirming(false);
-
     const toDelete = attempts.filter((_, i) => i !== attemptIdx && _.id);
     for (const a of toDelete) {
       await fetch(`/api/practice?id=${a.id}`, { method: "DELETE" }).catch(() => {});
     }
-
     router.push(`/results/${chosen.id}`);
-  };
-
-  const stopAllMedia = () => {
-    resetRecording();
   };
 
   if (loading) {
     return (
       <>
-        <header className="page-header">
-          <h1>Loading...</h1>
-        </header>
-        <main>
-          <div className="container">
-            <div className="loading">
-              <div className="spinner" />
-            </div>
-          </div>
-        </main>
+        <header className="page-header"><h1>Loading...</h1></header>
+        <main><div className="container"><div className="loading"><div className="spinner" /></div></div></main>
       </>
     );
   }
@@ -301,20 +227,12 @@ export default function PracticePage() {
   if (!exercise) {
     return (
       <>
-        <header className="page-header">
-          <h1>Not Found</h1>
-        </header>
+        <header className="page-header"><h1>Not Found</h1></header>
         <main>
           <div className="container" style={{ paddingTop: 20 }}>
             <div className="empty-state">
               <p>Exercise not found.</p>
-              <button
-                className="btn btn-primary"
-                style={{ marginTop: 16, maxWidth: 200 }}
-                onClick={() => router.push("/")}
-              >
-                Back to Home
-              </button>
+              <button className="btn btn-primary" style={{ marginTop: 16, maxWidth: 200 }} onClick={() => router.push("/")}>Back to Home</button>
             </div>
           </div>
         </main>
@@ -322,34 +240,22 @@ export default function PracticePage() {
     );
   }
 
-  const isReading = exercise.type === "READING";
-  const questions = isReading
-    ? [exercise.passageText]
-    : [exercise.question1, exercise.question2, exercise.question3];
+  const submitLabel = submitting
+    ? "Evaluating..."
+    : busyAfterRecording
+      ? uploadingAudio.some(Boolean) ? "Uploading audio..." : "Transcribing..."
+      : attempts.length === 0
+        ? "Submit Attempt 1"
+        : `Submit Attempt ${attempts.length + 1} (${3 - attempts.length} left)`;
 
   return (
     <>
       <header className="page-header">
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            onClick={handleBack}
-            style={{
-              background: "none",
-              border: "none",
-              color: "white",
-              fontSize: 20,
-              cursor: "pointer",
-              padding: 0,
-            }}
-          >
-            &#x2190;
-          </button>
+          <button onClick={handleBack} style={{ background: "none", border: "none", color: "white", fontSize: 20, cursor: "pointer", padding: 0 }}>&#x2190;</button>
           <div>
             <h1>{exercise.title}</h1>
-            <div className="subtitle">
-              {isReading ? "Reading Aloud" : "Stimulus-Based Conversation"}{" "}
-              &middot; {exercise.difficulty}
-            </div>
+            <div className="subtitle">{isReading ? "Reading Aloud" : "Stimulus-Based Conversation"} &middot; {exercise.difficulty}</div>
           </div>
         </div>
       </header>
@@ -358,179 +264,108 @@ export default function PracticePage() {
         <div className="container" style={{ paddingTop: 12 }}>
           <ReRe mood={mascotMood} compact />
 
-          {exercise.preambleText && (
-            <div className="info-banner">{exercise.preambleText}</div>
-          )}
+          {exercise.preambleText && <div className="info-banner">{exercise.preambleText}</div>}
 
-          {!isReading &&
-            (exercise.photographDescription || exercise.posterDescription) && (
-              <>
-                {posterImage ? (
-                  <div className="poster-image-area">
-                    <img src={posterImage} alt="Visual stimulus" />
-                    <button
-                      className="regenerate-btn"
-                      onClick={generateImage}
-                      disabled={generatingImage}
-                    >
-                      {generatingImage ? "Generating..." : "Regenerate"}
+          {!isReading && (exercise.photographDescription || exercise.posterDescription) && (
+            <>
+              {posterImage ? (
+                <div className="poster-image-area">
+                  <img src={posterImage} alt="Visual stimulus" />
+                  <button className="regenerate-btn" onClick={generateImage} disabled={generatingImage}>
+                    {generatingImage ? "Generating..." : "Regenerate"}
+                  </button>
+                </div>
+              ) : generatingImage ? (
+                <div className="poster-image-area" style={{ flexDirection: "column", gap: 12, padding: 24 }}>
+                  <ReRe mood="thinking" message="Generating your visual stimulus..." compact />
+                  <div className="spinner" />
+                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>This may take a few seconds...</div>
+                </div>
+              ) : (
+                <div className="poster-desc">
+                  <strong>Visual Stimulus: {exercise.topic}</strong>
+                  {exercise.photographDescription || exercise.posterDescription}
+                  {imageError && (
+                    <div style={{ marginTop: 8, fontSize: 12, color: "var(--coral)", padding: "6px 10px", background: "var(--coral-soft)", borderRadius: 8 }}>
+                      {imageError}
+                    </div>
+                  )}
+                  <div style={{ marginTop: 8 }}>
+                    <button className="btn btn-sm btn-outline" onClick={generateImage} style={{ width: "auto" }}>
+                      {imageError ? "Retry Image Generation" : "Generate Image"}
                     </button>
                   </div>
-                ) : generatingImage ? (
-                  <div className="poster-image-area" style={{
-                    flexDirection: "column",
-                    gap: 12,
-                    padding: 24,
-                  }}>
-                    <ReRe mood="thinking" message="Generating your visual stimulus..." compact />
-                    <div className="spinner" />
-                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                      This may take a few seconds...
-                    </div>
-                  </div>
-                ) : (
-                  <div className="poster-desc">
-                    <strong>Visual Stimulus: {exercise.topic}</strong>
-                    {exercise.photographDescription ||
-                      exercise.posterDescription}
-                    {imageError && (
-                      <div style={{
-                        marginTop: 8,
-                        fontSize: 12,
-                        color: "var(--coral)",
-                        padding: "6px 10px",
-                        background: "var(--coral-soft)",
-                        borderRadius: 8,
-                      }}>
-                        {imageError}
-                      </div>
-                    )}
-                    <div style={{ marginTop: 8 }}>
-                      <button
-                        className="btn btn-sm btn-outline"
-                        onClick={generateImage}
-                        style={{ width: "auto" }}
-                      >
-                        {imageError ? "Retry Image Generation" : "Generate Image"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+                </div>
+              )}
+            </>
+          )}
 
           {isReading ? (
             <>
               <div className="passage-text">{exercise.passageText}</div>
               {exercise.readingTips && (
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-muted)",
-                    marginTop: 6,
-                    fontStyle: "italic",
-                  }}
-                >
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, fontStyle: "italic" }}>
                   Tips: {exercise.readingTips}
                 </div>
               )}
               <div className="section-label">Your Reading</div>
               <RecordingSection
-                idx={0}
                 state={recordingStates[0]}
                 transcript={transcripts[0]}
-                audio={audioPaths[0]}
+                audioSrc={resolveAudioSrc(audioPaths[0], null)}
+                uploading={uploadingAudio[0]}
                 onToggle={() => toggleRecording(0)}
               />
             </>
           ) : (
             <>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 6,
-                  padding: "8px 0",
-                }}
-              >
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "8px 0" }}>
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
                     onClick={() => {
-                      if (recordingStates[currentQuestion] === "recording") {
-                        toggleRecording(currentQuestion);
-                      } else {
-                        stopAllMedia();
-                      }
+                      if (recordingStates[currentQuestion] === "recording") toggleRecording(currentQuestion);
                       setCurrentQuestion(i);
                     }}
                     style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: "50%",
-                      cursor: "pointer",
-                      background:
-                        i === currentQuestion
-                          ? "var(--primary)"
-                          : transcripts[i].trim()
-                            ? "var(--success)"
-                            : "var(--border)",
+                      width: 10, height: 10, borderRadius: "50%", cursor: "pointer",
+                      background: i === currentQuestion ? "var(--primary)" : transcripts[i].trim() ? "var(--success)" : "var(--border)",
                       transition: "background 0.2s",
                     }}
                   />
                 ))}
               </div>
-              <div className="section-label">
-                Question {currentQuestion + 1} of 3
-              </div>
+              <div className="section-label">Question {currentQuestion + 1} of 3</div>
               <div className="question-block">
                 <div className="q-label">
-                  {exercise.sbcQ1Type && currentQuestion === 0
-                    ? "Picture Inference"
-                    : currentQuestion === 1
-                      ? "Personal Experience"
-                      : "Opinion"}
+                  {currentQuestion === 0 ? "Picture Inference" : currentQuestion === 1 ? "Personal Experience" : "Opinion"}
                 </div>
                 <div style={{ fontSize: 15 }}>{questions[currentQuestion]}</div>
               </div>
               <RecordingSection
-                idx={currentQuestion}
                 state={recordingStates[currentQuestion]}
                 transcript={transcripts[currentQuestion]}
-                audio={audioPaths[currentQuestion]}
+                audioSrc={resolveAudioSrc(audioPaths[currentQuestion], null)}
+                uploading={uploadingAudio[currentQuestion]}
                 onToggle={() => toggleRecording(currentQuestion)}
                 isStimulus
               />
               <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                 {currentQuestion > 0 && (
-                  <button
-                    className="btn btn-outline btn-sm"
-                    style={{ flex: 1 }}
+                  <button className="btn btn-outline btn-sm" style={{ flex: 1 }}
                     onClick={() => {
-                      if (recordingStates[currentQuestion] === "recording") {
-                        toggleRecording(currentQuestion);
-                      } else {
-                        stopAllMedia();
-                      }
+                      if (recordingStates[currentQuestion] === "recording") toggleRecording(currentQuestion);
                       setCurrentQuestion((q) => q - 1);
-                    }}
-                  >
+                    }}>
                     Previous
                   </button>
                 )}
                 {currentQuestion < 2 && (
-                  <button
-                    className="btn btn-primary btn-sm"
-                    style={{ flex: 1 }}
+                  <button className="btn btn-primary btn-sm" style={{ flex: 1 }}
                     onClick={() => {
-                      if (recordingStates[currentQuestion] === "recording") {
-                        toggleRecording(currentQuestion);
-                      } else {
-                        stopAllMedia();
-                      }
+                      if (recordingStates[currentQuestion] === "recording") toggleRecording(currentQuestion);
                       setCurrentQuestion((q) => q + 1);
-                    }}
-                  >
+                    }}>
                     Next Question
                   </button>
                 )}
@@ -538,60 +373,37 @@ export default function PracticePage() {
             </>
           )}
 
-          {missingQuestions.length > 0 &&
-            recordingStates.some((s) => s === "done") && (
-              <div className="error-banner" style={{ marginTop: 12 }}>
-                {isReading
-                  ? "Please record your reading before submitting."
-                  : `Still need to record Question${missingQuestions.length > 1 ? "s" : ""} ${missingQuestions.map((i) => i + 1).join(", ")}.`}
-              </div>
-            )}
-
-          {/* Transcribing status (Android post-recording) */}
-          {transcribingAudio[isReading ? 0 : currentQuestion] && (
-            <div className="error-banner" style={{ marginTop: 8, background: "rgba(99,102,241,0.12)", borderColor: "rgba(99,102,241,0.35)", color: "var(--primary)" }}>
-              ⏳ Transcribing your recording…
+          {missingQuestions.length > 0 && recordingStates.some((s) => s === "done") && (
+            <div className="error-banner" style={{ marginTop: 12 }}>
+              {isReading
+                ? "Please record your reading before submitting."
+                : `Still need to record Question${missingQuestions.length > 1 ? "s" : ""} ${missingQuestions.map((i) => i + 1).join(", ")}.`}
             </div>
           )}
 
-          {/* Recording error */}
           {recordingErrors[isReading ? 0 : currentQuestion] && (
             <div className="error-banner" style={{ marginTop: 8, background: "rgba(251,191,36,0.12)", borderColor: "rgba(251,191,36,0.35)", color: "var(--gold)" }}>
               ⚠️ {recordingErrors[isReading ? 0 : currentQuestion]}
             </div>
           )}
 
-          {/* Previous attempts */}
           {attempts.length > 0 && (
             <div style={{ marginTop: 16 }}>
-              <div className="section-label">
-                Your Attempts ({attempts.length}/3)
-              </div>
+              <div className="section-label">Your Attempts ({attempts.length}/3)</div>
               {attempts.map((a, i) => (
                 <div key={i} className="card" style={{
-                  padding: "10px 14px",
-                  marginBottom: 8,
+                  padding: "10px 14px", marginBottom: 8,
                   borderLeft: `3px solid ${selectedAttempt === i ? "var(--purple-glow)" : "var(--border)"}`,
-                  cursor: "pointer",
-                  opacity: confirming && selectedAttempt !== i ? 0.7 : 1,
+                  cursor: "pointer", opacity: confirming && selectedAttempt !== i ? 0.7 : 1,
                 }} onClick={() => setSelectedAttempt(i)}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
-                        Attempt {i + 1}
-                      </span>
-                      {a.scores && (
-                        <span style={{ fontSize: 12, color: "var(--teal)", marginLeft: 8 }}>
-                          {a.scores.total}/{a.scores.max}
-                        </span>
-                      )}
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>Attempt {i + 1}</span>
+                      {a.scores && <span style={{ fontSize: 12, color: "var(--teal)", marginLeft: 8 }}>{a.scores.total}/{a.scores.max}</span>}
                     </div>
                     {confirming && (
-                      <button
-                        className="btn btn-primary btn-sm"
-                        style={{ width: "auto", padding: "4px 14px", fontSize: 12 }}
-                        onClick={(e) => { e.stopPropagation(); handleConfirmAttempt(i); }}
-                      >
+                      <button className="btn btn-primary btn-sm" style={{ width: "auto", padding: "4px 14px", fontSize: 12 }}
+                        onClick={(e) => { e.stopPropagation(); handleConfirmAttempt(i); }}>
                         Confirm This
                       </button>
                     )}
@@ -604,50 +416,22 @@ export default function PracticePage() {
             </div>
           )}
 
-          {/* Confirming state */}
-          {confirming && (
-            <div className="info-banner" style={{ marginTop: 12 }}>
-              Select which attempt to keep. The others will be deleted.
-            </div>
-          )}
+          {confirming && <div className="info-banner" style={{ marginTop: 12 }}>Select which attempt to keep. The others will be deleted.</div>}
 
           <div style={{ marginTop: 20, paddingBottom: 24 }}>
             {!confirming && attempts.length < 3 && (
               <button
                 className="btn btn-primary"
-                disabled={!allRecorded || submitting}
+                disabled={!allRecorded || submitting || busyAfterRecording}
                 onClick={handleSaveAttempt}
               >
-                {submitting ? (
-                  <>
-                    <div
-                      className="spinner"
-                      style={{ width: 20, height: 20, borderWidth: 2 }}
-                    />{" "}
-                    Evaluating...
-                  </>
-                ) : transcribingAudio.some((t) => t) ? (
-                  "Transcribing..."
-                ) : attempts.length === 0 ? (
-                  "Submit Attempt 1"
-                ) : (
-                  `Submit Attempt ${attempts.length + 1} (${3 - attempts.length} left)`
-                )}
+                {submitting ? <><div className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} /> Evaluating...</> : submitLabel}
               </button>
             )}
             {attempts.length > 0 && !confirming && (
-              <button
-                className="btn btn-outline"
-                style={{ marginTop: 8 }}
-                onClick={() => {
-                  if (attempts.length === 1) {
-                    handleConfirmAttempt(0);
-                  } else {
-                    setConfirming(true);
-                  }
-                }}
-              >
-                Confirm & Finish ({attempts.length} attempt{attempts.length !== 1 ? "s" : ""})
+              <button className="btn btn-outline" style={{ marginTop: 8 }}
+                onClick={() => attempts.length === 1 ? handleConfirmAttempt(0) : setConfirming(true)}>
+                Confirm &amp; Finish ({attempts.length} attempt{attempts.length !== 1 ? "s" : ""})
               </button>
             )}
           </div>
@@ -658,17 +442,17 @@ export default function PracticePage() {
 }
 
 function RecordingSection({
-  idx,
   state,
   transcript,
-  audio,
+  audioSrc,
+  uploading,
   onToggle,
   isStimulus,
 }: {
-  idx: number;
   state: RecordingState;
   transcript: string;
-  audio: string | null;
+  audioSrc: string | null;
+  uploading: boolean;
   onToggle: () => void;
   isStimulus?: boolean;
 }) {
@@ -676,15 +460,10 @@ function RecordingSection({
   return (
     <>
       <div className="record-area">
-        <button
-          className={`btn-record ${state === "recording" ? "recording" : ""}`}
-          onClick={onToggle}
-        >
+        <button className={`btn-record ${state === "recording" ? "recording" : ""}`} onClick={onToggle}>
           {state === "recording" ? "⏹" : "🎤"}
         </button>
-        <div
-          className={`record-status ${state === "recording" ? "active" : ""}`}
-        >
+        <div className={`record-status ${state === "recording" ? "active" : ""}`}>
           {state === "idle" && "Tap to start recording"}
           {state === "recording" && "Recording... Tap to stop"}
           {state === "done" && "Recording complete. Tap to re-record"}
@@ -693,47 +472,22 @@ function RecordingSection({
       <div className={`transcript-box ${transcript ? "has-text" : ""}`}>
         {transcript || "Your speech will appear here..."}
       </div>
-      {audio && (
+      {state === "done" && (
         <div className="audio-player-mini">
-          <AudioPlayer src={audio} label="" />
+          {uploading
+            ? <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>⏳ Uploading recording...</div>
+            : audioSrc
+              ? <AudioPlayer src={audioSrc} label="" />
+              : null}
         </div>
       )}
       {peel && transcript && (
         <div className="structured-transcript">
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              marginBottom: 6,
-              color: "var(--text-muted)",
-            }}
-          >
-            PEEL Framework Analysis
-          </div>
-          {peel.point && (
-            <div className="st-section st-peel">
-              <div className="st-label">Point</div>
-              <div className="st-text">{peel.point}</div>
-            </div>
-          )}
-          {peel.evidence && (
-            <div className="st-section st-evidence">
-              <div className="st-label">Evidence / Experience</div>
-              <div className="st-text">{peel.evidence}</div>
-            </div>
-          )}
-          {peel.explanation && (
-            <div className="st-section st-explain">
-              <div className="st-label">Explanation</div>
-              <div className="st-text">{peel.explanation}</div>
-            </div>
-          )}
-          {peel.link && (
-            <div className="st-section st-link">
-              <div className="st-label">Link</div>
-              <div className="st-text">{peel.link}</div>
-            </div>
-          )}
+          <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6, color: "var(--text-muted)" }}>PEEL Framework Analysis</div>
+          {peel.point && <div className="st-section st-peel"><div className="st-label">Point</div><div className="st-text">{peel.point}</div></div>}
+          {peel.evidence && <div className="st-section st-evidence"><div className="st-label">Evidence / Experience</div><div className="st-text">{peel.evidence}</div></div>}
+          {peel.explanation && <div className="st-section st-explain"><div className="st-label">Explanation</div><div className="st-text">{peel.explanation}</div></div>}
+          {peel.link && <div className="st-section st-link"><div className="st-label">Link</div><div className="st-text">{peel.link}</div></div>}
         </div>
       )}
     </>

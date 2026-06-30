@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAudioFile, downloadAudioFromGCS } from "@/lib/db";
+import { downloadAudio } from "@/lib/audio-service";
+import { getAudioFile } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -11,11 +12,7 @@ export async function GET(request: NextRequest) {
     let mimeType: string;
 
     if (path) {
-      // New: GCS-backed audio
-      const result = await downloadAudioFromGCS(path);
-      if (!result) {
-        return NextResponse.json({ error: "Audio not found" }, { status: 404 });
-      }
+      const result = await downloadAudio(path);
       buffer = result.buffer;
       mimeType = result.mimeType;
     } else if (id) {
