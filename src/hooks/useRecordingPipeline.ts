@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import fixWebmDuration from "fix-webm-duration";
 
 export type RecordingState = "idle" | "recording" | "done";
 
@@ -27,7 +26,6 @@ export function useRecordingPipeline(): RecordingPipeline {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<{ [idx: number]: Blob[] }>({ 0: [], 1: [], 2: [] });
   const recordingVersionRef = useRef<number[]>([0, 0, 0]);
-  const recordingStartTimeRef = useRef<{ [idx: number]: number }>({ 0: 0, 1: 0, 2: 0 });
 
   const startRecording = useCallback(async (questionIdx: number) => {
     const myVersion = recordingVersionRef.current[questionIdx];
@@ -64,14 +62,7 @@ export function useRecordingPipeline(): RecordingPipeline {
       if (recordingVersionRef.current[questionIdx] !== myVersion) return;
 
       const capturedMime = mediaRecorder.mimeType || "audio/webm";
-      const rawBlob = new Blob(audioChunksRef.current[questionIdx], { type: capturedMime });
-      const durationMs = Date.now() - (recordingStartTimeRef.current[questionIdx] || Date.now());
-
-      // Fix WebM duration metadata so browsers can seek (not needed for mp4)
-      let blob = rawBlob;
-      if (capturedMime.includes("webm")) {
-        try { blob = await fixWebmDuration(rawBlob, durationMs); } catch { blob = rawBlob; }
-      }
+      const blob = new Blob(audioChunksRef.current[questionIdx], { type: capturedMime });
 
       // Convert to base64 for upload and transcription
       const base64 = await new Promise<string>((resolve) => {
@@ -127,7 +118,6 @@ export function useRecordingPipeline(): RecordingPipeline {
       setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
     };
 
-    recordingStartTimeRef.current[questionIdx] = Date.now();
     mediaRecorder.start(1000);
     mediaRecorderRef.current = mediaRecorder;
     setRecordingStates((prev) => { const n = [...prev]; n[questionIdx] = "recording"; return n; });
@@ -165,7 +155,6 @@ export function useRecordingPipeline(): RecordingPipeline {
     mediaRecorderRef.current = null;
     recordingVersionRef.current = [0, 0, 0];
     audioChunksRef.current = { 0: [], 1: [], 2: [] };
-    recordingStartTimeRef.current = { 0: 0, 1: 0, 2: 0 };
     setRecordingStates(["idle", "idle", "idle"]);
     setTranscripts(["", "", ""]);
     setAudioPaths([null, null, null]);
