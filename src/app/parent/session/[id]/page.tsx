@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { OralExercise, PracticeHistory, StructuredTranscript } from "@/lib/types";
-import AudioPlayer from "../../AudioPlayer";
+import AudioPlayer from "../../../AudioPlayer";
 
 export default function ParentSessionDetailPage() {
   const params = useParams();
