@@ -30,9 +30,6 @@ export interface PracticeHistory {
   exerciseType: string;
   exerciseTopic: string;
   dateMillis: number;
-  audioPath1: string | null;
-  audioPath2: string | null;
-  audioPath3: string | null;
   transcript1: string | null;
   transcript2: string | null;
   transcript3: string | null;

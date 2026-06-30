@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import type { OralExercise, PracticeHistory, StructuredTranscript } from "@/lib/types";
+import type { OralExercise, PracticeHistory } from "@/lib/types";
 import AudioPlayer from "../../../AudioPlayer";
+import { ScoreRow } from "@/components/ScoreRow";
+import { StructuredTranscriptView } from "@/components/StructuredTranscriptView";
 
 export default function ParentSessionDetailPage() {
   const params = useParams();
@@ -219,78 +221,6 @@ export default function ParentSessionDetailPage() {
       // ignore
     }
     setDeleting(false);
-  };
-
-  const parseTranscript = (raw: string | null): StructuredTranscript | null => {
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as StructuredTranscript;
-    } catch {
-      return null;
-    }
-  };
-
-
-  const renderStructuredTranscript = (raw: string | null, label: string) => {
-    const st = parseTranscript(raw);
-    if (!st) return null;
-    return (
-      <div className="structured-transcript">
-        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>
-          {label} - {st.framework} Framework
-        </div>
-        <div className="st-section st-peel">
-          <div className="st-label">Point</div>
-          <div className="st-text">{st.point}</div>
-        </div>
-        <div className="st-section st-evidence">
-          <div className="st-label">Evidence</div>
-          <div className="st-text">{st.evidence}</div>
-        </div>
-        <div className="st-section st-explain">
-          <div className="st-label">Explanation</div>
-          <div className="st-text">{st.explanation}</div>
-        </div>
-        <div className="st-section st-link">
-          <div className="st-label">Link</div>
-          <div className="st-text">{st.link}</div>
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              padding: "2px 8px",
-              borderRadius: 10,
-              background:
-                st.overallCoherence === "strong"
-                  ? "rgba(45,212,191,0.15)"
-                  : st.overallCoherence === "moderate"
-                  ? "rgba(251,191,36,0.15)"
-                  : "rgba(248,113,113,0.15)",
-              color:
-                st.overallCoherence === "strong"
-                  ? "var(--teal)"
-                  : st.overallCoherence === "moderate"
-                  ? "var(--gold)"
-                  : "var(--coral)",
-            }}
-          >
-            Coherence: {st.overallCoherence}
-          </span>
-        </div>
-        {st.vocabularyHighlights.length > 0 && (
-          <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
-            <strong>Vocabulary:</strong> {st.vocabularyHighlights.join(", ")}
-          </div>
-        )}
-        {st.grammarNotes.length > 0 && (
-          <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-muted)" }}>
-            <strong>Grammar:</strong> {st.grammarNotes.join("; ")}
-          </div>
-        )}
-      </div>
-    );
   };
 
   const SectionHeader = ({
@@ -526,9 +456,9 @@ export default function ParentSessionDetailPage() {
                   {(history.structuredTranscript1 || history.structuredTranscript2 || history.structuredTranscript3) && (
                     <div style={{ marginTop: 12, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                       <h3 style={{ marginBottom: 8, fontSize: 13 }}>Structured Analysis</h3>
-                      {renderStructuredTranscript(history.structuredTranscript1, isReading ? "Reading" : "Response 1")}
-                      {!isReading && renderStructuredTranscript(history.structuredTranscript2, "Response 2")}
-                      {!isReading && renderStructuredTranscript(history.structuredTranscript3, "Response 3")}
+                      <StructuredTranscriptView raw={history.structuredTranscript1} label={isReading ? "Reading" : "Response 1"} />
+                      {!isReading && <StructuredTranscriptView raw={history.structuredTranscript2} label="Response 2" />}
+                      {!isReading && <StructuredTranscriptView raw={history.structuredTranscript3} label="Response 3" />}
                     </div>
                   )}
                 </div>
@@ -794,28 +724,3 @@ export default function ParentSessionDetailPage() {
   );
 }
 
-function ScoreRow({ label, score }: { label: string; score: number }) {
-  const barWidth = (score / 10) * 100;
-  const barColor =
-    score >= 7 ? "var(--success)" : score >= 5 ? "var(--warning)" : "var(--danger)";
-
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
-        <span>{label}</span>
-        <span style={{ fontWeight: 600 }}>{score}/10</span>
-      </div>
-      <div style={{ height: 8, background: "var(--border)", borderRadius: 4, overflow: "hidden" }}>
-        <div
-          style={{
-            height: "100%",
-            width: `${barWidth}%`,
-            background: barColor,
-            borderRadius: 4,
-            transition: "width 0.5s",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
