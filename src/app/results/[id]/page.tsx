@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { PracticeHistory, StructuredTranscript } from "@/lib/types";
 import ReRe from "../../ReRe";
+import AudioPlayer from "../../AudioPlayer";
 
 export default function ResultsPage() {
   const params = useParams();
@@ -283,20 +284,17 @@ export default function ResultsPage() {
           )}
 
           {/* Audio Playback */}
-          {(history.audioPath1 || history.audioPath2 || history.audioPath3 || history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
+          {(history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
             <div className="card">
               <div className="card-title">Your Recordings</div>
-              {(history.audioPath1 || history.audioBlob1) && (
-                <AudioPlayback
-                  src={history.audioPath1 || history.audioBlob1!}
-                  label={isReading ? "Reading" : "Response 1"}
-                />
+              {history.audioBlob1 && (
+                <AudioPlayer src={history.audioBlob1} label={isReading ? "Reading" : "Response 1"} />
               )}
-              {!isReading && (history.audioPath2 || history.audioBlob2) && (
-                <AudioPlayback src={history.audioPath2 || history.audioBlob2!} label="Response 2" />
+              {!isReading && history.audioBlob2 && (
+                <AudioPlayer src={history.audioBlob2} label="Response 2" />
               )}
-              {!isReading && (history.audioPath3 || history.audioBlob3) && (
-                <AudioPlayback src={history.audioPath3 || history.audioBlob3!} label="Response 3" />
+              {!isReading && history.audioBlob3 && (
+                <AudioPlayer src={history.audioBlob3} label="Response 3" />
               )}
             </div>
           )}
@@ -543,20 +541,6 @@ function ScoreRow({ label, score }: { label: string; score: number }) {
   );
 }
 
-function AudioPlayback({ src, label }: { src: string; label: string }) {
-  const audioSrc = src.startsWith("http") ? src : (src.startsWith("data:") ? src : `data:audio/webm;base64,${src}`);
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-        {label}
-      </span>
-      <audio controls preload="none" style={{ flex: 1, height: 32 }} aria-label={`Playback: ${label}`}>
-        <source src={audioSrc} />
-        Your browser does not support audio playback.
-      </audio>
-    </div>
-  );
-}
 
 const PEEL_COLORS: Record<string, { bg: string; text: string }> = {
   Point: { bg: "#BBDEFB", text: "#0D47A1" },

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { OralExercise, PracticeHistory, StructuredTranscript } from "@/lib/types";
+import AudioPlayer from "../../AudioPlayer";
 
 export default function ParentSessionDetailPage() {
   const params = useParams();
@@ -229,22 +230,6 @@ export default function ParentSessionDetailPage() {
     }
   };
 
-  const renderAudio = (src: string | null, label: string) => {
-    if (!src) return null;
-    return (
-      <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4 }}>
-          {label}
-        </div>
-        <audio
-          controls
-          src={src}
-          style={{ width: "100%", minHeight: 48 }}
-          onError={() => console.error("[AUDIO] Failed to load:", src)}
-        />
-      </div>
-    );
-  };
 
   const renderStructuredTranscript = (raw: string | null, label: string) => {
     const st = parseTranscript(raw);
@@ -605,7 +590,7 @@ export default function ParentSessionDetailPage() {
             {/* For Reading: single player before sliders */}
             {isReading && history.audioBlob1 && (
               <div style={{ marginTop: 12 }}>
-                {renderAudio(history.audioBlob1, "Listen to recording")}
+                <AudioPlayer src={history.audioBlob1} label="Listen to recording" />
               </div>
             )}
             {isReading && !history.audioBlob1 && (
@@ -623,7 +608,9 @@ export default function ParentSessionDetailPage() {
                 return (
                   <div key={idx} style={{ marginBottom: 20 }}>
                     {/* For SBC: player per question above its slider */}
-                    {!isReading && blobs[idx] && renderAudio(blobs[idx], `Listen — Question ${idx + 1}`)}
+                    {!isReading && blobs[idx] && (
+                      <AudioPlayer src={blobs[idx]!} label={`Listen — Question ${idx + 1}`} />
+                    )}
                     {!isReading && !blobs[idx] && (
                       <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginBottom: 6 }}>
                         No audio for Q{idx + 1}
