@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadAudioToStorage } from "@/lib/db";
+import { uploadAudioToGCS } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const { data, mimeType } = await req.json();
+    const { data } = await req.json();
     if (!data) return NextResponse.json({ error: "data required" }, { status: 400 });
-    const url = await uploadAudioToStorage(data, mimeType || "audio/webm");
-    return NextResponse.json({ url });
+    const path = await uploadAudioToGCS(data);
+    if (!path) return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json({ path });
   } catch (e) {
-    console.error("[AUDIO UPLOAD ERROR]", e);
+    console.error("[AUDIO UPLOAD]", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }

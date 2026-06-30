@@ -5,7 +5,6 @@ import {
   insertPracticeHistory,
   updateParentGrading,
   deletePracticeHistoryById,
-  uploadAudioToGCS,
 } from "@/lib/db";
 import type { PracticeHistory } from "@/lib/types";
 
@@ -27,16 +26,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const blob1: string | null = body.audioBlob1 || null;
-    const blob2: string | null = body.audioBlob2 || null;
-    const blob3: string | null = body.audioBlob3 || null;
-
-    // Upload audio to Firebase Storage in parallel; failures are non-fatal.
-    const [audioPath1, audioPath2, audioPath3] = await Promise.all([
-      blob1 ? uploadAudioToGCS(blob1) : Promise.resolve(null),
-      blob2 ? uploadAudioToGCS(blob2) : Promise.resolve(null),
-      blob3 ? uploadAudioToGCS(blob3) : Promise.resolve(null),
-    ]);
+    // Audio already uploaded to GCS by the client; paths passed directly.
+    const audioPath1: string | null = body.audioPath1 || null;
+    const audioPath2: string | null = body.audioPath2 || null;
+    const audioPath3: string | null = body.audioPath3 || null;
 
     const id = await insertPracticeHistory({
       exerciseId: body.exerciseId,

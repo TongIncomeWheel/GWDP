@@ -56,6 +56,7 @@ export default function PracticePage() {
     recordingStates,
     transcripts,
     audioBlobs,
+    audioPaths,
     transcribingAudio,
     recordingErrors,
     toggleRecording,
@@ -216,9 +217,12 @@ export default function PracticePage() {
           transcript1: transcripts[0] || null,
           transcript2: transcripts[1] || null,
           transcript3: transcripts[2] || null,
-          audioBlob1: audioBlobs[0] || null,
-          audioBlob2: audioBlobs[1] || null,
-          audioBlob3: audioBlobs[2] || null,
+          audioBlob1: null,
+          audioBlob2: null,
+          audioBlob3: null,
+          audioPath1: audioPaths[0] ? decodeURIComponent(audioPaths[0].replace("/api/audio/stream?path=", "")) : null,
+          audioPath2: audioPaths[1] ? decodeURIComponent(audioPaths[1].replace("/api/audio/stream?path=", "")) : null,
+          audioPath3: audioPaths[2] ? decodeURIComponent(audioPaths[2].replace("/api/audio/stream?path=", "")) : null,
           structuredTranscript1: structuredTranscripts[0],
           structuredTranscript2: structuredTranscripts[1],
           structuredTranscript3: structuredTranscripts[2],
@@ -228,16 +232,10 @@ export default function PracticePage() {
       const { id } = await res.json();
       if (!id) throw new Error("No session ID returned from server");
 
-      // Pass audio blobs directly so Gemini can assess delivery from audio
       const evalRes = await fetch("/api/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          historyId: id,
-          audioBlob1: audioBlobs[0] || null,
-          audioBlob2: audioBlobs[1] || null,
-          audioBlob3: audioBlobs[2] || null,
-        }),
+        body: JSON.stringify({ historyId: id }),
       });
       const evalData = await evalRes.json();
 
@@ -441,7 +439,7 @@ export default function PracticePage() {
                 idx={0}
                 state={recordingStates[0]}
                 transcript={transcripts[0]}
-                audio={audioBlobs[0]}
+                audio={audioPaths[0]}
                 onToggle={() => toggleRecording(0)}
               />
             </>
@@ -499,7 +497,7 @@ export default function PracticePage() {
                 idx={currentQuestion}
                 state={recordingStates[currentQuestion]}
                 transcript={transcripts[currentQuestion]}
-                audio={audioBlobs[currentQuestion]}
+                audio={audioPaths[currentQuestion]}
                 onToggle={() => toggleRecording(currentQuestion)}
                 isStimulus
               />
