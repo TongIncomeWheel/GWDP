@@ -33,7 +33,7 @@ function getDb(): Firestore {
 export function getBucket() {
   getDb(); // ensures app is initialized
   const projectId = process.env.GCLOUD_PROJECT || "gen-lang-client-0684149502";
-  const bucketName = process.env.GCLOUD_STORAGE_BUCKET || `${projectId}.appspot.com`;
+  const bucketName = process.env.GCLOUD_STORAGE_BUCKET || "gwdp-audio";
   return getStorage().bucket(bucketName);
 }
 
