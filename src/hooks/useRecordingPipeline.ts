@@ -73,49 +73,61 @@ export function useRecordingPipeline(): RecordingPipeline {
 
       if (recordingVersionRef.current[questionIdx] !== myVersion) return;
 
-      // Upload to GCS and transcribe in parallel
+      // Upload and transcribe independently — each updates state as soon as it finishes.
+      // Do NOT block one on the other: slow transcription must not delay the audio player appearing.
       setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
       setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
 
-      const [uploadResult, transcribeResult] = await Promise.allSettled([
-        fetch("/api/practice/audio", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: base64 }),
-        }).then((r) => r.json()),
-        fetch("/api/transcribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ audioBase64: base64, mimeType: capturedMime }),
-        }).then((r) => r.json()),
-      ]);
+      const myVer = myVersion;
+      const idx = questionIdx;
 
-      if (recordingVersionRef.current[questionIdx] !== myVersion) return;
-
-      // Handle upload result
-      if (uploadResult.status === "fulfilled" && uploadResult.value?.path) {
-        setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = uploadResult.value.path; return n; });
-      } else {
-        setRecordingErrors((prev) => {
-          const n = [...prev];
-          n[questionIdx] = "Audio upload failed — recording may not be available for playback.";
-          return n;
+      const uploadDone = fetch("/api/practice/audio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: base64 }),
+      })
+        .then((r) => r.json())
+        .then((body) => {
+          if (recordingVersionRef.current[idx] !== myVer) return;
+          if (body?.path) {
+            setAudioPaths((prev) => { const n = [...prev]; n[idx] = body.path; return n; });
+          } else {
+            setRecordingErrors((prev) => { const n = [...prev]; n[idx] = "Audio upload failed — recording may not be available for playback."; return n; });
+          }
+        })
+        .catch(() => {
+          if (recordingVersionRef.current[idx] !== myVer) return;
+          setRecordingErrors((prev) => { const n = [...prev]; n[idx] = "Audio upload failed — recording may not be available for playback."; return n; });
+        })
+        .finally(() => {
+          if (recordingVersionRef.current[idx] !== myVer) return;
+          setUploadingAudio((prev) => { const n = [...prev]; n[idx] = false; return n; });
         });
-      }
-      setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
 
-      // Handle transcription result
-      if (transcribeResult.status === "fulfilled" && transcribeResult.value?.transcript) {
-        setTranscripts((prev) => { const n = [...prev]; n[questionIdx] = transcribeResult.value.transcript; return n; });
-      } else {
-        setRecordingErrors((prev) => {
-          const n = [...prev];
-          // Only overwrite if no upload error already set
-          if (!n[questionIdx]) n[questionIdx] = "Transcription failed — audio saved and will still be graded.";
-          return n;
+      const transcribeDone = fetch("/api/transcribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audioBase64: base64, mimeType: capturedMime }),
+      })
+        .then((r) => r.json())
+        .then((body) => {
+          if (recordingVersionRef.current[idx] !== myVer) return;
+          if (body?.transcript) {
+            setTranscripts((prev) => { const n = [...prev]; n[idx] = body.transcript; return n; });
+          } else {
+            setRecordingErrors((prev) => { const n = [...prev]; if (!n[idx]) n[idx] = "Transcription failed — audio saved and will still be graded."; return n; });
+          }
+        })
+        .catch(() => {
+          if (recordingVersionRef.current[idx] !== myVer) return;
+          setRecordingErrors((prev) => { const n = [...prev]; if (!n[idx]) n[idx] = "Transcription failed — audio saved and will still be graded."; return n; });
+        })
+        .finally(() => {
+          if (recordingVersionRef.current[idx] !== myVer) return;
+          setTranscribingAudio((prev) => { const n = [...prev]; n[idx] = false; return n; });
         });
-      }
-      setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
+
+      await Promise.allSettled([uploadDone, transcribeDone]);
     };
 
     mediaRecorder.start(1000);
