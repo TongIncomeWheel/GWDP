@@ -37,8 +37,55 @@ export function getBucket() {
   return getStorage().bucket(bucketName);
 }
 
-// Store audio as base64 in Firestore (avoids GCS bucket config issues).
-// Each recording at 24kbps is ~100-400KB — well within Firestore's 1MB doc limit.
+// Upload audio to Firebase Storage (GCS). Returns the GCS object path on success, null on failure.
+// The path is short (e.g. "audio/uuid.webm") and safe to store in Firestore.
+// Caller should treat null as a non-fatal failure — session saves without audio.
+export async function uploadAudioToGCS(base64Data: string): Promise<string | null> {
+  try {
+    // Extract mime type from data URL prefix (e.g. "data:audio/webm;codecs=opus;base64,...")
+    let mimeType = "audio/webm";
+    if (base64Data.startsWith("data:")) {
+      const match = base64Data.match(/^data:([^;,]+)/);
+      if (match) mimeType = match[1];
+    }
+    const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+    const objectName = `audio/${crypto.randomUUID()}.${ext}`;
+    const raw = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
+    const buffer = Buffer.from(raw, "base64");
+    const bucket = getBucket();
+    await bucket.file(objectName).save(buffer, {
+      metadata: { contentType: mimeType },
+      resumable: false,
+    });
+    return objectName;
+  } catch (e) {
+    console.warn("[GCS UPLOAD] Failed:", e);
+    return null;
+  }
+}
+
+export async function downloadAudioFromGCS(objectName: string): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  try {
+    const bucket = getBucket();
+    const file = bucket.file(objectName);
+    const [buffer] = await file.download();
+    const [meta] = await file.getMetadata();
+    return { buffer: Buffer.from(buffer), mimeType: (meta.contentType as string) || "audio/webm" };
+  } catch (e) {
+    console.warn("[GCS DOWNLOAD] Failed:", e);
+    return null;
+  }
+}
+
+export async function deleteAudioFromGCS(objectName: string): Promise<void> {
+  try {
+    await getBucket().file(objectName).delete();
+  } catch (e) {
+    console.warn("[GCS DELETE] Failed:", e);
+  }
+}
+
+// Legacy: store audio as base64 in Firestore audio_files collection (used by old records).
 export async function uploadAudioToStorage(base64Data: string, mimeType: string): Promise<string> {
   const db = getDb();
   const ref = db.collection("audio_files").doc();
@@ -254,7 +301,16 @@ export async function closeExercise(id: number): Promise<void> {
 
 export async function deleteRecordings(id: number): Promise<void> {
   const db = getDb();
+  const history = await getPracticeHistoryById(id);
+  if (history) {
+    for (const path of [history.audioPath1, history.audioPath2, history.audioPath3]) {
+      if (path) await deleteAudioFromGCS(path);
+    }
+  }
   await db.collection("practice_history").doc(String(id)).update({
+    audioPath1: null,
+    audioPath2: null,
+    audioPath3: null,
     audioBlob1: null,
     audioBlob2: null,
     audioBlob3: null,

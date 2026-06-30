@@ -5,6 +5,7 @@ import {
   insertPracticeHistory,
   updateParentGrading,
   deletePracticeHistoryById,
+  uploadAudioToGCS,
 } from "@/lib/db";
 import type { PracticeHistory } from "@/lib/types";
 
@@ -29,13 +30,13 @@ export async function POST(request: NextRequest) {
     const blob1: string | null = body.audioBlob1 || null;
     const blob2: string | null = body.audioBlob2 || null;
     const blob3: string | null = body.audioBlob3 || null;
-    const totalBlobBytes = (blob1?.length ?? 0) + (blob2?.length ?? 0) + (blob3?.length ?? 0);
-    if (totalBlobBytes > 800_000) {
-      return NextResponse.json(
-        { error: "Audio recordings are too large to store (limit ~600 KB). Please re-record with shorter responses." },
-        { status: 413 }
-      );
-    }
+
+    // Upload audio to Firebase Storage in parallel; failures are non-fatal.
+    const [audioPath1, audioPath2, audioPath3] = await Promise.all([
+      blob1 ? uploadAudioToGCS(blob1) : Promise.resolve(null),
+      blob2 ? uploadAudioToGCS(blob2) : Promise.resolve(null),
+      blob3 ? uploadAudioToGCS(blob3) : Promise.resolve(null),
+    ]);
 
     const id = await insertPracticeHistory({
       exerciseId: body.exerciseId,
@@ -43,6 +44,9 @@ export async function POST(request: NextRequest) {
       exerciseType: body.exerciseType || "READING",
       exerciseTopic: body.exerciseTopic || "",
       dateMillis: Date.now(),
+      audioPath1: audioPath1 ?? null,
+      audioPath2: audioPath2 ?? null,
+      audioPath3: audioPath3 ?? null,
       transcript1: body.transcript1 || null,
       transcript2: body.transcript2 || null,
       transcript3: body.transcript3 || null,
@@ -53,9 +57,9 @@ export async function POST(request: NextRequest) {
       isEvaluated: false, isEvaluating: false, errorMessage: null,
       parentScore1: null, parentScore2: null, parentScore3: null,
       parentFeedback: null, parentTotalScore: null,
-      audioBlob1: blob1,
-      audioBlob2: blob2,
-      audioBlob3: blob3,
+      audioBlob1: null,
+      audioBlob2: null,
+      audioBlob3: null,
       structuredTranscript1: body.structuredTranscript1 || null,
       structuredTranscript2: body.structuredTranscript2 || null,
       structuredTranscript3: body.structuredTranscript3 || null,

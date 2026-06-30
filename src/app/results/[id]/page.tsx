@@ -7,6 +7,7 @@ import ReRe from "../../ReRe";
 import AudioPlayer from "../../AudioPlayer";
 import { ScoreRow } from "@/components/ScoreRow";
 import { StructuredTranscriptView } from "@/components/StructuredTranscriptView";
+import { resolveAudioSrc } from "@/lib/audio";
 
 export default function ResultsPage() {
   const params = useParams();
@@ -286,17 +287,19 @@ export default function ResultsPage() {
           )}
 
           {/* Audio Playback */}
-          {(history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
+          {(resolveAudioSrc(history.audioPath1, history.audioBlob1) ||
+            resolveAudioSrc(history.audioPath2, history.audioBlob2) ||
+            resolveAudioSrc(history.audioPath3, history.audioBlob3)) && (
             <div className="card">
               <div className="card-title">Your Recordings</div>
-              {history.audioBlob1 && (
-                <AudioPlayer src={history.audioBlob1} label={isReading ? "Reading" : "Response 1"} />
+              {resolveAudioSrc(history.audioPath1, history.audioBlob1) && (
+                <AudioPlayer src={resolveAudioSrc(history.audioPath1, history.audioBlob1)!} label={isReading ? "Reading" : "Response 1"} />
               )}
-              {!isReading && history.audioBlob2 && (
-                <AudioPlayer src={history.audioBlob2} label="Response 2" />
+              {!isReading && resolveAudioSrc(history.audioPath2, history.audioBlob2) && (
+                <AudioPlayer src={resolveAudioSrc(history.audioPath2, history.audioBlob2)!} label="Response 2" />
               )}
-              {!isReading && history.audioBlob3 && (
-                <AudioPlayer src={history.audioBlob3} label="Response 3" />
+              {!isReading && resolveAudioSrc(history.audioPath3, history.audioBlob3) && (
+                <AudioPlayer src={resolveAudioSrc(history.audioPath3, history.audioBlob3)!} label="Response 3" />
               )}
             </div>
           )}

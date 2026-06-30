@@ -1,27 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAudioFile } from "@/lib/db";
+import { getAudioFile, downloadAudioFromGCS } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
-  const id = request.nextUrl.searchParams.get("id");
-  if (!id) {
-    return NextResponse.json({ error: "id required" }, { status: 400 });
-  }
+  const { searchParams } = request.nextUrl;
+  const path = searchParams.get("path");
+  const id = searchParams.get("id");
 
   try {
-    const audio = await getAudioFile(id);
-    if (!audio) {
-      return NextResponse.json({ error: "Audio not found" }, { status: 404 });
+    let buffer: Buffer;
+    let mimeType: string;
+
+    if (path) {
+      // New: GCS-backed audio
+      const result = await downloadAudioFromGCS(path);
+      if (!result) {
+        return NextResponse.json({ error: "Audio not found" }, { status: 404 });
+      }
+      buffer = result.buffer;
+      mimeType = result.mimeType;
+    } else if (id) {
+      // Legacy: Firestore audio_files collection
+      const audio = await getAudioFile(id);
+      if (!audio) {
+        return NextResponse.json({ error: "Audio not found" }, { status: 404 });
+      }
+      const raw = audio.data.includes(",") ? audio.data.split(",")[1] : audio.data;
+      buffer = Buffer.from(raw, "base64");
+      mimeType = audio.mimeType || "audio/webm";
+    } else {
+      return NextResponse.json({ error: "path or id required" }, { status: 400 });
     }
 
-    // Strip data URL prefix and decode base64 to binary
-    const raw = audio.data.includes(",") ? audio.data.split(",")[1] : audio.data;
-    const buffer = Buffer.from(raw, "base64");
-    const mimeType = audio.mimeType || "audio/webm";
     const total = buffer.length;
-
     const rangeHeader = request.headers.get("range");
+
     if (rangeHeader) {
-      // Parse "bytes=start-end"
       const [, rangeVal] = rangeHeader.split("=");
       const [startStr, endStr] = (rangeVal ?? "").split("-");
       const start = parseInt(startStr || "0", 10);
@@ -40,7 +53,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return new Response(buffer, {
+    return new Response(buffer as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": mimeType,

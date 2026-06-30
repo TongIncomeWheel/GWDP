@@ -6,6 +6,7 @@ import type { OralExercise, PracticeHistory } from "@/lib/types";
 import AudioPlayer from "../../../AudioPlayer";
 import { ScoreRow } from "@/components/ScoreRow";
 import { StructuredTranscriptView } from "@/components/StructuredTranscriptView";
+import { resolveAudioSrc, hasAudio } from "@/lib/audio";
 
 export default function ParentSessionDetailPage() {
   const params = useParams();
@@ -210,6 +211,9 @@ export default function ParentSessionDetailPage() {
       });
       setHistory({
         ...history,
+        audioPath1: null,
+        audioPath2: null,
+        audioPath3: null,
         audioBlob1: null,
         audioBlob2: null,
         audioBlob3: null,
@@ -518,12 +522,12 @@ export default function ParentSessionDetailPage() {
             </div>
 
             {/* For Reading: single player before sliders */}
-            {isReading && history.audioBlob1 && (
+            {isReading && resolveAudioSrc(history.audioPath1, history.audioBlob1) && (
               <div style={{ marginTop: 12 }}>
-                <AudioPlayer src={history.audioBlob1} label="Listen to recording" />
+                <AudioPlayer src={resolveAudioSrc(history.audioPath1, history.audioBlob1)!} label="Listen to recording" />
               </div>
             )}
-            {isReading && !history.audioBlob1 && (
+            {isReading && !resolveAudioSrc(history.audioPath1, history.audioBlob1) && (
               <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>
                 No audio available for this session.
               </div>
@@ -531,17 +535,19 @@ export default function ParentSessionDetailPage() {
 
             <div style={{ marginTop: 12 }}>
               {sliderLabels.map((label, idx) => {
+                const paths = [history.audioPath1, history.audioPath2, history.audioPath3];
                 const blobs = [history.audioBlob1, history.audioBlob2, history.audioBlob3];
+                const src = resolveAudioSrc(paths[idx], blobs[idx]);
                 const value = idx === 0 ? parentScore1 : idx === 1 ? parentScore2 : parentScore3;
                 const setter = idx === 0 ? setParentScore1 : idx === 1 ? setParentScore2 : setParentScore3;
 
                 return (
                   <div key={idx} style={{ marginBottom: 20 }}>
                     {/* For SBC: player per question above its slider */}
-                    {!isReading && blobs[idx] && (
-                      <AudioPlayer src={blobs[idx]!} label={`Listen — Question ${idx + 1}`} />
+                    {!isReading && src && (
+                      <AudioPlayer src={src} label={`Listen — Question ${idx + 1}`} />
                     )}
-                    {!isReading && !blobs[idx] && (
+                    {!isReading && !src && (
                       <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginBottom: 6 }}>
                         No audio for Q{idx + 1}
                       </div>
@@ -698,7 +704,7 @@ export default function ParentSessionDetailPage() {
 
           {/* Delete Recordings */}
           {history.isClosed &&
-            (history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
+            hasAudio(history.audioPath1, history.audioPath2, history.audioPath3, history.audioBlob1, history.audioBlob2, history.audioBlob3) && (
               <div className="card" style={{ borderColor: "var(--danger)" }}>
                 <div className="card-title" style={{ color: "var(--danger)" }}>
                   Storage Management
