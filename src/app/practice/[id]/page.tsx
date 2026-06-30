@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { OralExercise } from "@/lib/types";
 import ReRe from "../../ReRe";
+import AudioPlayer from "../../AudioPlayer";
 import { useRecordingPipeline, type RecordingState } from "@/hooks/useRecordingPipeline";
 
 function splitIntoPEEL(text: string) {
@@ -696,7 +697,7 @@ function RecordingSection({
       </div>
       {audio && (
         <div className="audio-player-mini">
-          <audio controls src={audio} style={{ width: "100%", minHeight: 48 }} />
+          <AudioPlayer src={audio} label="" />
         </div>
       )}
       {peel && transcript && (
