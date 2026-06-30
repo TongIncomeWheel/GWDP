@@ -58,8 +58,6 @@ export default function PracticePage() {
     null,
     null,
   ]);
-  const [audioPaths, setAudioPaths] = useState<(string | null)[]>([null, null, null]);
-  const [uploadingAudio, setUploadingAudio] = useState<boolean[]>([false, false, false]);
   const [transcribingAudio, setTranscribingAudio] = useState<boolean[]>([false, false, false]);
   const [recordingStates, setRecordingStates] = useState<RecordingState[]>([
     "idle",
@@ -160,25 +158,7 @@ export default function PracticePage() {
         const base64 = reader.result as string;
         setAudioBlobs((prev) => { const n = [...prev]; n[questionIdx] = base64; return n; });
 
-        // GCS upload (for parent playback) — runs in parallel with transcription
-        setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
-        fetch("/api/practice/audio", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: base64, mimeType: capturedMime }),
-        })
-          .then((r) => r.json())
-          .then((data) => {
-            if (recordingVersionRef.current[questionIdx] !== myVersion) return;
-            if (data.url) setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = data.url; return n; });
-          })
-          .catch(() => {})
-          .finally(() => {
-            if (recordingVersionRef.current[questionIdx] === myVersion)
-              setUploadingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
-          });
-
-        // Transcription via Gemini — runs immediately from base64
+        // Transcription via Gemini
         setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = true; return n; });
         try {
           const txRes = await fetch("/api/transcribe", {
@@ -224,7 +204,6 @@ export default function PracticePage() {
         audioChunksRef.current[questionIdx] = [];
         setTranscripts((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
         setAudioBlobs((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
-        setAudioPaths((prev) => { const n = [...prev]; n[questionIdx] = null; return n; });
         setRecordingErrors((prev) => { const n = [...prev]; n[questionIdx] = ""; return n; });
         setTranscribingAudio((prev) => { const n = [...prev]; n[questionIdx] = false; return n; });
         startRecording(questionIdx);
@@ -286,12 +265,11 @@ export default function PracticePage() {
     }
   };
 
-  const uploadsComplete = uploadingAudio.every((u) => !u);
   const transcriptReady = transcribingAudio.every((t) => !t);
   const allRecorded =
     (exercise?.type === "READING"
       ? recordingStates[0] === "done"
-      : recordingStates.slice(0, 3).every((s) => s === "done")) && uploadsComplete && transcriptReady;
+      : recordingStates.slice(0, 3).every((s) => s === "done")) && transcriptReady;
 
   const missingQuestions =
     exercise?.type === "STIMULUS"
@@ -346,10 +324,6 @@ export default function PracticePage() {
           transcript1: transcripts[0] || null,
           transcript2: transcripts[1] || null,
           transcript3: transcripts[2] || null,
-          audioPath1: audioPaths[0] || null,
-          audioPath2: audioPaths[1] || null,
-          audioPath3: audioPaths[2] || null,
-          // Store blobs directly in the session so parent playback never expires
           audioBlob1: audioBlobs[0] || null,
           audioBlob2: audioBlobs[1] || null,
           audioBlob3: audioBlobs[2] || null,
@@ -389,8 +363,6 @@ export default function PracticePage() {
       setSelectedAttempt(attempts.length);
       setTranscripts(["", "", ""]);
       setAudioBlobs([null, null, null]);
-      setAudioPaths([null, null, null]);
-      setUploadingAudio([false, false, false]);
       setTranscribingAudio([false, false, false]);
       setRecordingErrors(["", "", ""]);
       setRecordingStates(["idle", "idle", "idle"]);
@@ -771,8 +743,6 @@ export default function PracticePage() {
                     />{" "}
                     Evaluating...
                   </>
-                ) : uploadingAudio.some((u) => u) ? (
-                  "Uploading audio..."
                 ) : transcribingAudio.some((t) => t) ? (
                   "Transcribing..."
                 ) : attempts.length === 0 ? (

@@ -3,7 +3,6 @@ import {
   getAllPracticeHistoryMeta,
   getPracticeHistoryById,
   insertPracticeHistory,
-  attachAudioBlobs,
   updateParentGrading,
   deletePracticeHistoryById,
 } from "@/lib/db";
@@ -32,9 +31,7 @@ export async function POST(request: NextRequest) {
       exerciseType: body.exerciseType || "READING",
       exerciseTopic: body.exerciseTopic || "",
       dateMillis: Date.now(),
-      audioPath1: body.audioPath1 || null,
-      audioPath2: body.audioPath2 || null,
-      audioPath3: body.audioPath3 || null,
+      audioPath1: null, audioPath2: null, audioPath3: null,
       transcript1: body.transcript1 || null,
       transcript2: body.transcript2 || null,
       transcript3: body.transcript3 || null,
@@ -45,21 +42,14 @@ export async function POST(request: NextRequest) {
       isEvaluated: false, isEvaluating: false, errorMessage: null,
       parentScore1: null, parentScore2: null, parentScore3: null,
       parentFeedback: null, parentTotalScore: null,
-      audioBlob1: null, audioBlob2: null, audioBlob3: null,
+      audioBlob1: body.audioBlob1 || null,
+      audioBlob2: body.audioBlob2 || null,
+      audioBlob3: body.audioBlob3 || null,
       structuredTranscript1: body.structuredTranscript1 || null,
       structuredTranscript2: body.structuredTranscript2 || null,
       structuredTranscript3: body.structuredTranscript3 || null,
       isClosed: false,
     });
-    // Attach blobs in a separate update so an oversized doc doesn't break the submit
-    if (body.audioBlob1 || body.audioBlob2 || body.audioBlob3) {
-      await attachAudioBlobs(
-        id,
-        body.audioBlob1 || null,
-        body.audioBlob2 || null,
-        body.audioBlob3 || null,
-      );
-    }
 
     return NextResponse.json({ id });
   } catch (e) {

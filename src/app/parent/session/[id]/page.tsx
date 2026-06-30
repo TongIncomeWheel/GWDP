@@ -602,13 +602,13 @@ export default function ParentSessionDetailPage() {
               Parent Grading
             </div>
 
-            {/* For Reading: single player at top before both sliders */}
-            {isReading && (history.audioPath1 || history.audioBlob1) && (
+            {/* For Reading: single player before sliders */}
+            {isReading && history.audioBlob1 && (
               <div style={{ marginTop: 12 }}>
-                {renderAudio(history.audioPath1 || history.audioBlob1, "Listen to recording")}
+                {renderAudio(history.audioBlob1, "Listen to recording")}
               </div>
             )}
-            {isReading && !(history.audioPath1 || history.audioBlob1) && (
+            {isReading && !history.audioBlob1 && (
               <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>
                 No audio available for this session.
               </div>
@@ -616,19 +616,15 @@ export default function ParentSessionDetailPage() {
 
             <div style={{ marginTop: 12 }}>
               {sliderLabels.map((label, idx) => {
-                const audioPaths = [
-                  history.audioPath1 || history.audioBlob1,
-                  history.audioPath2 || history.audioBlob2,
-                  history.audioPath3 || history.audioBlob3,
-                ];
+                const blobs = [history.audioBlob1, history.audioBlob2, history.audioBlob3];
                 const value = idx === 0 ? parentScore1 : idx === 1 ? parentScore2 : parentScore3;
                 const setter = idx === 0 ? setParentScore1 : idx === 1 ? setParentScore2 : setParentScore3;
 
                 return (
                   <div key={idx} style={{ marginBottom: 20 }}>
-                    {/* For SBC: show each question's player above its slider */}
-                    {!isReading && audioPaths[idx] && renderAudio(audioPaths[idx], `Listen — Question ${idx + 1}`)}
-                    {!isReading && !audioPaths[idx] && (
+                    {/* For SBC: player per question above its slider */}
+                    {!isReading && blobs[idx] && renderAudio(blobs[idx], `Listen — Question ${idx + 1}`)}
+                    {!isReading && !blobs[idx] && (
                       <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginBottom: 6 }}>
                         No audio for Q{idx + 1}
                       </div>
@@ -785,7 +781,7 @@ export default function ParentSessionDetailPage() {
 
           {/* Delete Recordings */}
           {history.isClosed &&
-            (history.audioPath1 || history.audioPath2 || history.audioPath3 || history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
+            (history.audioBlob1 || history.audioBlob2 || history.audioBlob3) && (
               <div className="card" style={{ borderColor: "var(--danger)" }}>
                 <div className="card-title" style={{ color: "var(--danger)" }}>
                   Storage Management
