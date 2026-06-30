@@ -8,15 +8,31 @@ export default function AudioPlayer({ src, label }: { src: string; label: string
   useEffect(() => {
     if (!src) return;
     let url: string;
-    // Convert data: URL to a real Blob URL so browsers can determine duration
-    // and play without needing a seek first.
-    fetch(src)
-      .then((r) => r.blob())
-      .then((blob) => {
+
+    if (src.startsWith("data:")) {
+      // iOS Safari can't reliably fetch() data URLs — decode directly
+      try {
+        const comma = src.indexOf(",");
+        const header = src.slice(0, comma);
+        const base64 = src.slice(comma + 1);
+        const mimeMatch = header.match(/data:(.*?);/);
+        const mime = mimeMatch?.[1] || "audio/webm";
+        const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: mime });
         url = URL.createObjectURL(blob);
         setBlobUrl(url);
-      })
-      .catch(() => setBlobUrl(src)); // fallback: use data URL directly
+      } catch {
+        setBlobUrl(src);
+      }
+    } else {
+      fetch(src)
+        .then((r) => r.blob())
+        .then((blob) => {
+          url = URL.createObjectURL(blob);
+          setBlobUrl(url);
+        })
+        .catch(() => setBlobUrl(src));
+    }
 
     return () => {
       if (url) URL.revokeObjectURL(url);
