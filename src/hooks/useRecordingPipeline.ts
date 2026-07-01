@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import fixWebmDuration from "fix-webm-duration";
 
 export type RecordingState = "idle" | "recording" | "done";
 
@@ -64,15 +63,7 @@ export function useRecordingPipeline(): RecordingPipeline {
       if (recordingVersionRef.current[questionIdx] !== myVersion) return;
 
       const capturedMime = mediaRecorder.mimeType || "audio/webm";
-      const rawBlob = new Blob(audioChunksRef.current[questionIdx], { type: capturedMime });
-      const durationMs = Date.now() - recordingStartTimeRef.current[questionIdx];
-
-      // Patch WebM Duration in the EBML header so browsers don't have to scan the whole file
-      // before starting playback. mp4 already has duration; skip for non-webm formats.
-      let blob = rawBlob;
-      if (capturedMime.includes("webm") && durationMs > 0) {
-        try { blob = await fixWebmDuration(rawBlob, durationMs); } catch { blob = rawBlob; }
-      }
+      const blob = new Blob(audioChunksRef.current[questionIdx], { type: capturedMime });
 
       // Convert to base64 for upload and transcription
       const base64 = await new Promise<string>((resolve) => {
