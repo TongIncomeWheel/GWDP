@@ -522,22 +522,22 @@ export default function ParentSessionDetailPage() {
             </div>
 
             {/* For Reading: single player before sliders */}
-            {isReading && resolveAudioSrc(history.audioPath1, history.audioBlob1) && (
+            {isReading && (
               <div style={{ marginTop: 12 }}>
-                <AudioPlayer src={resolveAudioSrc(history.audioPath1, history.audioBlob1)!} label="Listen to recording" />
-              </div>
-            )}
-            {isReading && !resolveAudioSrc(history.audioPath1, history.audioBlob1) && (
-              <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>
-                No audio available for this session.
+                {resolveAudioSrc(history.audioPath1, null) ? (
+                  <AudioPlayer src={resolveAudioSrc(history.audioPath1, null)!} label="Listen to recording" />
+                ) : (
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginBottom: 8 }}>
+                    No recording available for this session.
+                  </div>
+                )}
               </div>
             )}
 
             <div style={{ marginTop: 12 }}>
               {sliderLabels.map((label, idx) => {
                 const paths = [history.audioPath1, history.audioPath2, history.audioPath3];
-                const blobs = [history.audioBlob1, history.audioBlob2, history.audioBlob3];
-                const src = resolveAudioSrc(paths[idx], blobs[idx]);
+                const src = resolveAudioSrc(paths[idx], null);
                 const value = idx === 0 ? parentScore1 : idx === 1 ? parentScore2 : parentScore3;
                 const setter = idx === 0 ? setParentScore1 : idx === 1 ? setParentScore2 : setParentScore3;
 
@@ -549,7 +549,7 @@ export default function ParentSessionDetailPage() {
                     )}
                     {!isReading && !src && (
                       <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginBottom: 6 }}>
-                        No audio for Q{idx + 1}
+                        No recording for Q{idx + 1}
                       </div>
                     )}
                     <div className="grading-row">

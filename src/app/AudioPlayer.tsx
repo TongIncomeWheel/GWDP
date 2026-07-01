@@ -13,8 +13,8 @@ export default function AudioPlayer({ src, label }: { src: string; label: string
         </div>
       )}
       {error ? (
-        <div style={{ fontSize: 12, color: "#c0392b", padding: "8px 0" }}>
-          Audio could not be loaded. Please try refreshing the page.
+        <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", padding: "8px 0" }}>
+          Recording unavailable.
         </div>
       ) : (
         <audio

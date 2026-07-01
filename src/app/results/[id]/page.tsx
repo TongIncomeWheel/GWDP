@@ -287,22 +287,42 @@ export default function ResultsPage() {
           )}
 
           {/* Audio Playback */}
-          {(resolveAudioSrc(history.audioPath1, history.audioBlob1) ||
-            resolveAudioSrc(history.audioPath2, history.audioBlob2) ||
-            resolveAudioSrc(history.audioPath3, history.audioBlob3)) && (
-            <div className="card">
-              <div className="card-title">Your Recordings</div>
-              {resolveAudioSrc(history.audioPath1, history.audioBlob1) && (
-                <AudioPlayer src={resolveAudioSrc(history.audioPath1, history.audioBlob1)!} label={isReading ? "Reading" : "Response 1"} />
-              )}
-              {!isReading && resolveAudioSrc(history.audioPath2, history.audioBlob2) && (
-                <AudioPlayer src={resolveAudioSrc(history.audioPath2, history.audioBlob2)!} label="Response 2" />
-              )}
-              {!isReading && resolveAudioSrc(history.audioPath3, history.audioBlob3) && (
-                <AudioPlayer src={resolveAudioSrc(history.audioPath3, history.audioBlob3)!} label="Response 3" />
-              )}
-            </div>
-          )}
+          <div className="card">
+            <div className="card-title">Your Recordings</div>
+            {isReading ? (
+              resolveAudioSrc(history.audioPath1, null) ? (
+                <AudioPlayer src={resolveAudioSrc(history.audioPath1, null)!} label="Reading" />
+              ) : (
+                <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", padding: "8px 0" }}>
+                  No recording available for this session.
+                </div>
+              )
+            ) : (
+              <>
+                {resolveAudioSrc(history.audioPath1, null) ? (
+                  <AudioPlayer src={resolveAudioSrc(history.audioPath1, null)!} label="Response 1" />
+                ) : (
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", padding: "4px 0" }}>
+                    No recording for Response 1.
+                  </div>
+                )}
+                {resolveAudioSrc(history.audioPath2, null) ? (
+                  <AudioPlayer src={resolveAudioSrc(history.audioPath2, null)!} label="Response 2" />
+                ) : (
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", padding: "4px 0" }}>
+                    No recording for Response 2.
+                  </div>
+                )}
+                {resolveAudioSrc(history.audioPath3, null) ? (
+                  <AudioPlayer src={resolveAudioSrc(history.audioPath3, null)!} label="Response 3" />
+                ) : (
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", padding: "4px 0" }}>
+                    No recording for Response 3.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
 
           {/* Structured Transcripts with PEEL breakdown */}
           {(history.structuredTranscript1 ||
