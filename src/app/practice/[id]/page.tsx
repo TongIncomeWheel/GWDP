@@ -472,14 +472,11 @@ function RecordingSection({
       <div className={`transcript-box ${transcript ? "has-text" : ""}`}>
         {transcript || "Your speech will appear here..."}
       </div>
-      {state === "done" && (
-        <div className="audio-player-mini">
-          {uploading
-            ? <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>⏳ Uploading recording...</div>
-            : audioSrc
-              ? <AudioPlayer src={audioSrc} label="" />
-              : null}
-        </div>
+      {state === "done" && !uploading && audioSrc && (
+        <AudioPlayer src={audioSrc} label="" />
+      )}
+      {state === "done" && uploading && (
+        <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>⏳ Uploading recording...</div>
       )}
       {peel && transcript && (
         <div className="structured-transcript">
