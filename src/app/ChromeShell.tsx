@@ -8,10 +8,15 @@ const PATH_LABELS: Record<string, string> = {
   "/history": "student/history",
   "/parent": "parent/dashboard",
   "/parent/settings": "parent/settings",
+  "/zh": "zh/practice",
+  "/zh/history": "zh/history",
+  "/zh/rubric": "zh/rubric",
+  "/zh/parent": "zh/parent",
 };
 
 export default function ChromeShell() {
   const pathname = usePathname();
+  const isZh = pathname.startsWith("/zh");
 
   const pathLabel =
     PATH_LABELS[pathname] ||
@@ -21,13 +26,24 @@ export default function ChromeShell() {
       ? "student/results"
       : pathname.startsWith("/parent/session/")
       ? "parent/session"
+      : isZh
+      ? "zh/practice"
       : "student");
 
-  const navItems = [
-    { href: "/", label: "Practice", active: pathname === "/" || pathname.startsWith("/practice/") },
-    { href: "/history", label: "History", active: pathname === "/history" || pathname.startsWith("/results/") },
-    { href: "/parent", label: "Parent", active: pathname.startsWith("/parent") },
-  ];
+  const navItems = isZh
+    ? [
+        { href: "/zh", label: "Practice", active: pathname === "/zh" },
+        { href: "/zh/history", label: "History", active: pathname === "/zh/history" },
+        { href: "/zh/rubric", label: "Rubric", active: pathname === "/zh/rubric" },
+        { href: "/zh/parent", label: "Parent", active: pathname === "/zh/parent" || pathname.startsWith("/zh/parent/") },
+        { href: "/", label: "English", active: false },
+      ]
+    : [
+        { href: "/", label: "Practice", active: pathname === "/" || pathname.startsWith("/practice/") },
+        { href: "/history", label: "History", active: pathname === "/history" || pathname.startsWith("/results/") },
+        { href: "/parent", label: "Parent", active: pathname.startsWith("/parent") },
+        { href: "/zh", label: "华文", active: false },
+      ];
 
   return (
     <div className="chrome-shell">

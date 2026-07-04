@@ -15,7 +15,7 @@ export interface RecordingPipeline {
   resetAll: () => void;
 }
 
-export function useRecordingPipeline(): RecordingPipeline {
+export function useRecordingPipeline(options?: { transcribeUrl?: string }): RecordingPipeline {
   const [recordingStates, setRecordingStates] = useState<RecordingState[]>(["idle", "idle", "idle"]);
   const [transcripts, setTranscripts] = useState<string[]>(["", "", ""]);
   const [audioPaths, setAudioPaths] = useState<(string | null)[]>([null, null, null]);
@@ -105,7 +105,7 @@ export function useRecordingPipeline(): RecordingPipeline {
           setUploadingAudio((prev) => { const n = [...prev]; n[idx] = false; return n; });
         });
 
-      const transcribeDone = fetch("/api/transcribe", {
+      const transcribeDone = fetch(options?.transcribeUrl || "/api/transcribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ audioBase64: base64, mimeType: capturedMime }),
