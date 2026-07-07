@@ -39,9 +39,17 @@ function computeChineseCharCoverage(passage: string, transcript: string): { cove
   return { coveragePercent, missingChars: missing.slice(0, 30), addedChars: added.slice(0, 20) };
 }
 
+function isUsableZhTranscript(t: string | null | undefined): boolean {
+  if (!t || t === "No speech recognized" || t.trim().length === 0) return false;
+  // Reject transcripts that are mostly non-Chinese (Pinyin / English / garbage)
+  const chineseChars = (t.match(/[一-鿿]/g) || []).length;
+  const totalNonSpace = t.replace(/\s/g, "").length;
+  return totalNonSpace > 0 && chineseChars / totalNonSpace >= 0.3;
+}
+
 function buildZhReadingPrompt(history: PracticeHistory, exercise: OralExercise): string {
   const transcript = history.transcript1 || "";
-  const hasTranscript = transcript && transcript !== "No speech recognized" && transcript.trim().length > 0;
+  const hasTranscript = isUsableZhTranscript(transcript);
 
   let coverageInfo = "";
   if (hasTranscript && exercise.passageText) {
@@ -102,7 +110,8 @@ CRITICAL SCORING RULES:
 3. COMPLETENESS: If the student did not read the ENTIRE passage, deduct heavily. Reading only part = maximum 4/10. Reading less than a third = maximum 2/10.
 4. ACCURACY: Use character coverage data to identify missed/substituted characters, but verify with audio — speech-to-text may have errors.
 5. EMPTY/MINIMAL TRANSCRIPTS: If transcript is empty but audio is provided, evaluate entirely from audio. Only score 0 if the student genuinely did not speak.
-6. DO NOT penalise for: mild Singapore Mandarin accent, absence of erhua, Beijing-specific tones — these are NOT errors in Singapore Chinese.
+6. POOR TRANSCRIPT QUALITY: The transcript is auto-generated and may be inaccurate for Chinese audio. If the transcript seems wrong or inconsistent with what you hear in the audio, IGNORE the transcript and evaluate from audio alone.
+7. DO NOT penalise for: mild Singapore Mandarin accent, absence of erhua, Beijing-specific tones — these are NOT errors in Singapore Chinese.
 
 [课文 / Reading Passage]:
 "${exercise.passageText}"
@@ -143,9 +152,9 @@ Respond in valid JSON with this exact structure:
 }
 
 function buildZhStimulusPrompt(history: PracticeHistory, exercise: OralExercise): string {
-  const hasT1 = !!history.transcript1 && history.transcript1 !== "No speech recognized" && history.transcript1.trim().length > 0;
-  const hasT2 = !!history.transcript2 && history.transcript2 !== "No speech recognized" && history.transcript2.trim().length > 0;
-  const hasT3 = !!history.transcript3 && history.transcript3 !== "No speech recognized" && history.transcript3.trim().length > 0;
+  const hasT1 = isUsableZhTranscript(history.transcript1);
+  const hasT2 = isUsableZhTranscript(history.transcript2);
+  const hasT3 = isUsableZhTranscript(history.transcript3);
   const answeredCount = [hasT1, hasT2, hasT3].filter(Boolean).length;
 
   return `
@@ -185,8 +194,9 @@ CRITICAL SCORING RULES:
 2. SCORE EACH QUESTION INDEPENDENTLY: score1 = Q1 holistic, score2 = Q2 holistic, score3 = Q3 holistic (0-10 each). A strong Q1 does NOT raise a weak Q2.
 3. SINGAPORE STANDARD CALIBRATION: A student who answers clearly in Mandarin with at least one reason or example and speaks fluently should score 6-8/10. Do NOT require Beijing Mandarin pronunciation or formal written register.
 4. MINIMUM RESPONSE FLOOR: Responses fewer than ~15 Chinese characters / ~10 spoken words cannot score above 4/10 regardless of content. If audio is also silent, score MUST be 0.
-5. VOCABULARY CHECK: If every answer uses only the most basic words (好、坏、高兴) with zero variety, cap language component at 5/10.
-6. STRUCTURE CHECK: No organisation at all (no point, no reason) = cap content component at 5/10. Even "我觉得……因为……" counts as minimal structure.
+5. POOR TRANSCRIPT QUALITY: The transcript is machine-generated and may be inaccurate for Chinese audio. If a transcript seems wrong or inconsistent with what you hear, IGNORE it and evaluate from audio alone.
+6. VOCABULARY CHECK: If every answer uses only the most basic words (好、坏、高兴) with zero variety, cap language component at 5/10.
+7. STRUCTURE CHECK: No organisation at all (no point, no reason) = cap content component at 5/10. Even "我觉得……因为……" counts as minimal structure.
 
 [图片主题 / Stimulus Theme]: ${exercise.topic}
 [图片内容描述 / Stimulus Description]:

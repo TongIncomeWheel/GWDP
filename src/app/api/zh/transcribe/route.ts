@@ -26,9 +26,14 @@ export async function POST(request: NextRequest) {
   }
 
   const body = {
+    systemInstruction: {
+      parts: [{
+        text: "You are transcribing audio from a Singapore primary school student speaking Mandarin Chinese (普通话). ALWAYS output in Simplified Chinese characters (简体中文汉字). NEVER use Pinyin, Traditional Chinese, or English unless those exact words were spoken. If the audio is inaudible or silent, return an empty string."
+      }]
+    },
     contents: [{
       parts: [
-        { text: "请将这段录音的内容转录成简体中文。只需返回学生所说的文字，不需要任何注释、标点说明或额外内容。用简体中文书写。" },
+        { text: "请将这段录音逐字转录成简体中文汉字。只输出学生所说的文字内容，不加标点注释、拼音、英文或任何说明。如果听不到任何内容，请返回空字符串。" },
         { inline_data: { mime_type: mimeType, data: base64 } },
       ],
     }],
@@ -48,6 +53,15 @@ export async function POST(request: NextRequest) {
   }
 
   const data = await res.json();
-  const transcript = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+
+  // Validate the transcript actually contains Chinese characters.
+  // If Gemini returned Pinyin, English, or garbage instead of Chinese, discard it
+  // so the evaluator falls back to audio-only grading (avoids garbage-in → garbage-out).
+  const chineseChars = (raw.match(/[一-鿿]/g) || []).length;
+  const totalChars = raw.replace(/\s/g, "").length;
+  const chineseRatio = totalChars > 0 ? chineseChars / totalChars : 0;
+  const transcript = chineseRatio >= 0.3 ? raw : "";
+
   return NextResponse.json({ transcript });
 }
